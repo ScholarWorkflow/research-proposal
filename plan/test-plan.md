@@ -7,8 +7,8 @@
 - 测试计划版本：`rp-tests-r3-2026-11-03`。
 - 需求版本：`rp-requirements-2026-11-02-q6-q16`。
 - 执行计划：[implementation-plan.md](implementation-plan.md)，版本 `rp-plan-r3-2026-11-03`，校验值 `edf6692023be0e717ff454482c10763cc74c42885cc41ea8458fd1915fb69bcf`；批准依据见 [implementation-plan-review.md](implementation-plan-review.md)。
-- 目标仓库：`research-proposal`；工作树：`worktrees/research-proposal-plan`；分支：`feat/research-proposal`。当前尚无产品提交；已按公开组件契约准备测试代码、输入和配置，没有正式执行结果。
-- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r4-2026-11-03`，准备符合性结论见 `plan/test-preparation-review.md`；第二关结论由主代理记录，第三关尚未执行。
+- 目标仓库：`research-proposal`；工作树：`worktrees/research-proposal-plan`；分支：`feat/research-proposal`。本次配置修正对应已交付产品 `4797a1bd69dca2a1354476a564c5d2714d8004da`；正式执行状态由执行工程师维护于 `plan/test-results.md`，本次准备修正不代跑用例。
+- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r5-2026-11-03`，本次仅修正固定夹具 TOML 的配置读取；准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录，第三关尚未执行。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
@@ -158,6 +158,8 @@
 
 需要真实用户选择或确认的场景，使用现有评估服务对同一隔离使用目录和同一稿件逐次发送请求。先检查上一请求的实际问题、方案和产品保存的状态，再将针对该问题或该版方案的具体用户决定作为下一请求的输入；不预先灌入尚未提出的问题的答案，也不直接改写产品确认状态。每次请求可以建立新的运行时对话，不要求恢复同一个线程；交互之间继续使用产品已经保存的有效成果，不重复成稿。依据为现有评估服务 [app-server 入口约定](../../../eval-server/docs/appserver-migration.md)第 193–201 行，源码版本 `1ae8b6131bd0041b82cf3cc3789bf7fe09dfac6e`：每次评估创建新的主对话，不支持 `resume`。这只调整请求组织方式，不新增测试场景或修改运行时。
 
+本轮用户已授权执行工程师扮演合成申请者，在看到实际选项或方案后作出测试决定，并在正式结果中保存实际选择；该授权仅用于隔离测试，不预填决定、不改写产品状态，也不省略原定确认条件。
+
 上述目标和预期结果在产品运行前确定，不能根据实际输出倒推通过条件。业务判断所需的来源、材料片段、学校要求、用户选择及已知缺项由本地测试工程师事先准备；使用有权使用的公开材料或合成申请信息，不复制用户实际申请资料到产品仓库。
 
 上游正式状态采用原流程生成的有效资料或已有有效保存件。未完成场景可从隔离副本移除本项指定的产物；检查仍由生产入口完成，不能补造成功状态或修改消费者里的受管代码。材料载体样本只用于其声明的检查，不伪装成现实中已发表的研究证据。
@@ -267,7 +269,7 @@ export RP_KB_SERVER_PATH="$(direnv exec "$RP_EVAL_DIRECTORY" sh -c 'printf %s "$
 mkdir -p "$RP_KB_DATA" "$RP_KB_CACHE" "$RP_BROWSER_DATA"
 ```
 
-使用固定工具的真实覆盖键合成消费者配置，表达式仅在 [consumer-runtime.yq](../test/config/consumer-runtime.yq) 维护。它保留原有模型、代理、服务命令与参数，仅增加本轮环境和已有嵌套模式。原生 MCP 环境与 shell 环境分别设置；不依赖长期运行的评估服务自动继承调用者临时变量：
+使用固定工具的真实覆盖键合成消费者配置，表达式仅在 [consumer-runtime.yq](../test/config/consumer-runtime.yq) 维护。先用 `yq -p=toml` 从原夹具提取 `features` 到本轮 JSON 输入；yq 4.54.1 的 `load` 不自动按 TOML 解析，也不支持 `from_toml`，不能直接对加载后的字符串读取 `.features`。它保留原有模型、代理、服务命令与参数，仅增加本轮环境和已有嵌套模式。原生 MCP 环境与 shell 环境分别设置；不依赖长期运行的评估服务自动继承调用者临时变量：
 
 ```bash
 : "${RP_THREAD_BUDGET:?按当前请求的固定上游处理范围绑定累计线程预算}"
@@ -279,16 +281,29 @@ test ! -L "$RP_PROJECT_CONFIG"
 yq -e -p=toml \
   '.mcp_servers."chrome-devtools".command != null and .mcp_servers."personal-knowledge".command != null' \
   "$RP_PROJECT_CONFIG" > /dev/null
-cp "$RP_PROJECT_CONFIG" "$RP_RUN/config/installed-config.toml"
+RP_INSTALLED_CONFIG="$RP_RUN/config/installed-config.toml"
+if [ ! -f "$RP_INSTALLED_CONFIG" ]; then
+  cp "$RP_PROJECT_CONFIG" "$RP_INSTALLED_CONFIG"
+fi
 umask 077
+RP_CONFIG_OUTPUT="$RP_RUN/config/consumer-config-r5.toml"
+export RP_NESTED_FEATURES_FILE="$RP_RUN/config/nested-features.json"
+yq -e -p=toml -o=json '.features' \
+  "$RP_FIXTURES/configs/codex-nested-delegation-consumer.toml" \
+  > "$RP_NESTED_FEATURES_FILE"
+jq -e 'type == "object" and .multi_agent_v2.enabled == true' \
+  "$RP_NESTED_FEATURES_FILE" > /dev/null
 yq -p=toml -o=toml --from-file "$RP_WORKTREE/test/config/consumer-runtime.yq" \
-  "$RP_PROJECT_CONFIG" > "$RP_RUN/config/consumer-config.toml"
-yq -e -p=toml '.' "$RP_RUN/config/consumer-config.toml" > /dev/null
-cp "$RP_RUN/config/consumer-config.toml" "$RP_CONSUMER/.codex/config.toml.new"
+  "$RP_INSTALLED_CONFIG" > "$RP_CONFIG_OUTPUT"
+yq -e -p=toml '.features.multi_agent_v2.enabled == true' \
+  "$RP_CONFIG_OUTPUT" > /dev/null
+cp "$RP_CONFIG_OUTPUT" "$RP_CONSUMER/.codex/config.toml.new"
 mv "$RP_CONSUMER/.codex/config.toml.new" "$RP_PROJECT_CONFIG"
 ```
 
 本轮项目本身是独占消费者；这些写入不触及用户配置或已有生产数据。`KB_SERVER_PATH` 如已由安装固定，保留安装值；新增时采用环境已有值。知识库数据和缓存、浏览器辅助数据均为本轮路径。若必需服务定义缺失，按 RP-01 的实际安装结果归属，不以临时启动定义补齐。共享请求准备器的单个 `fixture_mcp` 范例不用于替代这份多服务配置。
+
+本次 r5 修正只影响消费者配置合成及写入前检查。若 r4 已生成失败配置，保留原安装快照、失败配置和诊断，另用新配置输出路径从原安装快照重新合成；检查通过后由执行者替换自己的消费者配置。未受影响的 RP-01、RP-02 安装和组件结果继续采用，不重装、不重跑，尚未发出的评估请求在本次配置修正审核后继续。
 
 已安装使用目录的每次请求采用固定夹具现有入口：
 

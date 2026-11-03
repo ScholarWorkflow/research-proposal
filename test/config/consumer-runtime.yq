@@ -1,4 +1,4 @@
-.features = ((.features // {}) * load(strenv(RP_FIXTURES) + "/configs/codex-nested-delegation-consumer.toml").features) |
+.features = ((.features // {}) * load(strenv(RP_NESTED_FEATURES_FILE))) |
 .agents.max_concurrent_threads_per_session = env(RP_THREAD_BUDGET) |
 .shell_environment_policy.set.ZOTERO_HTTP_URL = strenv(ZOTERO_HTTP_URL) |
 .shell_environment_policy.set.ZOTERO_MCP_URL = strenv(ZOTERO_MCP_URL) |
