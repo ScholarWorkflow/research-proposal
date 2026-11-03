@@ -80,7 +80,12 @@ def read_material(request: dict) -> dict:
         status = "needs_input"
     else:
         try:
-            blocks, issues, reader = readers[extension]()
+            reading = readers[extension]()
+            blocks, issues, reader = reading[:3]
+            if len(reading) > 3:
+                for field in ("interpretation", "ocr_outputs"):
+                    if field in reading[3]:
+                        material[field] = reading[3][field]
             for position, block in enumerate(blocks, 1):
                 block["block_id"] = f"{material_id}-{position}"
             material.update(blocks=blocks, issues=issues, reader=reader)
@@ -96,6 +101,9 @@ def read_material(request: dict) -> dict:
                     material["blocks"] = previous.get("blocks", [])
                     material["reader"] = previous.get("reader", material["reader"])
                     material["issues"] = previous.get("issues", []) + material["issues"]
+                    for field in ("interpretation", "ocr_outputs"):
+                        if field in previous:
+                            material[field] = previous[field]
             status = "blocked"
     write_json(record_path, material)
     return result(status, material["issues"], material=material, material_path=str(record_path))

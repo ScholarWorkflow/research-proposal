@@ -18,9 +18,20 @@
 | `read_material` | `path`、`material_type`、`source`、`output_dir` | 保存 `material` 全部字段与原件位置；不可只复制提取正文。`source` 是已知出处字符串，未知时如实标记待核，不伪造出版社、页码等。 |
 | `import_revision` | `path`、`baseline_body`、`output_dir` | `body` 是待处理 AST，`original_copy` 是保留原件；`changes`、`comments`、`unsupported` 均为 `{kind,text,location}` 数组。导入不更新正式正文或确认。 |
 
-`material` 包含 `material_id`、`material_type`、`source`、`original_path`、`digest`、`reader`、`blocks`、`issues`。块为 `{block_id,text,locator}`，图像解释在独立 `interpretation`，不混入逐字转录。引用采用实际返回定位：PDF 物理页从 1 开始；图片区域为 `bbox`；文本行、段落从 1 开始；EPUB/HTML 有 `fragment`、`paragraph`；Word 的段落或表格行列从 0 开始，没有稳定分页不填页码。
+`material` 包含 `material_id`、`material_type`、`source`、`original_path`、`digest`、`reader`、`blocks`、`issues`。块为 `{block_id,text,locator}`；扫描识别的 `text` 在回图核对前只是候选转录，附加字段见下文。`interpretation` 中带 `unverified_output_structure` 的片段来源尚未核对，字段名称不能证明它一定是模型解释。引用采用实际返回定位：PDF 物理页从 1 开始；图片区域为 `bbox`；文本行、段落从 1 开始；EPUB/HTML 有 `fragment`、`paragraph`；Word 的段落或表格行列从 0 开始，没有稳定分页不填页码。
 
-扫描图片由安装后的 `vision-glance` 读取，使用用户明确提供的 `VISION_ENV_FILE`。密集小字必要时分区读取并保留原页区域；识别的 `[?]`、缺字和失败都是缺项。不要把无法识别的内容写成空白原文。
+扫描图片由安装后的 `vision-glance` 读取，使用用户明确提供的 `VISION_ENV_FILE`。服务输出是自由文本，不保证标出遮挡、缺字或可靠区分转录与解读。密集小字必要时分区读取并保留原页区域；消费以下实际字段：
+
+| 字段 | 含义与使用 |
+|---|---|
+| `blocks[].verification`、`raw_output_path` | 识别块标记为 `needs_input`；`raw_output_path` 保留完整输出或旧缓存原字符串，普通段落也须回看原图。 |
+| `interpretation[]` | 来源未核对的结构片段，如引用块或 HTML 注释；每项有 `kind: unverified_output_structure`、`text`、`locator`、`verification: needs_input`、`raw_output_path`。保留它们，逐处核对来源，不能一律断言是服务添加的解读。 |
+| `ocr_outputs[]` | 每项保留 `raw_output_path`、`input_image`、`input_bbox`、`locator`、`origin`。`input_image` 是实际送入客户端的图片或页图，`input_bbox` 是实际 `--region` 像素框，`locator` 对应原图或 PDF 区域；`origin` 区分 `live_stdout` 与 `legacy_cache_text`。 |
+| `issues` | 所有未核对识别区域有 `ocr_visual_review_required`；已有 `[?]` 另有 `uncertain_transcription`，来源未核对的结构片段有 `ocr_output_structure_unverified`。保留这些缺项，不能因服务未输出 `[?]` 就认定文字完整。 |
+
+读取结果后实际查看 `original_path` 对应原页/图片及 `ocr_outputs` 中的输入区域，逐处确认采用的原文。在 `materials` 步骤数据中附核对记录：材料编号、块或片段、实际页/区域、采用原文、具体不能辨认处及其定位；保留原输出和原有缺项，使后来能区分服务候选与已核对摘录。笼统的“识别结果待核”不能作为已完成核对的记录。无法判断的片段继续待核，不能当作已确认原文引用，也不能把遮挡或缺字改写成原文空白。
+
+回图判断要依据实际文字与图形。图形描述也可能印在原件上，不能按描述性词语判断来源。服务自由文本中的坐标仅随原输出保留，定位仍使用组件记录的实际输入图片、裁剪区域和原页关系。
 
 ## 创建或接续本稿
 

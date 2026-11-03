@@ -324,20 +324,71 @@ def _positions(length: int, limit: int = 1024, overlap: int = 96) -> list[int]:
     return points
 
 
+def _parse_ocr_output(raw: str, location: dict, raw_output_path: str) -> dict:
+    """Separate output structures, without claiming they were absent from the image.
+
+    The fixed glance CLI returns the provider's string, not typed OCR evidence.
+    Markdown is only an output-structure parser here. Every extracted item still
+    needs comparison with the actual input image; service-written coordinates
+    remain unverified text and never replace the known input region.
+    """
+    issues = [issue("ocr_visual_review_required", "此区域的识别结果尚未对照原图核对。候选文字、遗漏、遮挡和输出说明均需实际查看；没有 [?] 不代表内容完整或可直接引用。", location)]
+    interpretations = []
+    omitted = object()
+
+    def separate(node):
+        if isinstance(node, list):
+            return [clean for item in node if (clean := separate(item)) is not omitted]
+        if not isinstance(node, dict):
+            return node
+        kind, content = node.get("t"), node.get("c")
+        if kind in {"BlockQuote", "RawBlock", "RawInline", "CodeBlock", "Image"}:
+            text = content[-1] if kind in {"RawBlock", "RawInline", "CodeBlock"} else ast_text(node).strip()
+            interpretations.append({
+                "kind": "unverified_output_structure", "text": text,
+                "locator": dict(location), "verification": "needs_input",
+                "raw_output_path": raw_output_path, "output_structure": kind,
+            })
+            return omitted
+        return {key: clean for key, value in node.items() if (clean := separate(value)) is not omitted}
+
+    try:
+        body = pandoc_body(None, "markdown-smart", data=raw.encode("utf-8"))
+        text = ast_text(separate(body)).strip()
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        text = ""
+        interpretations.append({"kind": "unverified_output_structure", "text": raw,
+                                "locator": dict(location), "verification": "needs_input",
+                                "raw_output_path": raw_output_path, "output_structure": "unparsed"})
+        issues.append(issue("ocr_output_parse_failed", f"识别输出的结构未能分开（{type(error).__name__}）；原输出完整保留，不能直接当作逐字转录。", location))
+    if interpretations:
+        issues.append(issue("ocr_output_structure_unverified", "识别输出含引用、原始标记或其他结构片段，已另存。尚未核对它们是否出现在原图中，不据格式认定其来源，也不采用其中坐标作为确定定位。", location))
+    if "[?]" in raw:
+        issues.append(issue("uncertain_transcription", "此区域含无法辨认的文字或符号，原输出中的 [?] 已保留；引用前需核对，不能补猜。", location))
+    return {"text": text, "interpretation": interpretations, "issues": issues}
+
+
 def _ocr_image(path: Path, width: int, height: int, directory: Path, locator: dict,
-               *, transform=None) -> tuple[list, list]:
+               *, transform=None) -> tuple[list, list, dict]:
     configuration, issues = _vision_configuration()
-    blocks = []
+    blocks, interpretations, outputs = [], [], []
     cache = directory / "ocr"
     cache.mkdir(parents=True, exist_ok=True)
     image_digest = hash_file(path)
 
-    def retain(text, location):
-        if not text:
+    def retain(raw, location, box, key, origin):
+        raw_path = cache / f"{key}-stdout.txt"
+        raw_path.write_text(raw, encoding="utf-8")
+        outputs.append({"raw_output_path": str(raw_path), "input_image": str(path),
+                        "input_bbox": box, "locator": dict(location), "origin": origin})
+        if not raw.strip():
             return
-        blocks.append({"text": text, "locator": location})
-        if "[?]" in text:
-            issues.append(issue("uncertain_transcription", "此区域含无法辨认的文字或符号，已原样保留 [?]；引用前需核对，不能补猜。", location))
+        parsed = _parse_ocr_output(raw, location, str(raw_path))
+        if parsed["text"]:
+            blocks.append({"text": parsed["text"], "locator": location,
+                           "verification": "needs_input", "raw_output_path": str(raw_path)})
+        interpretations.extend(parsed["interpretation"])
+        issues.extend(parsed["issues"])
 
     for top in _positions(height):
         for left in _positions(width):
@@ -349,12 +400,16 @@ def _ocr_image(path: Path, width: int, height: int, directory: Path, locator: di
             cache_file = cache / f"{key}.json"
             previous = read_json(cache_file) if cache_file.is_file() else None
             if previous and previous.get("configuration") == configuration and configuration:
-                text = previous["text"]
+                raw = previous.get("raw_output", previous["text"])
+                origin = previous.get("raw_output_origin", "legacy_cache_text")
             elif configuration:
                 try:
                     response = run_tool("vision-glance", [str(path), "--ocr", "--region", ",".join(map(str, box))], timeout=300)
-                    text = response.stdout.decode("utf-8").strip()
-                    write_json(cache_file, {"configuration": configuration, "text": text, "locator": location})
+                    (cache / f"{key}-stdout.txt").write_bytes(response.stdout)
+                    raw = response.stdout.decode("utf-8")
+                    origin = "live_stdout"
+                    write_json(cache_file, {"configuration": configuration, "text": raw.strip(), "locator": location,
+                                            "raw_output": raw, "raw_output_origin": origin})
                 except (OSError, subprocess.SubprocessError, UnicodeError) as error:
                     diagnostic = cache / f"{key}-error.txt"
                     detail = getattr(error, "stderr", None)
@@ -375,23 +430,27 @@ def _ocr_image(path: Path, width: int, height: int, directory: Path, locator: di
                     diagnostic.write_text(detail, encoding="utf-8")
                     issues.append(issue("ocr_failed", f"图片文字识别未完成（{type(error).__name__}）；原错误见 {diagnostic}，可读结果和原图保留，未猜测内容。", location))
                     if previous:
-                        retain(previous["text"], location)
+                        retain(previous.get("raw_output", previous["text"]), location, box, key,
+                               previous.get("raw_output_origin", "legacy_cache_text"))
                     continue
             else:
                 # Already saved transcriptions remain available when a later dependency fails.
                 if previous:
-                    retain(previous["text"], location)
+                    retain(previous.get("raw_output", previous["text"]), location, box, key,
+                           previous.get("raw_output_origin", "legacy_cache_text"))
                 continue
-            if not text:
+            if not raw.strip():
+                retain(raw, location, box, key, origin)
                 issues.append(issue("ocr_empty", "此区域未返回可读文字；不能把它认定为空白材料。", location))
                 continue
-            retain(text, location)
-    return blocks, issues
+            retain(raw, location, box, key, origin)
+    return blocks, issues, {"interpretation": interpretations, "ocr_outputs": outputs}
 
 
-def read_image(path: Path, directory: Path) -> tuple[list, list, str]:
+def read_image(path: Path, directory: Path) -> tuple[list, list, str, dict]:
     from PIL import Image
     blocks, issues = [], []
+    details = {"interpretation": [], "ocr_outputs": []}
     with Image.open(path) as original:
         for frame in range(getattr(original, "n_frames", 1)):
             original.seek(frame)
@@ -401,18 +460,21 @@ def read_image(path: Path, directory: Path) -> tuple[list, list, str]:
             locator = {"kind": "image", "image": str(path)}
             if getattr(original, "n_frames", 1) > 1:
                 locator["frame"] = frame + 1
-            read_blocks, read_issues = _ocr_image(normalized, *original.size, directory, locator)
+            read_blocks, read_issues, read_details = _ocr_image(normalized, *original.size, directory, locator)
             blocks.extend(read_blocks)
             issues.extend(read_issues)
-    return blocks, issues, "Pillow 原像素归一及固定 vision-glance --ocr 分区识别"
+            for name in details:
+                details[name].extend(read_details[name])
+    return blocks, issues, "Pillow 原像素归一及固定 vision-glance --ocr 分区识别；候选结果待原图核对", details
 
 
-def read_pdf(path: Path, directory: Path) -> tuple[list, list, str]:
+def read_pdf(path: Path, directory: Path) -> tuple[list, list, str, dict]:
     import pymupdf
     blocks, issues = [], []
+    details = {"interpretation": [], "ocr_outputs": []}
     with pymupdf.open(path) as document:
         if document.needs_pass:
-            return [], [issue("encrypted_pdf", "PDF 需要密码；请提供有读取权限的可打开副本。", str(path))], "PyMuPDF"
+            return [], [issue("encrypted_pdf", "PDF 需要密码；请提供有读取权限的可打开副本。", str(path))], "PyMuPDF", details
         for number, page in enumerate(document, 1):
             location = {"kind": "pdf", "page": number}
             label = page.get_label()
@@ -438,10 +500,12 @@ def read_pdf(path: Path, directory: Path) -> tuple[list, list, str]:
                                 round(page.rect.y0 + box[1] * page.rect.height / pixmap.height, 4),
                                 round(page.rect.x0 + box[2] * page.rect.width / pixmap.width, 4),
                                 round(page.rect.y0 + box[3] * page.rect.height / pixmap.height, 4)]
-                    read_blocks, read_issues = _ocr_image(page_image, pixmap.width, pixmap.height, directory,
-                                                        {**location, "bbox_units": "PDF points", "page_image": str(page_image)}, transform=transform)
+                    read_blocks, read_issues, read_details = _ocr_image(page_image, pixmap.width, pixmap.height, directory,
+                                                                      {**location, "bbox_units": "PDF points", "page_image": str(page_image)}, transform=transform)
                     blocks.extend(read_blocks)
                     issues.extend(read_issues)
+                    for name in details:
+                        details[name].extend(read_details[name])
             except (OSError, ValueError, RuntimeError) as error:
                 issues.append(issue("pdf_page_failed", f"本页未能完整读取（{type(error).__name__}）；其余页的有效结果保留。", location))
-    return blocks, issues, "PyMuPDF 物理页与文字块；扫描区域使用固定 vision-glance --ocr"
+    return blocks, issues, "PyMuPDF 物理页与文字块；扫描区域使用固定 vision-glance --ocr，候选结果待原图核对", details
