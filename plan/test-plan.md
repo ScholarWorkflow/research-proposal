@@ -8,7 +8,7 @@
 - 需求版本：`rp-requirements-2026-11-02-q6-q16`。
 - 执行计划：[implementation-plan.md](implementation-plan.md)，版本 `rp-plan-r3-2026-11-03`，校验值 `edf6692023be0e717ff454482c10763cc74c42885cc41ea8458fd1915fb69bcf`；批准依据见 [implementation-plan-review.md](implementation-plan-review.md)。
 - 目标仓库：`research-proposal`；工作树：`worktrees/research-proposal-plan`；分支：`feat/research-proposal`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r7-2026-11-03`：保留 r5 的配置读取修正及 r6 的服务恢复记录，本次只记录用户修复模型认证后明确要求的 RP-04 首请求追加尝试；准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录，第三关尚未执行。
+- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r8-2026-11-03`：保留 r5 的配置读取修正、r6/r7 的恢复授权和四次尝试记录，本次补齐既定业务所需的沙箱网络设置及 RP-04-02 续接条件；准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录，第三关尚未执行。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
@@ -182,7 +182,7 @@
 
 ### 已准备的版本、输入和配置
 
-本节版本为 `rp-recipe-r7-2026-11-03`。它保留上面的全部业务检查，不增加通过条件。产品提交、发布来源、独占目录和服务端口在正式执行前按下文绑定；真实上游成果和成稿由指定的前序用例产生。执行结果和已经绑定的实际值见 `test-results.md` 及受控交接，不能将准备记录视作产品通过结果。
+本节版本为 `rp-recipe-r8-2026-11-03`。它保留上面的全部业务检查，不增加通过条件。产品提交、发布来源、独占目录和服务端口在正式执行前按下文绑定；真实上游成果和成稿由指定的前序用例产生。执行结果和已经绑定的实际值见 `test-results.md` 及受控交接，不能将准备记录视作产品通过结果。
 
 共享夹具已先在干净 `master` 上执行 `git pull --ff-only origin master`，结果为已是最新；本轮固定 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`。共享缓存原记录属于 `8cecafc694e4591dee47372f38903e5ac2b689fe`，所以只复用其中的不可变插件与下载缓存，在独立临时根重跑现有 `prepare_shared_test_assets_macos.sh`，没有修改旧缓存或生产配置。本轮新记录与固定夹具版本一致、工作树干净。没有启动 Chrome、Zotero 或模型业务请求。
 
@@ -271,6 +271,8 @@ mkdir -p "$RP_KB_DATA" "$RP_KB_CACHE" "$RP_BROWSER_DATA"
 
 使用固定工具的真实覆盖键合成消费者配置，表达式仅在 [consumer-runtime.yq](../test/config/consumer-runtime.yq) 维护。先用 `yq -p=toml` 从原夹具提取 `features` 到本轮 JSON 输入；yq 4.54.1 的 `load` 不自动按 TOML 解析，也不支持 `from_toml`，不能直接对加载后的字符串读取 `.features`。它保留原有模型、代理、服务命令与参数，仅增加本轮环境和已有嵌套模式。原生 MCP 环境与 shell 环境分别设置；不依赖长期运行的评估服务自动继承调用者临时变量：
 
+r8 在同一表达式设置 `sandbox_workspace_write.network_access = true`，供隔离 Zotero 回环端点和本清单已有联网流程使用。`sandbox_mode` 仍由固定 `ordinary-smoke.toml` 提供 `workspace-write`，模型、代理、审批方式、可写目录和其他沙箱选项保持原值。该网络键是 [Codex 正式配置](https://learn.chatgpt.com/docs/agent-approvals-security#network-access)，不另加命令行重复覆盖，也不修改共享夹具或评估服务。
+
 ```bash
 : "${RP_THREAD_BUDGET:?按当前请求的固定上游处理范围绑定累计线程预算}"
 test "$RP_THREAD_BUDGET" -gt 0
@@ -286,7 +288,7 @@ if [ ! -f "$RP_INSTALLED_CONFIG" ]; then
   cp "$RP_PROJECT_CONFIG" "$RP_INSTALLED_CONFIG"
 fi
 umask 077
-RP_CONFIG_OUTPUT="$RP_RUN/config/consumer-config-r5.toml"
+RP_CONFIG_OUTPUT="$RP_RUN/config/consumer-config-r8.toml"
 export RP_NESTED_FEATURES_FILE="$RP_RUN/config/nested-features.json"
 yq -e -p=toml -o=json '.features' \
   "$RP_FIXTURES/configs/codex-nested-delegation-consumer.toml" \
@@ -295,7 +297,8 @@ jq -e 'type == "object" and .multi_agent_v2.enabled == true' \
   "$RP_NESTED_FEATURES_FILE" > /dev/null
 yq -p=toml -o=toml --from-file "$RP_WORKTREE/test/config/consumer-runtime.yq" \
   "$RP_INSTALLED_CONFIG" > "$RP_CONFIG_OUTPUT"
-yq -e -p=toml '.features.multi_agent_v2.enabled == true' \
+yq -e -p=toml -o=json \
+  '.features.multi_agent_v2.enabled == true and .sandbox_workspace_write.network_access == true' \
   "$RP_CONFIG_OUTPUT" > /dev/null
 cp "$RP_CONFIG_OUTPUT" "$RP_CONSUMER/.codex/config.toml.new"
 mv "$RP_CONSUMER/.codex/config.toml.new" "$RP_PROJECT_CONFIG"
@@ -304,6 +307,8 @@ mv "$RP_CONSUMER/.codex/config.toml.new" "$RP_PROJECT_CONFIG"
 本轮项目本身是独占消费者；这些写入不触及用户配置或已有生产数据。`KB_SERVER_PATH` 如已由安装固定，保留安装值；新增时采用环境已有值。知识库数据和缓存、浏览器辅助数据均为本轮路径。若必需服务定义缺失，按 RP-01 的实际安装结果归属，不以临时启动定义补齐。共享请求准备器的单个 `fixture_mcp` 范例不用于替代这份多服务配置。
 
 本次 r5 修正只影响消费者配置合成及写入前检查。若 r4 已生成失败配置，保留原安装快照、失败配置和诊断，另用新配置输出路径从原安装快照重新合成；检查通过后由执行者替换自己的消费者配置。未受影响的 RP-01、RP-02 安装和组件结果继续采用，不重装、不重跑，尚未发出的评估请求在本次配置修正审核后继续。
+
+r8 同样保留已有配置和失败请求；`consumer-config-r8.toml` 不覆盖 r5 输出。准备者只在独占临时目录复制配置并预检，正式消费者由执行者在当前请求已结束、第二关定向审核完成后应用，不能边运行边改配置。
 
 已安装使用目录的每次请求采用固定夹具现有入口：
 
@@ -319,6 +324,8 @@ UV_CACHE_DIR="$RP_PREP/uv-cache" uv run \
 ```
 
 `RP_CONSUMER` 是 RP-01 的实际安装路径；`RP_REQUEST_DIR` 是 `RP_RUN/requests/` 下尚未存在的本次请求目录。`RP_PROMPT` 是当前业务请求或刚取得的具体用户决定；`RP_TIMEOUT` 对 RP-04、RP-05 固定为 1800 秒，对其他请求固定为 600 秒。每个新请求有独占目录，但沿用同一消费者和稿件数据。准备入口生成 `resolved-config.toml`、`preparation.json`、`eval-request.json`，只读取本次 `preparation.json.loading_method` 确认应使用的加载方式；不另造配置解析器或手抄配置参数。
+
+固定准备器的 `resolved-config.toml` 只记录默认文件与所选范例合并的设置，不是完整消费者配置快照；其中没有网络字段不能单独判定网络开关未加载。网络设置保存在上一步的 `.codex/config.toml`，由 Codex 原生加载。固定 [准备器](../../../skills-test-fixtures/scripts/prepare_codex_project_config.py)只为项目尚未提供的已声明值生成参数；[评估入口约定](../../../eval-server/README.md)及其 `commands.py`、`evals.py` 维持项目配置和单次请求设置的原有加载路径，不硬编码网络或审批值。此处只做配置解析及传输准备，实际 Zotero 能否使用仍由原负责代理在 RP-04 的既定步骤判断。
 
 上面的普通范例与已合成的消费者配置共同使用；模型默认仍只来自固定夹具。准备入口发现缺少变量、未安装服务、受保护设置冲突或配置不能传输时停止受影响项，不改为连接生产服务。RP-13 将 `RP_VISION_FILE` 设为 `RP_VISION_MISSING_CONFIG`，重新执行同一配置合成和请求准备步骤；恢复时改回 `RP_VISION_CONFIG`。两次都保留各自请求目录，不修改视觉凭据文件。
 
@@ -500,6 +507,8 @@ jq '{status, issues, material: {material_id: .material.material_id,
 本轮仅对 RP-04 首请求按用户逐次恢复后的明确指示追加尝试，累计上限为四次，不适用于其他请求。前两次分别连接服务失败，以及收到 HTTP 503 `app-server runtime is not READY`，均未进入业务。用户随后告知“现在应该好了，看看”；主对话只读确认日志已有 `initial_start_ok`，r6 据此允许第三次，结果仍在业务前因模型接口缺少认证头返回 401，保存在 `requests/rp04-01-recovery1/`。执行者达到上限后停止，未自行更换模型或认证。
 
 用户再次明确表示“你试试看，我弄好了”，本 r7 仅据此允许第四次。执行者沿用保存的原请求、同一产品与安装、输入、配置、模型、线程预算及超时，另存 `requests/rp04-01-auth-recovery1/`，不覆盖前三次记录。此次若再发生外部故障，停止自动尝试并交环境负责人；不得据此放宽其他重试上限，也不得为业务结果不满意重跑。主对话没有启动、停止或重启服务，也没有读写认证值；用户恢复服务及认证不被记为产品修正或业务通过。
+
+本次 r8 另处理新隔离消费者的 RP-04-02：首请求已由原代理返回 8 位教员，合成申请者已据实际选项选择石川巧；随后原采集代理的 Zotero 检查被沙箱拒绝，已保存的响应显示 `termination_reason=completed`、实际 `sandbox.networkAccess=false`。这次配置修正不作为原条件下的无条件重试，也不重新选择教授。执行者须确认上一请求及当前独立请求均已结束、没有未完成的写入或委派，并核对已保存资料仍无该次教授采集产物，再应用获批配置；将同一资料路径及石川巧决定交回原负责代理，从原 Zotero 前置步骤继续，另存请求目录。保留旧 `rp04-02/response.json`、`zotero-probe-result.json`、配置和全部此前失败记录；不跳过 Zotero、不用外部探针替代业务，不改写阶段状态。若不能确认结束或副作用，继续停止并交执行负责人；新请求仍受本节既有停止规则约束。
 
 请求超时或返回 `termination_uncertain` 时，不启动第二份等价工作。先按现有服务状态与已保存产品状态确认上轮已停止及副作用；无法确认时保持无法判断并交执行负责人。已确认的业务失败不因网络、记录或清理错误被覆盖。新的用户决定是连续业务输入，不是重试；只提交当次真实决定，沿用先前有效成果。
 

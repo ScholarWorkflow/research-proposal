@@ -1,5 +1,6 @@
 .features = ((.features // {}) * load(strenv(RP_NESTED_FEATURES_FILE))) |
 .agents.max_concurrent_threads_per_session = env(RP_THREAD_BUDGET) |
+.sandbox_workspace_write.network_access = true |
 .shell_environment_policy.set.ZOTERO_HTTP_URL = strenv(ZOTERO_HTTP_URL) |
 .shell_environment_policy.set.ZOTERO_MCP_URL = strenv(ZOTERO_MCP_URL) |
 .shell_environment_policy.set.VISION_ENV_FILE = strenv(RP_VISION_FILE) |
