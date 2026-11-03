@@ -4,27 +4,29 @@
 
 ## 版本与范围
 
-- 测试计划版本：`rp-tests-r3-2026-11-03`。
-- 需求版本：`rp-requirements-2026-11-02-q6-q16`。
+- 测试计划版本：`rp-tests-r4-repository-scope-2026-11-03`。
+- 需求版本：`rp-requirements-2026-11-02-q6-q16`；测试范围采用用户 2026 年 11 月 3 日的新决定：“只测 research-proposal 的逻辑，recipe 应该手动准备输入”。产品功能要求不变。
 - 执行计划：[implementation-plan.md](implementation-plan.md)，版本 `rp-plan-r3-2026-11-03`，校验值 `edf6692023be0e717ff454482c10763cc74c42885cc41ea8458fd1915fb69bcf`；批准依据见 [implementation-plan-review.md](implementation-plan-review.md)。
 - 目标仓库：`research-proposal`；工作树：`worktrees/research-proposal-plan`；分支：`feat/research-proposal`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r12-user-retry-2026-11-03`：保留 r5 至 r11 的配置修正、换版恢复及全部失败记录；本次仅落实用户明确授权，对 RP-04 的公开全文访问决定请求按原条件追加一次，产品与模型不变。准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录；此前第三关和正式失败结论保留，追加结果另记。
+- 执行说明版本：`rp-recipe-r13-input-fixtures-2026-11-03`。本次修订替代 r3 业务清单及 r12 的现行执行义务；历史尝试、发现的实际问题和不受影响的通过结果保留。独立设计复核、第一关及第二关结论见 `plan/test-plan-review.md`，准备符合性结论见 `plan/test-preparation-review.md`；准备完成不表示正式测试通过。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
-下面 RP-01 至 RP-13 及各项明确列出的场景构成唯一必测清单。每项按自己的观察点判断，不因某项安排了实际会话，就重新检查其他项已经覆盖的全部行为。不追加所有学科、学校、语言、文件格式的组合，不测试其他平台或运行工具，不重新验收上游全部业务、共享安装器或模型服务。
+下面 RP-01 至 RP-13 及各项明确列出的场景构成唯一必测清单。只验收本仓库的安装交付、输入发现与交接安排、材料整理、研究设计、成稿、修改和恢复。上游产物由 Recipe 手动准备为输入；不运行采集、Zotero 保存、全文下载、论文分析或套磁候选生成来证明这些输入的生成过程，也不验收上游子代理、服务、批次或委派链。已有上游检查随产品发现入口正常使用，不为本次测试重写或绕过它们。
+
+每项按自己的观察点判断，不因某项安排了实际会话，就重新检查其他项已经覆盖的全部行为。不追加所有学科、学校、语言、文件格式的组合，不测试其他平台或运行工具，不重新验收共享安装器或模型服务。RP-04、RP-05 不再是 RP-07、RP-08 的前置运行；本次手工准备的是外部输入，不是 research-proposal 的成功输出或用户确认。
 
 ## 必测清单
 
 ### RP-01：Nix 安装交付
 
-**目标**：一次安装提供主技能、直接依赖、原代理及固定运行程序，能支撑本计划要求的实际流程。
+**目标**：一次安装提供主技能、声明的直接依赖、原代理及固定运行程序，正确交付本仓库功能所需的安装内容。
 
 **输入或场景**：在约定平台，从固定产品提交安装到仓库和开发工作树之外的干净使用目录。该目录含一份无关的示例技能和一项无关配置，供检查保留行为；不使用用户真实配置。
 
-**预期结果**：正式安装所需的固定构建输出实际构建成功；安装后的主技能及随附资源完整，六项直接依赖和原代理可用，不要求另跑 APM，不依赖开发目录的文件。安装保留无关示例技能与配置。安装说明准确区分代码安装与模型、Zotero、浏览器及视觉服务的外部条件。
+**预期结果**：正式安装所需的固定构建输出实际构建成功；安装后的主技能及随附资源完整，六项直接依赖和原代理按声明安装并可定位，不要求另跑 APM，不依赖开发目录的文件。安装保留无关示例技能与配置。安装说明准确区分代码安装与模型、Zotero、浏览器及视觉服务的外部条件。
 
-**检查方式**：检查实际构建和安装结果、安装目录及相关配置条目；实际可用性直接采用 RP-04 的上游运行、RP-06 的材料读取和 RP-08 的成稿结果，不另跑一套相同流程。依赖服务采用真实服务的必要操作；不以仅列出工具、显示帮助或模拟成功代替可用。共享层已有适用结果直接引用，不新增安装冲突矩阵或通用运行时认证。
+**检查方式**：检查实际构建和安装结果、安装目录及相关配置条目；本仓库运行入口的实际使用采用 RP-06 的材料读取和 RP-08 的成稿结果，不另跑一套相同流程。依赖交付检查到声明、安装位置和资源引用，不要求启动 Zotero、浏览器或上游代理证明其内部功能。共享层已有适用结果直接引用，不新增安装冲突矩阵或通用运行时认证。
 
 ### RP-02：npx skills 安装入口
 
@@ -40,31 +42,31 @@
 
 **目标**：用户给定路径后自动找到适用材料，并沿用有效成果及真实选择。
 
-**输入或场景**：同一份有效资料分别以专攻目录、`教授研究` 目录、单个教授目录和具体正式产物路径进入输入发现组件；另有两个可选教授或方向而用户未指定的资料。已有产物包含两种状态：有效输入包及候选均齐全；有效输入包齐全但缺候选。
+**输入或场景**：Recipe 手动准备一份符合固定上游格式、内容及引用对应的资料，分别以专攻目录、`教授研究` 目录、单个教授目录和具体正式产物路径进入输入发现组件；另有两个可选教授或方向而用户未指定的资料。已有产物包含两种状态：有效输入包及候选均齐全；有效输入包齐全但缺候选。
 
-**预期结果**：四类路径均对应正确的申请项目、教授和已有进度；对象未明确时提供选择，收到已有明确选择时沿用。输入包和候选均有效时直接交研究计划选题；只缺候选时调用上游第三阶段。不会因存在 Markdown 报告就伪造正式上游状态，也不把套磁选择自动认作研究计划已确认的全部选题。
+**预期结果**：四类路径均对应正确的申请项目、教授和已有进度；对象未明确时提供选择，收到已有明确选择时沿用。输入包和候选均有效时返回 `proposal`；只缺候选时返回 `stage3`。不会因存在 Markdown 报告就伪造正式上游状态，也不把套磁选择自动认作研究计划已确认的全部选题。
 
-**检查方式**：输入发现与有效性判断采用产品组件的常规自动测试，直接检查其结果及正式输入状态；用户选择和第三阶段调用采用围绕同一资料的连续实际 Codex 交互，观察相关用户决定、该次委派和候选结果。两种方式各检查上述不同部分，不再次证明同一行为。有效产物由原流程生成或取自已有有效保存件，不手造“已完成”状态。
+**检查方式**：采用产品输入发现组件的常规自动测试，检查四种入口、返回对象、已有选择、未选择时的需求及 `next_step`。有效性由发现入口调用既有上游检查；不另行认证检查器。第三阶段的交接说明统一在 RP-04 静态核对，不实际生成候选。研究计划自身的选题确认由 RP-07 检查。
 
-### RP-04：从合格招生项目资料补齐上游输入
+### RP-04：识别缺少的上游步骤并安排交接
 
-**目标**：尚未运行 professor-contact 时，新技能通过依赖自行完成所需前置流程。
+**目标**：资料未齐时，research-proposal 识别应交给哪个上游步骤，并提供与其职责一致的交接说明。
 
-**输入或场景**：一个合格的招生项目资料目录，尚无教授研究产物；测试会话按真实提示提供教授、方向等必要选择。该资料采用可实际读取的公开研究来源。
+**输入或场景**：Recipe 准备合格招生项目、缺预筛、缺目标、缺第一阶段快照、缺输入包和缺候选的对应小型输入副本。每份输入在调用前就固定已有内容及预期下一步，不在用例中调用上游采集、下载、分析或候选生成。
 
-**预期结果**：完成采集和预筛，沿原规则运行阶段 0、1、2、3，获得有效输入包和候选，并交研究计划自己的选题。定向补全文归第一阶段；各阶段由原命名代理负责，完成原检查和收尾，不手写上游状态，不进入邮件编译或邮件生成阶段。已有用户决定不被绕过。
+**预期结果**：发现结果分别指向适用的 `collect`、`preview`、`stage0`、`stage1`、`stage2`、`stage3`，不把缺少材料误当成 `proposal`。主技能及引用文件使用原命名代理和既定业务参数，要求等待、消费返回结果后重新发现；定向补全文交第一阶段，第三阶段的调用方收尾按原约定安排，不进入邮件阶段。这里检查的是本仓库的分支与交接安排，不要求原代理完成业务。
 
-**检查方式**：通过安装后的主技能进行实际 Codex 会话，检查正式目标、第一阶段快照、输入包和候选结果，以及本项要求的阶段委派与顺序。只查看这些相关调用及结果，不收集完整运行链或认证全部子代理。所得材料继续用于 RP-07、RP-08，不重新从头采集。
+**检查方式**：普通自动测试调用产品 `discover`，检查对应副本的 `next_step`；缺候选的 `stage3` 分支直接采用 RP-03 的同一次检查，不重复执行。准确代理名称、参数来源、等待与消费、第三阶段调用方收尾由直接阅读本仓库技能及引用文件核对。两种检查分别覆盖可执行组件和提示文本，不新建模拟代理或委派观察设施，不发送会运行上游代理的评估请求。完整输入另由 Recipe 准备，供 RP-07、RP-08 使用。
 
-### RP-05：零散论文分析的前置补齐
+### RP-05：零散论文分析的前置顺序
 
-**目标**：已有分析但缺正式输入包时，先满足上游真实前置条件，再复用有效分析。
+**目标**：已有分析但缺正式输入包时，research-proposal 不跳过目标和第一阶段快照直接交第二阶段。
 
-**输入或场景**：从原流程的有效资料副本中保留论文分析和事实文件，移除正式输入包、目标及第一阶段快照，形成计划明确支持的未完成状态。
+**输入或场景**：Recipe 手动准备相互对应的论文分析及事实文件。三个输入副本分别缺目标和第一阶段快照、只有有效目标、目标与快照齐全但缺输入包；适用预筛按场景备齐。
 
-**预期结果**：先检查并补齐适用预筛、阶段 0 和第一阶段，再交第二阶段检查已有分析是否可复用；不会直接跳到第二阶段或第三阶段。只有通过原身份、来源和缓存检查的分析才可复用，最后形成有效输入包及候选。
+**预期结果**：三个副本依次交阶段 0、阶段 1、阶段 2；未满足前置时不直接返回阶段 2、阶段 3 或 `proposal`。本仓库保留分析和事实文件供原负责代理采用，不自行声明其已通过上游身份、来源或缓存检查。
 
-**检查方式**：通过安装后的主技能运行此场景，查看目标和快照建立结果、第二阶段预检结果及最终输入包；核对本项要求的阶段顺序。直接采用上游的复用判断，不重新实现论文身份检查，也不要求再次批量分析全部论文。
+**检查方式**：普通自动测试对准备好的三个副本调用 `discover`，检查实际分析归属、材料发现及下一步。每个副本是独立的测试输入，不冒充前一用例生成的产物；不运行上游代理、论文分析或缓存复用业务。
 
 ### RP-06：非论文材料读取、定位和候选
 
@@ -80,7 +82,7 @@
 
 **目标**：将已选问题转成有证据且可以开展的方案，并落实两处用户决定。
 
-**输入或场景**：复用论文路线或非论文路线已选问题，以及事先选定、可读取的相关来源；包含教授之外的研究、需要分辨的矛盾结论和一个有待核实的关键材料取得条件。条件先无可靠取得途径，再补充可核实的申请条件和备用办法，但不声称资源已经取得。条件补齐后，围绕同一稿件先查看尚未确认的中文方案，再针对实际方案给出用户确认；已有有效确认的部分继续复用。
+**输入或场景**：论文路线直接使用 Recipe 准备的有效上游输入包、候选及可核对原文；非论文路线复用 RP-06 的材料与候选。由主技能展示研究问题后取得合成申请者的实际选择，再使用事先选定、可读取的相关来源；包含教授之外的研究、需要分辨的矛盾结论和一个有待核实的关键材料取得条件。条件先无可靠取得途径，再补充可核实的申请条件和备用办法，但不声称资源已经取得。条件补齐后，围绕同一稿件先查看尚未确认的中文方案，再针对实际方案给出用户确认；已有有效确认的部分继续复用。不以 RP-04、RP-05 或上游实际运行成功作为开始条件。
 
 **预期结果**：说明已有研究、本计划的具体区别及方法依据；资料足够后停止补查，矛盾尚可能推翻选题时继续针对该问题核对，已确认的真实学术分歧可以作为动机。关键条件未解决时保存方案、缺项和替代建议；有合理途径与备用办法后可形成中文方案，区分计划申请、符合条件和已经获得。关键条件未解决，或适用的中文方案尚未获得用户确认时，不生成或提交完整目标语言正文，可保存中文方案、大纲和缺项；条件与确认均满足后才进入 RP-08。研究问题与中文方案分别记录用户决定，已有明确决定不重复询问。
 
@@ -162,180 +164,140 @@
 
 上述目标和预期结果在产品运行前确定，不能根据实际输出倒推通过条件。业务判断所需的来源、材料片段、学校要求、用户选择及已知缺项由本地测试工程师事先准备；使用有权使用的公开材料或合成申请信息，不复制用户实际申请资料到产品仓库。
 
-上游正式状态采用原流程生成的有效资料或已有有效保存件。未完成场景可从隔离副本移除本项指定的产物；检查仍由生产入口完成，不能补造成功状态或修改消费者里的受管代码。材料载体样本只用于其声明的检查，不伪装成现实中已发表的研究证据。
+用户已经明确授权 Recipe 手动准备上游输入。准备者可以按固定格式制作合成上游产物，也可采用已有保存件；提供对应原文、定位与预期场景，必要时使用原仓库既有的纯本地格式构造助手。合成材料及外部输入须明确标识，不宣称本轮已经完成采集、下载、分析或上游校验代理。未完成场景从这些输入副本移除指定产物。正式测试仍通过本仓库生产入口，正常采用已有格式检查；不改检查结果、不修改消费者受管代码，不预写 research-proposal 自己的问题确认、方案确认、正文或提交成功。材料载体样本只用于其声明的检查，不伪装成现实中已发表的研究证据。
 
-每个已完成目标选择表中规定的足够观察点。自动检查使用产品仓库的普通测试代码；实际会话使用安装后的主技能。只对 RP-03、RP-04、RP-05 明确列出的阶段委派与顺序查看相应调用；其他项以业务产物和用户可见行为判断，不要求完整运行轨迹。
+每个目标选择表中规定的足够观察点。自动检查使用产品仓库的普通测试代码；实际会话使用安装后的主技能并从资料已齐全的位置开始。RP-03、RP-04、RP-05 检查发现结果和本仓库交接说明，不检查上游实际调用链；其他项以业务产物和用户可见行为判断。完整上游输入若不能被产品接受，先区分测试输入准备错误与本仓库发现逻辑错误，不因此转回从招生资料跑上游。
 
-以下准备职责继续有效。本轮已经准备输入、普通测试和配置合成步骤并做有限预检；没有构建或安装产品，也没有运行正式用例。执行时按下文绑定实际值：
+以下准备职责适用于本次范围修订；历史上已完成的安装、运行和结果保留，本次只重做受影响的输入与步骤：
 
-1. 固定首个待测产品提交、实际依赖锁定图、配置版本和适用的已有结果；本次尚不存在这些执行记录，不虚填提交号或声称可复用测试已经通过。
+1. 固定当前待测产品提交、依赖锁定图、配置版本和适用的已有结果。只改测试计划及输入不使原产品安装失效；复用现有有效安装与缓存，不因为上游测试被移出范围就重装产品。
 2. 准备上述小型输入和必要测试代码，给出每项可直接执行的准备顺序、命令、实际输入与输出位置。对 RP-11 的受控失败，采用标准测试框架的现有能力；如果确实需要新的专用设施，先按测试规则申请明确范围，不能直接作为必测前置。
-3. 从固定产品提交按正式入口安装到干净使用目录，按需要隔离 `CODEX_HOME`、Zotero 数据、浏览器配置和其他可写状态，不替换 `HOME` 或连接用户生产资料。可复用的安装和缓存继续使用；RP-01、RP-02 因目标就是安装交付而安排各自安装。
+3. 产品安装来自固定提交的正式入口，使用仓库外的干净目录，隔离本次资料、稿件及必需服务的可写状态，不替换 `HOME` 或连接用户生产资料。RP-01、RP-02 已有仍适用安装结果直接复用。新范围不需要启动或探测 Zotero、浏览器，也不以它们可用作为准备条件；不因范围修订擅自清理原有进程。
 4. 使用 `skills-test-fixtures` 前先更新其主分支并固定实际使用版本；依该版本的现有配置与准备方式安排环境。运行配置的路径、变量来源与加载方式由测试工程师写清，不转交用户猜测，也不复制产品代理或工具配置到夹具中补偿安装缺陷。
 5. Codex 实际会话使用现有评估服务，按项目共识使用默认配置；在干净使用目录启动，命令携带该目录。具体请求及配置以准备时读取的服务文档为准，本计划不虚构尚未核对的接口参数，不自行启动、停止或重启评估服务。
 6. 仅做命令可运行、必需依赖与配置可用、用户状态隔离的预检。临时配置、预检输出与原始结果放在仓库外独立临时目录，正式测试代码留在产品仓库；不新增环境来源认证或全环境快照。
 7. 在执行说明中写明可重试的外部故障、最多尝试次数、停止条件、需要重置的状态和保持不变的输入配置。已确认业务失败不因结果不满意而重跑；环境未恢复时不连续重复完整运行。所有正式尝试保留。
 
-以上是准备职责。下文记录输入、可执行安排及执行前需要绑定的实际值。产品尚未实现、尚无正式运行生成物，不阻止按已批准执行计划编写步骤；第二关核对步骤与产品约定是否一致，不要求提前运行产品。
+以上是准备职责。下文为唯一现行执行说明；旧步骤只保留在 Git 历史和历史结果中，不再要求执行者拼接旧续跑方案。第二关核对步骤与本仓库公开接口及本次范围是否一致，不要求准备角色提前运行产品或正式用例。
 
 ## 执行说明
 
-### 已准备的版本、输入和配置
+### 当前版本与复用范围
 
-本节版本为 `rp-recipe-r12-user-retry-2026-11-03`。它保留上面的全部业务检查，不增加通过条件。产品提交、发布来源、独占目录和服务端口在正式执行前按下文绑定；真实上游成果和成稿由指定的前序用例产生。执行结果和已经绑定的实际值见 `test-results.md` 及受控交接，不能将准备记录视作产品通过结果。
+本节版本为 `rp-recipe-r13-input-fixtures-2026-11-03`，落实上面的 r4 业务范围，整段替代旧依赖链步骤。待测产品仍为 `b983497308157dedec6b4d97f16c95dc0b0f60f9`；其正式 Nix 安装位于既有消费者目录，继续复用，不因修改测试输入重装。固定共享夹具为 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`；主对话本轮已在干净主分支更新，退出 0、已是最新。
 
-共享夹具已先在干净 `master` 上执行 `git pull --ff-only origin master`，结果为已是最新；本轮固定 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`。共享缓存原记录属于 `8cecafc694e4591dee47372f38903e5ac2b689fe`，所以只复用其中的不可变插件与下载缓存，在独立临时根重跑现有 `prepare_shared_test_assets_macos.sh`，没有修改旧缓存或生产配置。本轮新记录与固定夹具版本一致、工作树干净。没有启动 Chrome、Zotero 或模型业务请求。
+RP-01、RP-02 的适用安装结果、RP-06、RP-13 及未受影响的组件结果直接采用 `test-results.md` 当前记录。RP-01 的实际运行能力继续采用 RP-06、RP-08；RP-09 的空白招生表读取已经完成，不重复请求。旧上游运行、旧配置故障及本仓库实际业务失败保留原样。RP-03 至 RP-05 按本节新方法正式执行后才能更新结果；手工材料准备及配置检查均不表示业务通过。
 
-正式可复用输入均在 [test/fixtures](../test/fixtures/README.md)。该目录说明各样本的已知内容、定位、适用范围及公开来源，不另存执行步骤。七类载体、残损扫描图、未支持扩展名、两种模板、修订和冲突稿、合成申请者、甲乙项目要求以及无关安装项均已落盘。真实作品、期刊全文、募集要项与空白研究计划表仅保存在仓库外，避免向源码再分发全文。
+本次仍使用固定夹具的 `gpt-6-luna`、`low` 默认值。此前放在临时目录的其他模型候选没有获批，不能加载。不会启动、停止或探测 Zotero、浏览器或评估服务，也不要求任何上游采集、下载、分析、校验或候选生成业务完成。
 
-本轮实际准备目录由交接提供，称为 `RP_PREP`；其中 `config/runtime-locations.env` 记录夹具目录、评估服务配置所在目录、视觉配置来源及隔离输出位置，不含密钥。`input/admissions/` 已组合公开招生资料与三字段 `info.json`；`input/nonpaper/` 已放入《罗生门》原文、合成个人资料与甲项目要求；`input/empty/` 为空目录。`sources/` 保留公开原始资料，`render/` 是样本页面，`logs/` 是有限预检输出。上述目录都不是干净产品安装，不能将其中的空消费者目录记为已安装。
+### 运行目录与安装入口
 
-配置来源按以下顺序使用：
+资料根与结果根分开：`RP_CONSUMER` 是现有正式安装及真实稿件所在目录；`RP_RUN` 只保存本次日志、配置、请求和组件输出。未提交状态可能含绝对路径，因此保持消费者和原稿位置，不复制状态后手改路径。
 
-1. Codex 的模型与推理强度只取固定夹具 `configs/codex-smoke-defaults.toml`，当前解析值为 `gpt-6-luna`、`low`；普通可写工作区差异取 `examples/codex/ordinary-smoke.toml`。不在请求里另写第二份默认值。
-2. 主技能、原命名代理、运行程序、MCP 启动定义和项目配置由待测产品正式安装生成。原命名代理的递归调用沿用计划中的固定上游定义；嵌套调用开关读取夹具的 `configs/codex-nested-delegation-consumer.toml` 中 `features` 表，不复制其模型默认值，不增加角色或临场提高线程上限。
-3. 视觉客户端固定来源声明的用户配置位置已经找到，`VISION_API_KEY`、`VISION_BASE_URL`、`VISION_MODEL` 三项均非空，另有模型链配置 `VISION_CHAIN`。已在 `RP_PREP/config/vision.env` 创建权限为 `0600` 的本轮副本，并用固定客户端支持的 `VISION_STATE_FILE` 指向本轮独占目录。实际值不写入计划或对话。RP-13 使用独立 `vision-missing.env`，明确把三项与 `VISION_CHAIN` 都设为空，避免继承模型链后继续调用服务。实际加载均须通过产品支持的 `VISION_ENV_FILE` 入口；当前没有运行该入口。
-4. Zotero 与浏览器使用同版夹具的独占数据、配置、进程及自动端口。固定 Zotero 客户端接受 `ZOTERO_HTTP_URL`、`ZOTERO_MCP_URL`，通过 shell 环境传入；固定 `chrome-devtools` 原生 MCP 服务接受 `CHROME_CDP_PORT`、`CHROME_PROFILE_DIR`、`SKILLREPO_DATA_HOME`，通过该服务的 `env` 传入。固定 `personal-knowledge` 原生 MCP 服务接受 `OPENCODE_PK_DATA_DIR`、`OPENCODE_PK_MODEL_CACHE_DIR` 和 `KB_SERVER_PATH`；前两项指向本轮目录，后一项保留环境已有程序位置。现有覆盖入口足够按下文生成配置；不复制代理、包装器或启动定义。
-5. 评估端口和已有知识库程序位置从 `direnv exec "$RP_EVAL_DIRECTORY"` 取得，不另行启动、停止或重配评估服务。共享安装器进程使用本轮空 `CODEX_HOME` 避免读取用户安装配置；该值不传给评估请求，已有服务认证不复制到仓库，`HOME` 保持原值。
-
-线程配置使用受支持的 `agents.max_concurrent_threads_per_session`，值由执行者在每次请求提交前绑定为 `RP_THREAD_BUDGET`。按该请求从现有保存点开始、依原流程可能处理的对象数及固定上游声明计算**累计可创建的子线程数**，主对话不计入，已完成子线程不扣除；不把同一时刻的并行数当作会话容量。上游 analyzer 的[固定调用约定](https://github.com/ScholarWorkflow/professor-contact/blob/ad096fe31a4b5694cbe47a40f37b621435e1eeec/packages/professor-contact-codex/.apm/agents/professor-contact-analyzer.agent.md#L40)规定同批最多 3 个 `paper-analysis`，每个再启动 3 个叶子；对一次 analyzer 调用，按本请求的论文分析任务数 `P` 与剩余样式校验次数 `V` 预留 `1 + 4 × P + V`。`P` 包括全部批次及适用的仅补缺项分析；`V` 按[默认最多两次校验](https://github.com/ScholarWorkflow/professor-contact/blob/ad096fe31a4b5694cbe47a40f37b621435e1eeec/packages/professor-contact-codex/.apm/agents/professor-contact-analyzer.agent.md#L628)的剩余次数计算，额外校验仅采用已有真实授权的记录上限。再加上本请求仍会进入的采集、预筛、阶段 0、1、3 及它们按固定入口需要的子线程和校验；已有效完成且不会重跑的阶段不计入。计算中的对象数取当前有效输入、原阶段目标和既有批次安排，在现有请求准备说明中留一句来源与算式；不要求采集运行调用树证明这个数值。
-
-只在原流程已保存进度且请求自然返回后，按下一请求的已知范围重新绑定预算。若现有资料尚不能确定下一请求的合法处理范围，先完成该阶段原有的用户选择，再按原交互继续；不强制拆分业务阶段、不更改上游批次或真实决定。数值必须在对应请求开始前确定，不能在线程失败后提高并重试。允许的嵌套层级沿固定上游根→analyzer→paper-analysis→叶子，叶子是终点；已有 `multi_agent_v2` 模式承担嵌套委派。[当前官方配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)给出上述线程键，未给出 `max_depth`，因此不写未支持的深度覆盖。
-
-### 准备与执行顺序
-
-以下步骤由第二关通过后的本地执行工程师按依赖顺序执行。本轮只编写和检查步骤，不运行构建、安装、组件测试或实际请求。产品交付时绑定来源和提交，不改动以下已约定的输出、接口或命令参数。
-
-1. 在生产者工作树运行 `pwd`，把返回值保存为 `RP_WORKTREE`。将交接给出的准备目录赋给 `RP_PREP`，读取 `config/runtime-locations.env`。在仓库及其工作树之外用 `mktemp -d /private/tmp/research-proposal-run.XXXXXX` 创建正式运行根 `RP_RUN`；两个安装目录分别为 `RP_RUN/consumers/nix` 和 `RP_RUN/consumers/npx`，原始响应在 `RP_RUN/requests/`。安装后把实际输入复制到 Nix 使用目录的 `input/` 子目录，稿件保存于该子目录内，便于同一使用目录持续处理。
-2. RP-01 安装前放入无关技能和配置。按下方四个固定输出构建，使用共享缓存激活器安装；它调用同一组合环境的 `bin/agent-env apply --project`。构建和安装属于 RP-01，不作为准备预检执行。
-3. RP-02 在另一目录用固定 `skills@1.7.2` 安装同一产品提交及 `skills/research-proposal` 子目录，不使用本地复制、开发路径或另跑 APM。两种安装记录实际来源、版本、命令与路径；后续沿用 RP-01 安装。
-4. 从 `RP_PREP/input/admissions` 复制招生输入，先运行 RP-04 形成真实上游成果，供 RP-03、RP-05、RP-07 和 RP-08 复用。此前已在本工作区的旧测试消费者及临时目录内查找正式输入包和候选，没有找到可引用的有效保存件；没有使用生产申请资料。RP-04 的有效结果在正式执行前尚不存在，不能提前编造。
-5. 各实际交互都使用下节的相同评估入口。首次只提供该场景的资料路径、用途及已存在的真实决定；提出新的问题或方案后，先阅读响应及产品已保存状态，再取得针对该对象的用户决定，作为下一请求。请求次数由既有必需交互决定，不预填尚不存在的问题答案，不直接修改产品状态。
-
-发布交接提供 GitHub 的 `RP_REPOSITORY`（`owner/repo`）和完整 `RP_REVISION`。它们是必填执行参数，未填时先取得交接，不默认取主分支。安装命令如下：
+第二关通过后由执行者设置以下绑定。既有 `run.env` 仅含路径和版本；视觉秘密仍只通过配置文件路径引用，不输出内容。
 
 ```bash
-set -euo pipefail
-RP_WORKTREE="$(pwd)"
+set -e
+: "${RP_CONTINUATION_ENV:?采用本轮本地交接的 continuation.env 绝对路径}"
+source "$RP_CONTINUATION_ENV"
 source "$RP_PREP/config/runtime-locations.env"
-: "${RP_REPOSITORY:?需要产品发布仓库}"
-: "${RP_REVISION:?需要完整产品提交}"
-RP_REF="github:$RP_REPOSITORY/$RP_REVISION"
-RP_SKILLS_SOURCE="https://github.com/$RP_REPOSITORY/tree/$RP_REVISION/skills/research-proposal"
-RP_RUN="$(mktemp -d /private/tmp/research-proposal-run.XXXXXX)"
-RP_CONSUMER="$RP_RUN/consumers/nix"
-RP_NPX_CONSUMER="$RP_RUN/consumers/npx"
-mkdir -p "$RP_CONSUMER" "$RP_NPX_CONSUMER" "$RP_RUN/logs" \
-  "$RP_RUN/requests" "$RP_RUN/config" "$RP_RUN/activation-home"
-cp -R "$RP_WORKTREE/test/fixtures/install/.agents" "$RP_CONSUMER/.agents"
-cp -R "$RP_WORKTREE/test/fixtures/install/.codex" "$RP_CONSUMER/.codex"
-nix build "$RP_REF#research-proposal-runtime" --out-link "$RP_RUN/runtime" \
-  > "$RP_RUN/logs/build-runtime.log" 2>&1
-nix build "$RP_REF#research-proposal" --out-link "$RP_RUN/package" \
-  > "$RP_RUN/logs/build-package.log" 2>&1
-nix build "$RP_REF#research-proposal-environment" --out-link "$RP_RUN/environment" \
-  > "$RP_RUN/logs/build-environment.log" 2>&1
-nix build "$RP_REF#research-proposal-activate" --out-link "$RP_RUN/activate" \
-  > "$RP_RUN/logs/build-activate.log" 2>&1
-CODEX_HOME="$RP_RUN/activation-home" \
-  "$RP_RUN/activate/bin/research-proposal-activate" --project "$RP_CONSUMER" \
-  > "$RP_RUN/logs/activate.log" 2>&1
-RP_RUNTIME="$RP_RUN/runtime"
-(
-  cd "$RP_NPX_CONSUMER"
-  NPM_CONFIG_CACHE="$RP_RUN/npm-cache" npx --yes skills@1.7.2 add \
-    "$RP_SKILLS_SOURCE" --skill research-proposal --agent codex --copy --yes
-) > "$RP_RUN/logs/npx-install.log" 2>&1
+export RP_WORKTREE RP_PREP RP_FIXTURES RP_EVAL_DIRECTORY RP_RUNTIME RP_CONSUMER
+export RP_INSTALLED_CONFIG
+RP_RUN="$(mktemp -d /private/tmp/research-proposal-r13-run.XXXXXX)"
+export RP_RUN
+mkdir -p "$RP_RUN/config" "$RP_RUN/logs" "$RP_RUN/requests" "$RP_RUN/component-output"
+export RP_TEST_OUTPUT="$RP_RUN/component-output"
 ```
 
-各命令单独等待退出，非零时停止受影响步骤，不继续把后续空目录当安装成果；长构建按本地执行角色的原生会话规则等待。缓存激活器的名称由执行计划明确为 `research-proposal-activate`，`--project` 来自固定共享入口；首次安装已调用 `agent-env apply`，无需再执行第二次 apply。RP-01 的保留项、技能资源、原代理及六项依赖按原检查方式阅读实际安装结果。RP-02 按固定 CLI 的项目安装位置 `.agents/skills/research-proposal/` 检查完整资源及相对引用。
+`continuation.env` 已在本轮独占准备目录写明既有产品运行包、消费者、准备根、工作树及原安装快照的准确路径，并加载同目录 `zotero-isolation.env` 导出从旧消费者正常配置保留的两个隔离端点；位置随本地交接提供，不把机器部署路径写入公共仓库。正式测试从该 Nix 运行包导入模块，不从开发源码补依赖。旧结果根不被本次输出覆盖。
 
-实际业务前复制本轮输入到 `RP_CONSUMER/input/`，服务只启动一次并由所有请求共用。下列启动入口返回本轮 `fixture.env`，其中端口由服务分配；不写固定端口：
+RP-01 的正式入口仍是 README 中四个输出：`research-proposal-runtime`、`research-proposal`、`research-proposal-environment`、`research-proposal-activate`。已有有效结果直接引用；若产品变更确实影响安装，另由执行负责人绑定新提交并在空消费者执行下面原入口，不能把当前含稿件目录当成空安装：
 
 ```bash
-cp -R "$RP_PREP/input" "$RP_CONSUMER/input"
-export SCHOLAR_TEST_FIXTURE_ROOT="$RP_FIXTURE_ROOT"
-CHROME_FIXTURE_ENV="$(uv run bash "$RP_FIXTURES/scripts/start_chrome_test_fixture_macos.sh")"
-source "$CHROME_FIXTURE_ENV"
-ZOTERO_FIXTURE_ENV="$(uv run bash "$RP_FIXTURES/scripts/start_zotero_test_fixture_macos.sh")"
-source "$ZOTERO_FIXTURE_ENV"
-export RP_FIXTURES
-export RP_KB_DATA="$RP_CONSUMER/.test-runtime/knowledge/data"
-export RP_KB_CACHE="$RP_CONSUMER/.test-runtime/knowledge/cache"
-export RP_BROWSER_DATA="$RP_CONSUMER/.test-runtime/browser"
+# 仅用于经实际影响确定需要的新安装；当前 b983 安装不执行本段。
+RP_REF="github:ScholarWorkflow/research-proposal/$RP_REVISION"
+nix build "$RP_REF#research-proposal-runtime" --out-link "$RP_INSTALL/runtime"
+nix build "$RP_REF#research-proposal" --out-link "$RP_INSTALL/package"
+nix build "$RP_REF#research-proposal-environment" --out-link "$RP_INSTALL/environment"
+nix build "$RP_REF#research-proposal-activate" --out-link "$RP_INSTALL/activate"
+"$RP_INSTALL/activate/bin/research-proposal-activate" --project "$RP_CONSUMER"
+```
+
+缓存激活与 `"$RP_INSTALL/environment/bin/agent-env" apply --project "$RP_CONSUMER"` 二选一，不能要求重复激活。首次安装前预置 `test/fixtures/install/.agents/skills/unrelated-note` 及 `test/fixtures/install/.codex/config.toml` 无关配置，安装后按 RP-01 检查保留、声明的六项依赖、原代理及本技能资源；不启动依赖业务。RP-02 在另一干净目录使用 `npx --yes skills@1.7.2 add "https://github.com/ScholarWorkflow/research-proposal/tree/$RP_REVISION/skills/research-proposal" --skill research-proposal --agent codex --copy --yes`，检查主技能及引用资源。当前这两项的适用既有结果不重跑。
+
+### 手动准备上游输入
+
+正式输入源位于 `test/fixtures/upstream/`：合成作品《门灯》、林安和周岚两篇合成研究、招生信息、初始材料条件及补充条件。每份都标明合成身份；作品 P1—P6、研究 A1—A4/B1—B4 可以直接核对。个人准备和甲乙项目沿用 `test/fixtures/applications/`。合成论文不是现实出版物，也不声称上游已执行成功。
+
+[test/prepare_inputs.py](../test/prepare_inputs.py) 是输入构造脚本，不导入或调用待测 API。它使用当前安装的固定上游 `contact_targets`、`contact_stage1` 的纯本地字典构造函数，保持目标和快照格式；其余给定输入按同版格式整理。候选中 `validator.results` 明确标为合成终态，不记录或证明真实校验代理历史。脚本不调用上游业务 CLI、不联网，不写 research-proposal 自己的确认、正文或提交状态。
+
+第二关后在消费者内新建专用输入目录；不覆盖旧采集资料或非论文原稿。不能把生成后的目录搬到另一位置，因为输入引用使用绝对路径；需换位置时用同一脚本重新构造外部输入。
+
+```bash
+RP_INPUT_ROOT="$RP_CONSUMER/input/r13-manual-inputs"
+test ! -e "$RP_INPUT_ROOT"
+UV_CACHE_DIR="$RP_PREP/uv-cache" uv run --no-project python \
+  "$RP_WORKTREE/test/prepare_inputs.py" \
+  --output "$RP_INPUT_ROOT" \
+  --contact-scripts "$RP_CONSUMER/.agents/skills/professor-contact/scripts" \
+  > "$RP_RUN/logs/prepare-inputs.log" 2>&1
+export RP_INPUT_CASES="$RP_INPUT_ROOT/cases.json"
+jq '{complete, without_candidates, multiple, writing}' "$RP_INPUT_CASES"
+```
+
+输入清单按以下场景固定，缺项由脚本预先安排，不由用例中的上游运行补齐：
+
+| 清单键 | 已有输入与下一步 |
+|---|---|
+| `complete` | 同一完整输入包、候选、原文；`paths` 为专攻、教授研究、单教授、正式输入包四种入口，预期 `proposal`。 |
+| `without_candidates` | 有效输入包，缺候选，预期 `stage3`；同时作为 RP-04 的同一分支结果。 |
+| `multiple` | 两位可选教授；林安有两个方向。先无选择，再仅选择教授，再给完整选择，检查需求及已有选择沿用。 |
+| `collect`、`preview`、`stage0`、`stage1`、`stage2` | 分别只有合格招生项目、有论文但缺预筛、有预筛但缺目标、有目标但缺快照、目标及快照齐全但缺输入包。 |
+| `analysis_stage0`、`analysis_stage1`、`analysis_stage2` | 每份含对应分析、事实和索引；分别缺目标及快照、只有目标、目标及快照齐全；以实际分析文件为入口。 |
+| `writing` | 独立的完整包、候选、作品和两篇研究全文，加个人准备、甲项目和初始条件，直接供论文路线 RP-07、RP-08。补充条件留在该根以外的 `operator-inputs`，路径只记入执行者用清单的 `writing.access_supplement`。 |
+
+`cases.json` 只绑定路径和预期对象，不是产品状态。原检查仍随产品 `discover` 正常运行；输入若不能接受，先由准备者修正具体格式错误或由产品负责人修发现逻辑，不改检查器返回，也不转回运行上游链。
+
+### 唯一运行配置与实际请求
+
+`test/config/consumer-runtime.yq` 是本轮唯一项目配置合成表达式，从 b983 的原安装快照出发。保留安装定义，设置本仓库实际会话所需的正常视觉文件、原有工作区联网、单主线程，以及关闭本范围不使用的两个 MCP 服务；保留旧消费者的 `ZOTERO_HTTP_URL`、`ZOTERO_MCP_URL` 隔离覆盖，防止意外误路由退回本机默认库。不读取 Zotero 进程状态，不启动或探测端点，不把连通性作为准备条件，也不重新引入 Zotero 业务测试；浏览器、知识库目录及嵌套代理配置不再作为绑定前提。`mcp_servers.<id>.enabled=false` 使用 [Codex 官方配置字段](https://learn.chatgpt.com/docs/config-file/config-reference)，只在本次隔离消费者中禁用该服务，安装定义及旧进程都保留。线程数 1 对应本节不启动上游子代理的实际请求，不作上游容量计算。模型、审批及 `sandbox_mode=workspace-write` 仍取固定默认与普通范例，不写 CLI 重复覆盖。
+
+确认没有正在运行的请求或写入后，执行者保存原配置，再按单一表达式生成新文件；准备者的有限检查只在自己的临时目录进行，不修改消费者。
+
+```bash
 export RP_VISION_FILE="$RP_VISION_CONFIG"
-export RP_KB_SERVER_PATH="$(direnv exec "$RP_EVAL_DIRECTORY" sh -c 'printf %s "$KB_SERVER_PATH"')"
-: "${RP_KB_SERVER_PATH:?需要现有知识库程序配置}"
-mkdir -p "$RP_KB_DATA" "$RP_KB_CACHE" "$RP_BROWSER_DATA"
-```
-
-使用固定工具的真实覆盖键合成消费者配置，表达式仅在 [consumer-runtime.yq](../test/config/consumer-runtime.yq) 维护。先用 `yq -p=toml` 从原夹具提取 `features` 到本轮 JSON 输入；yq 4.54.1 的 `load` 不自动按 TOML 解析，也不支持 `from_toml`，不能直接对加载后的字符串读取 `.features`。它保留原有模型、代理、服务命令与参数，仅增加本轮环境和已有嵌套模式。原生 MCP 环境与 shell 环境分别设置；不依赖长期运行的评估服务自动继承调用者临时变量：
-
-r8 在同一表达式设置 `sandbox_workspace_write.network_access = true`，供隔离 Zotero 回环端点和本清单已有联网流程使用。`sandbox_mode` 仍由固定 `ordinary-smoke.toml` 提供 `workspace-write`，模型、代理、审批方式、可写目录和其他沙箱选项保持原值。该网络键是 [Codex 正式配置](https://learn.chatgpt.com/docs/agent-approvals-security#network-access)，不另加命令行重复覆盖，也不修改共享夹具或评估服务。
-
-```bash
-: "${RP_THREAD_BUDGET:?按当前请求的固定上游处理范围绑定累计线程预算}"
-test "$RP_THREAD_BUDGET" -gt 0
-export RP_THREAD_BUDGET
-RP_PROJECT_CONFIG="$RP_CONSUMER/.codex/config.toml"
-test -f "$RP_PROJECT_CONFIG"
-test ! -L "$RP_PROJECT_CONFIG"
-yq -e -p=toml \
-  '.mcp_servers."chrome-devtools".command != null and .mcp_servers."personal-knowledge".command != null' \
-  "$RP_PROJECT_CONFIG" > /dev/null
-RP_INSTALLED_CONFIG="$RP_RUN/config/installed-config.toml"
-if [ ! -f "$RP_INSTALLED_CONFIG" ]; then
-  cp "$RP_PROJECT_CONFIG" "$RP_INSTALLED_CONFIG"
-fi
-umask 077
-RP_CONFIG_OUTPUT="$RP_RUN/config/consumer-config-r8.toml"
-export RP_NESTED_FEATURES_FILE="$RP_RUN/config/nested-features.json"
-yq -e -p=toml -o=json '.features' \
-  "$RP_FIXTURES/configs/codex-nested-delegation-consumer.toml" \
-  > "$RP_NESTED_FEATURES_FILE"
-jq -e 'type == "object" and .multi_agent_v2.enabled == true' \
-  "$RP_NESTED_FEATURES_FILE" > /dev/null
+RP_CONFIG_OUTPUT="$RP_RUN/config/consumer-config-r13.toml"
+cp -p "$RP_CONSUMER/.codex/config.toml" "$RP_RUN/config/consumer-config.before.toml"
 yq -p=toml -o=toml --from-file "$RP_WORKTREE/test/config/consumer-runtime.yq" \
   "$RP_INSTALLED_CONFIG" > "$RP_CONFIG_OUTPUT"
-yq -e -p=toml -o=json \
-  '.features.multi_agent_v2.enabled == true and .sandbox_workspace_write.network_access == true' \
-  "$RP_CONFIG_OUTPUT" > /dev/null
+yq -p=toml -o=json '.' "$RP_CONFIG_OUTPUT" | jq -e '
+  .agents.max_concurrent_threads_per_session == 1 and
+  .sandbox_workspace_write.network_access == true and
+  .mcp_servers["chrome-devtools"].enabled == false and
+  .mcp_servers["personal-knowledge"].enabled == false and
+  (.shell_environment_policy.set.ZOTERO_HTTP_URL | length > 0) and
+  (.shell_environment_policy.set.ZOTERO_MCP_URL | length > 0) and
+  .shell_environment_policy.set.ZOTERO_HTTP_URL == env.ZOTERO_HTTP_URL and
+  .shell_environment_policy.set.ZOTERO_MCP_URL == env.ZOTERO_MCP_URL and
+  (.shell_environment_policy.set.VISION_ENV_FILE | length > 0)'
 cp "$RP_CONFIG_OUTPUT" "$RP_CONSUMER/.codex/config.toml.new"
-mv "$RP_CONSUMER/.codex/config.toml.new" "$RP_PROJECT_CONFIG"
+mv "$RP_CONSUMER/.codex/config.toml.new" "$RP_CONSUMER/.codex/config.toml"
 ```
 
-本轮项目本身是独占消费者；这些写入不触及用户配置或已有生产数据。`KB_SERVER_PATH` 如已由安装固定，保留安装值；新增时采用环境已有值。知识库数据和缓存、浏览器辅助数据均为本轮路径。若必需服务定义缺失，按 RP-01 的实际安装结果归属，不以临时启动定义补齐。共享请求准备器的单个 `fixture_mcp` 范例不用于替代这份多服务配置。
-
-本次 r5 修正只影响消费者配置合成及写入前检查。若 r4 已生成失败配置，保留原安装快照、失败配置和诊断，另用新配置输出路径从原安装快照重新合成；检查通过后由执行者替换自己的消费者配置。未受影响的 RP-01、RP-02 安装和组件结果继续采用，不重装、不重跑，尚未发出的评估请求在本次配置修正审核后继续。
-
-r8 同样保留已有配置和失败请求；`consumer-config-r8.toml` 不覆盖 r5 输出。准备者只在独占临时目录复制配置并预检，正式消费者由执行者在当前请求已结束、第二关定向审核完成后应用，不能边运行边改配置。
-
-已安装使用目录的每次请求采用固定夹具现有入口：
+每个实际请求采用固定夹具的原入口。`RP_REQUEST_DIR` 是 `$RP_RUN/requests/` 下尚未存在的新目录，`RP_PROMPT` 是本次自然语言业务输入或阅读实际输出后作出的具体决定，`RP_TIMEOUT=600`。它们由执行者逐次绑定，不能在提示词里补产品工具名称、参数或保存步骤。下列命令只适用于需要实际会话的 RP-07 至 RP-10、RP-12；RP-03 至 RP-05 不发送评估请求。
 
 ```bash
+RP_TIMEOUT=600
 UV_CACHE_DIR="$RP_PREP/uv-cache" uv run \
   "$RP_FIXTURES/scripts/prepare_codex_project_config.py" \
   --defaults "$RP_FIXTURES/configs/codex-smoke-defaults.toml" \
   --recipe "$RP_FIXTURES/examples/codex/ordinary-smoke.toml" \
-  --consumer-root "$RP_CONSUMER" \
-  --run-dir "$RP_REQUEST_DIR" \
-  --prompt "$RP_PROMPT" \
-  --timeout "$RP_TIMEOUT"
-```
-
-`RP_CONSUMER` 是 RP-01 的实际安装路径；`RP_REQUEST_DIR` 是 `RP_RUN/requests/` 下尚未存在的本次请求目录。`RP_PROMPT` 是当前业务请求或刚取得的具体用户决定；`RP_TIMEOUT` 对 RP-04、RP-05 固定为 1800 秒，对其他请求固定为 600 秒。每个新请求有独占目录，但沿用同一消费者和稿件数据。准备入口生成 `resolved-config.toml`、`preparation.json`、`eval-request.json`，只读取本次 `preparation.json.loading_method` 确认应使用的加载方式；不另造配置解析器或手抄配置参数。
-
-固定准备器的 `resolved-config.toml` 只记录默认文件与所选范例合并的设置，不是完整消费者配置快照；其中没有网络字段不能单独判定网络开关未加载。网络设置保存在上一步的 `.codex/config.toml`，由 Codex 原生加载。固定 [准备器](../../../skills-test-fixtures/scripts/prepare_codex_project_config.py)只为项目尚未提供的已声明值生成参数；[评估入口约定](../../../eval-server/README.md)及其 `commands.py`、`evals.py` 维持项目配置和单次请求设置的原有加载路径，不硬编码网络或审批值。此处只做配置解析及传输准备，实际 Zotero 能否使用仍由原负责代理在 RP-04 的既定步骤判断。
-
-上面的普通范例与已合成的消费者配置共同使用；模型默认仍只来自固定夹具。准备入口发现缺少变量、未安装服务、受保护设置冲突或配置不能传输时停止受影响项，不改为连接生产服务。RP-13 依下文的原路径快照步骤将 `RP_VISION_FILE` 设为 `RP_VISION_MISSING_CONFIG`，使用同一配置表达式和请求准备入口；结束且副作用可确认后恢复原稿及正常配置，正常扫描结果沿用 RP-06，不为恢复另发一次视觉请求。不修改视觉凭据文件。
-
-实际请求采用已核对的服务协议：
-
-```bash
+  --consumer-root "$RP_CONSUMER" --run-dir "$RP_REQUEST_DIR" \
+  --prompt "$RP_PROMPT" --timeout "$RP_TIMEOUT"
+jq '{loading_method, run_dir}' "$RP_REQUEST_DIR/preparation.json"
 RP_EVAL_PORT="$(direnv exec "$RP_EVAL_DIRECTORY" sh -c 'printf %s "$EVAL_PORT"')"
 curl --silent --show-error --max-time "$((RP_TIMEOUT + 30))" \
-  --output "$RP_REQUEST_DIR/response.json" \
-  --write-out '%{http_code}\n' \
+  --output "$RP_REQUEST_DIR/response.json" --write-out '%{http_code}\n' \
   --request POST "http://127.0.0.1:$RP_EVAL_PORT/eval" \
   --header 'Content-Type: application/json' \
   --data-binary @"$RP_REQUEST_DIR/eval-request.json" \
@@ -344,347 +306,88 @@ jq '{passed, version, termination_reason: .output.termination_reason, error}' \
   "$RP_REQUEST_DIR/response.json"
 ```
 
-`passed` 只表示请求正常结束，不是 RP 业务通过。一般项直接阅读返回的业务回复与产物。RP-03、RP-04、RP-05 使用固定夹具的 `configs/codex-eval-adapter-contract.json`，契约编号 `skills-test-fixtures/codex-eval-adapter@21`，以及它已有的解析入口；在正式请求保存后执行：
+准备器只把固定默认与普通范例的缺省项传给服务；原生项目文件保留上面合成的视觉、联网与禁用字段。`resolved-config.toml` 不是完整项目快照，不能因它不重复这些字段就判定未加载。每次请求另存配置、请求和响应，沿用同一消费者及稿件。`passed` 只表示请求结束，业务仍按本文观察点判断。无需收集或解析上游委派树。若使用执行者既有临时封装，它也必须采用这两个固定默认来源、当前 `RP_RUN` 与原 `RP_CONSUMER`；不得读取旧的其他模型候选或把旧结果根覆盖。
+
+### RP-03 至 RP-05 的自动检查与交接核对
+
+测试直接导入正式运行包的 `research_proposal.api`。缺模块或绑定会报错，不跳过、不回退到工作树源码。以下是正式命令，不在准备阶段执行：
 
 ```bash
-UV_CACHE_DIR="$RP_PREP/uv-cache" uv run \
-  "$RP_FIXTURES/scripts/parse_codex_eval_evidence.py" \
-  --contract "$RP_FIXTURES/configs/codex-eval-adapter-contract.json" \
-  --eval-response "$RP_REQUEST_DIR/response.json" \
-  --output "$RP_REQUEST_DIR/evidence.json"
-jq '{adapter_contract_id, problems, delegation,
-     relations: [.dispatch.thread_relations[]? |
-       select(.tool == "spawnAgent") |
-       {sender_thread_id, receiver_thread_ids, call_id, runtime_seq, status}]}' \
-  "$RP_REQUEST_DIR/evidence.json"
-```
-
-这一步列出本次请求已有的创建关系，供定位本项阶段，不启用完整调用树、MCP 或命名角色认证选项。`sender_thread_id` 是调用方，`receiver_thread_ids` 是实际子线程，`call_id` 连接对应调用，`runtime_seq` 指向响应中已有事件顺序。原阶段角色与本项操作要结合该次结构化调用参数、返回结果和正式阶段产物核对；提示文字出现名称不构成委派证据。执行者将本项相关阶段的实际子线程编号写入 `RP_RELATED_THREAD_IDS`，值为 JSON 字符串数组；不填猜测编号。只读取这些线程的现有生命周期片段：
-
-```bash
-jq --argjson related "$RP_RELATED_THREAD_IDS" '
-  .output.app_server_events[]? |
-  . as $event | .message.params as $params |
-  select(.message.method == "item/started" or
-         .message.method == "item/completed") |
-  select($params.item.type == "subAgentActivity" or
-         $params.item.type == "collabAgentToolCall") |
-  select((($related | index($params.item.agentThreadId)) != null) or
-         any($params.item.receiverThreadIds[]?;
-             . as $child | ($related | index($child)) != null)) |
-  {runtime_generation, runtime_seq, method: .message.method,
-   parent_thread_id: $params.threadId, item: $params.item}' \
-  "$RP_REQUEST_DIR/response.json"
-```
-
-仅在同一 `runtime_generation` 内按 `runtime_seq` 比较相关调用的顺序；连续请求先后以各自保存的请求与响应及实际产品状态连接，不跨请求比较序号。RP-03 只核对需要补候选时的第三阶段委派与候选；RP-04 核对采集、预筛及阶段 0—3 与目标、快照、输入包、候选；RP-05 核对补齐前置条件后才交第二阶段复用判断，并得到最终输入包。`dispatch.thread_relations[].status=completed` 仅表示创建关系事件结束，不能当作子代理业务结束；完成与收尾依原必测项的真实阶段产物和已有生命周期或结果事件判断。适配器的 `fixture_status`、`delegation.state` 均不是 RP 业务结论。字段缺失、相关阶段不能对应、先后无法观察或解析报错时，保留具体缺项并记无法判断，交测试负责人处理，不补造证据、重采样或新增采集设施。
-
-### 普通组件测试与实际输入绑定
-
-测试直接导入执行计划规定的 `research_proposal.api`，由正式 Nix 运行包的 Python 提供产品模块；没有开发模块回退、缺模块跳过或空断言。`test/support.py` 只提供普通文件读取和用例目录安排，不实现产品行为。`test/fixtures/` 共 26 个文件，含 25 项输入和一份 README；其中 `revisions/baseline.json` 是原短 Word 样本的 Pandoc AST 输入，不是成稿或新场景。
-
-RP-04 完成后，把真实路径写入 `RP_INPUT_CASES` 指向的 JSON 文件。`complete.paths` 按专攻目录、教授研究目录、单教授目录、正式输入包四种入口排列；`application_root`、`professor_path`、`selection.professor_path`、`selection.direction_id`、`input_file`、`candidate_file` 都取这次真实结果。`without_candidates` 记录只移除候选后的有效资料副本，包含 `path` 及同名归属、选择、输入包、候选路径字段；其中 `candidate_file` 仍记被移除文件的原路径。副本中的其他正式产物仍须经原检查认可，不改写上游完成状态。以下 JSON 仅是测试输入绑定，不进入产品状态：
-
-```json
-{
-  "complete": {
-    "paths": ["实际专攻目录", "实际教授研究目录", "实际单教授目录", "实际输入包文件"],
-    "application_root": "实际专攻目录",
-    "professor_path": "实际单教授目录",
-    "selection": {"professor_path": "实际单教授目录", "direction_id": "真实已选方向编号"},
-    "input_file": "实际有效输入包文件",
-    "candidate_file": "实际有效候选文件"
-  },
-  "without_candidates": {
-    "path": "缺候选副本中的教授目录",
-    "application_root": "副本中的专攻目录",
-    "professor_path": "副本中的教授目录",
-    "selection": {"professor_path": "副本中的教授目录", "direction_id": "相同真实方向编号"},
-    "input_file": "副本中的有效输入包文件",
-    "candidate_file": "副本中已移除候选的原路径"
-  }
-}
-```
-
-RP-08 完成后，将本轮隔离运行目录中的真实稿件目录绑定为 `RP_TEST_PROPOSAL`。RP-09、RP-11 串行独占它：每个普通用例先保存原目录快照，在原路径调用组件，结束后保存本次结果并恢复原目录，保持状态中绝对路径有效；不复制到新路径后手改确认或摘要。快照与结果放在 `RP_TEST_OUTPUT`，仅属于本轮原始输出。不得指向生产申请资料，不与实际改稿会话并行。
-
-从 RP-08 当前提交的 `works[current.revision_id]`、其步骤指向的实际保存件和 `正文.json`，用 `jq` 读取真实材料记录、问题及方案确认、条件、正文与引用，整理为公开 `save_revision` 的四份 `data` 输入 JSON，分别绑定 `RP_MATERIAL_DATA`、`RP_QUESTION_DATA`、`RP_SCHEME_DATA`、`RP_BODY_DATA`。问题数据保留 `question_id/text/confirmation`，方案数据保留 `scheme/conditions/confirmation`，正文数据保留 `body/references`，材料数据沿用已保存的材料记录。不补写决定、完成状态或摘要；测试经 API 建立新工作版。自然保留的有效请求也可用 `jq '.data'` 提取，但不要求逐调用取证或产品新增请求日志。下式只组合数据，实际调用时使用新的修订编号与当前计数：
-
-```bash
-export RP_TEST_OUTPUT="$RP_RUN/component-output"
-mkdir -p "$RP_TEST_OUTPUT"
-export RP_SAVE_REQUESTS="$RP_RUN/config/save-requests.json"
-jq -n --slurpfile materials "$RP_MATERIAL_DATA" \
-  --slurpfile question "$RP_QUESTION_DATA" \
-  --slurpfile scheme "$RP_SCHEME_DATA" \
-  --slurpfile body "$RP_BODY_DATA" \
-  '{materials: {data: $materials[0]}, question: {data: $question[0]},
-    scheme: {data: $scheme[0]}, body: {data: $body[0]}}' \
-  > "$RP_SAVE_REQUESTS"
-```
-
-RP-09 的 `RP_TEMPLATE_MAPPING` 指向按实际正文填写的映射数组。先用 `jq '.blocks | to_entries'` 读取当前 `正文.json` 的顶层块；按学校七个栏目为每项选择完整正文块，记录 `{field, target, body_blocks}`。合成 Word 模板没有独立表头，表格索引为 0，填写列为 1，栏目所在行依次为 0—6；不能把整篇正文塞进单一栏目。转填场景复用相同栏目与块索引，组件测试将 `target` 改为 `null`。映射文件只描述学校栏目位置，不改变已确认正文。
-
-RP-11 的材料变化分支选用 RP-08 非论文稿正文确实采用的一份文字原文，将其在 `RP_RUN` 内的隔离输入副本路径绑定为 `RP_RELATED_MATERIAL`；本轮已有的 `rashomon.html` 可直接使用，不限于 UTF-8 文本。以已保存引用及材料编号确认关联，且该路径须在本稿 `inputs.material_paths` 中。测试先保留原字节，在同一路径临时替换为有效 ASCII 正文：HTML 用完整的 `html/body` 文本，TXT、Markdown 用一段文本，使实际引用内容发生变化；在 `finally` 恢复原字节和编码。不新增无关文件，也不修改下载原件或生产资料。
-
-按依赖顺序分别执行下面的普通测试命令；相关变量均导出给对应测试进程。缺绑定会报错，不记为跳过或通过。只需运行对应类，不做全仓收集或重复回归：
-
-```bash
-export RP_RUN RP_TEST_PROPOSAL RP_INPUT_CASES RP_TEMPLATE_MAPPING RP_SAVE_REQUESTS RP_RELATED_MATERIAL
 cd "$RP_WORKTREE/test"
-uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v \
-  test_inputs.MaterialTests > "$RP_RUN/logs/rp06-components.log" 2>&1
+export RP_CONSUMER RP_INPUT_CASES RP_TEST_OUTPUT
 uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v \
   test_inputs.DiscoveryTests > "$RP_RUN/logs/rp03-components.log" 2>&1
 uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v \
-  test_inputs.RevisionImportTests > "$RP_RUN/logs/rp10-components.log" 2>&1
+  test_inputs.UpstreamRoutingTests > "$RP_RUN/logs/rp04-components.log" 2>&1
+uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v \
+  test_inputs.AnalysisRoutingTests > "$RP_RUN/logs/rp05-components.log" 2>&1
+```
+
+RP-04 的文字交接部分直接阅读安装后的 `research-proposal/SKILL.md`、`references/runtime.md`、`references/upstream.md`，对照原安装代理的既有职责和参数，记录位置及符合/不符合；不调用这些代理。核对下表足以覆盖本项，不新增调用证明：
+
+| 分支 | 本仓库应说明的目标与参数来源 |
+|---|---|
+| collect | `professor-collector`，发现结果的 `application_root` 作为 `folder_path`，`skip_pdf:true`；仅传已有教授范围。 |
+| preview | `professor-topic-clustering`，同一 `folder_path`、已有范围、`preview:true`。 |
+| stage0 | `professor-contact`，同一根；教授姓名先对应发现中的真实绝对教授目录，已有选择按正式教授/预筛路径与方向编号传入，不自造目标。 |
+| stage1 | `professor-contact-downloader`，同一根及阶段 0 的实际 `target_state`，按 `target_files` 格式；定向补全文仍归此阶段。 |
+| stage2 | `professor-contact-analyzer`，同一根与目标文件，先核对阶段 1；已有分析供原负责人采用，本仓库不宣称缓存已经可复用。 |
+| stage3 | `professor-contact-idea-generator`，有效输入包及精确方向；调用方按既有 prepare/save/record 校验收尾及终态重建总览约定处理。只核对文字安排，不生成候选或伪造代理调用。 |
+
+共同核对：准确名称、业务参数、等待并消费返回、完成后重新发现、保留真实用户决定、第三阶段调用方职责，以及 `proposal` 不进入邮件阶段。自动测试中的缺候选结果直接供 stage3 使用，不重复执行。
+
+### 论文与非论文路线的真实交互
+
+论文路线输入目录取 `jq -r '.writing.application_root' "$RP_INPUT_CASES"`，教授及包取同一 `writing` 记录；自然语言给出这些实际资料路径、林安、拟研究叙述问题、甲项目日文用途及合成材料身份。最初只提供该根及其中的 `access-initial.md`，不提供整个构造输出根或执行者用的 `cases.json`。补充条件在该根以外，待实际暴露关键条件缺项后，用 `jq -r '.writing.access_supplement' "$RP_INPUT_CASES"` 取得其路径，再提供给下一请求并针对实际建议决定。不得用“跳过上游”等指令替代有效输入；如果完整输入仍返回上游分支，保留结果并交准备/产品负责人，不启动上游业务。
+
+1. 阅读产品展示的问题，合成申请者针对当次内容选择；上游候选文件不构成研究计划问题确认。实际输出和磁盘保存状态一起检查，不能只看回复中的完成声明。
+2. 对照 `story.md` P1—P6、`professor-study.md` A1—A4、`outside-study.md` B1—B4，判断两种解释是证据冲突、推断差异还是合理分歧。不得把合成研究描述为现实论文，也不把申请者设想写成已有结果。资料足够后不为测试追加检索。
+3. 私人手稿尚无收藏处和取得条件时，查看中文方案、缺项及替代建议，并查看本稿状态没有完整正文或当前提交稿。随后提供 `access-supplement.md`；合成申请者可针对实际建议选择以已提供公开版本为主、手稿仅作可选补充，不能声称许可已取得。
+4. 阅读实际修订的中文方案后再决定确认，保留问题与方案两处决定。条件与确认满足后才提出生成甲项目日文稿的请求，完成 RP-08。
+
+非论文路线复用现有《罗生门》材料、相关研究及甲项目原稿，原位置为 `$RP_CONSUMER/input/nonpaper/研究计划/甲项目-联系教授`。其版本 6 尚未提交，历史 `rp07-03` 展示方案未保存且误写 1996 年论文作者的失败保留。先阅读该次实际方案，合成申请者通过正常反馈明确拒绝错误作者归属，要求按已提供的前田角藏 1996 年原文与石川巧 2016 年原文更正并继续当前方案；不提供组件调用或保存步骤，不原样重采样。检查真实修订及保存后再确认；已有问题决定、条件及未受影响内容沿用。相关原文位于本消费者既有非论文输入和原准备目录 `sources/`，需要补入时只复制对应现成文件，不重新下载或调用上游。
+
+两条路线各完成一稿：论文日文、非论文中文；要求使用同批 `program-a.md`、`applicant.md`。直接阅读 Word、Markdown、引用原文、状态与所有产品页图；比较正文、列表、表格和引用，检查栏目、篇幅、可行性及不确定事项。产品真实保存的正文与确认供后续测试使用，不能由输入脚本代写。
+
+### 其余组件与改稿安排
+
+RP-06 的六类文字载体、未支持格式、四处人工定位及扫描结果，RP-10 的导入组件，均采用仍适用的已有结果，不因 r13 重跑。对应正式组件命令保留为 `uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_inputs.MaterialTests` 和 `... test_inputs.RevisionImportTests`；仅当以后出现直接影响时再按该影响执行。TXT“十二人”回到第 5 行、Markdown“书籍可以外借”回到第 7 行、HTML“雨天仍开放”回到 `opening/p2`、EPUB“书籍二十四册”回到 `EPUB/chapter.xhtml` 的 `chapter-one/p2`，PDF 页码及 Word 单元格采用已有自动断言，不重复人工定位。正常扫描和 RP-13 恢复共用既有同图结果，不再次调用视觉模型。
+
+RP-08 真实提交后，绑定 `RP_TEST_PROPOSAL` 为非论文已成稿目录。RP-09、RP-11 串行独占原路径；`SavedDraftCase` 要求该稿和相关可改材料位于 `$RP_CONSUMER/input`，输出位于 `$RP_TEST_OUTPUT`，不再错误要求稿件位于新的日志根。每例先保存完整原路径快照，运行结束保存结果，再恢复原目录；状态中绝对路径保持不变。不得与实际改稿会话并行。
+
+RP-09：用 `jq '.blocks | to_entries'` 读取真实 `正文.json`，按七个栏目整理 `RP_TEMPLATE_MAPPING` 指向的数组，项为 `{field,target,body_blocks}`。合成 Word 首表索引 0、填写列 1、行 0—6；选择各栏目实际正文块，不把整稿放一格。转填测试复用同一内容映射而把 target 设为 null。执行后直接读本例 after 中 Word、Markdown 和所有页图，核对固定文字、填写内容与转填说明，不重审学术内容。
+
+RP-11：从真实当前版 `works[current.revision_id]` 的步骤保存件和正文，用 `jq` 整理四份公开 save_revision 的 data 输入，绑定 `RP_MATERIAL_DATA`、`RP_QUESTION_DATA`、`RP_SCHEME_DATA`、`RP_BODY_DATA`。保留真实材料、问题 `question_id/text/confirmation`、方案 `scheme/conditions/confirmation`、正文 `body/references`；不补写确认或完成标记，不要求产品另存原始调用日志。
+
+材料变化分支的 `RP_RELATED_MATERIAL_RECORD` 绑定本稿正文实际引用原文对应的既有读取记录。先用 `jq -r '.works[.current.revision_id].inputs.material_paths[]' "$RP_TEST_PROPOSAL/研究计划状态.json"` 读取实际材料输入，再对照本稿引用选定该读取记录，用 `jq '.material | {material_id, original_path}' "$RP_RELATED_MATERIAL_RECORD"` 查看原文绑定。当前已有记录可能是 `rashomon-read.json`；原文由其中的 `.material.original_path` 定位，不能假定 `inputs.material_paths` 直接列出 `rashomon.html`，也不为测试改写该列表。按下式组合数据并执行：
+
+```bash
+export RP_SAVE_REQUESTS="$RP_RUN/config/save-requests.json"
+jq -n --slurpfile materials "$RP_MATERIAL_DATA" \
+  --slurpfile question "$RP_QUESTION_DATA" --slurpfile scheme "$RP_SCHEME_DATA" \
+  --slurpfile body "$RP_BODY_DATA" \
+  '{materials:{data:$materials[0]}, question:{data:$question[0]},
+    scheme:{data:$scheme[0]}, body:{data:$body[0]}}' > "$RP_SAVE_REQUESTS"
+export RP_TEST_PROPOSAL RP_TEMPLATE_MAPPING RP_SAVE_REQUESTS RP_RELATED_MATERIAL_RECORD
+cd "$RP_WORKTREE/test"
 uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v \
   test_export.TemplateTests > "$RP_RUN/logs/rp09-components.log" 2>&1
 uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v \
   test_recovery.RecoveryTests > "$RP_RUN/logs/rp11-components.log" 2>&1
 ```
 
-RP-09 的自动断言检查原件、栏目填写、产物和未切换当前稿；执行者仍直接阅读本次 `after/` 中 Word、Markdown 和全部页图，核对对应正文及转填说明。RP-11 仅在已批准的失败分支控制 `page_review` 返回：`true` 用于进入状态提交边界，`false` 用于页面核对失败。它明确不表示真实页面合格，也不作为 RP-08、RP-09 的结果；正文、确认和导出仍来自真实基准及产品组件。单格式失败由目标文件位置的目录冲突触发，状态中断由公开 `os.replace` 边界触发，不要求实现私有 helper 或特定 subprocess 调用形式。
+测试从 `RP_RELATED_MATERIAL_RECORD` 的 `.material.original_path` 读取实际原文；若为相对路径，按该读取记录所在目录解释，不按测试进程目录解释。要求原文位于本轮消费者 input 内；保留原字节，把同路径内容临时替换为有效 ASCII 正文，再在 finally 恢复原字节和编码。它不改原下载件或无关文件，不要求原文直接列入 `inputs.material_paths`。产品能否正确处理材料记录指向原文的变化，仍由正式恢复结果判断。RP-11 的单格式失败用目标位置冲突，状态中断用公开 `os.replace` 边界，受控 `page_review` 仅用于失败/提交状态分支，不声称真实页图合格，也不作为 RP-08、RP-09 结果。
 
-`MaterialTests` 将 TXT、Markdown、HTML、EPUB 四类的原生结果保存为各用例输出目录中的 `<扩展名>-reading.json`，标准日志打印路径。执行者用 `jq '.material.blocks'` 读取选定片段和实际 `locator`，按它回到本次保留的原件，完成以下四处直接对照；PDF、Word 直接采用自动定位断言，不重复人工证明。这属于 RP-06 原定检查，自动测试成功不单独表示 RP-06 通过。
+RP-10 实际会话从 RP-08 的真实交付副本制作修改稿：纯措辞 Markdown；明确要求核心方法修改且改英文；文件自行把未核实条件写为已取得但没有解释意图；两份核心方法冲突且未选择的版本。依次检查实际改变的确认与版本选择，用户决定针对当次内容，原件保留；已有 Word 修订/批注/未支持对象的组件结果沿用。不得把短样本冒充真实交付稿，不因测试提示而补产品处理步骤。
 
-| 载体及选定片段 | 原件中应能回到的位置 |
-|---|---|
-| TXT：“十二人” | 第一章开放记录中的周二句，原文件第 5 行。 |
-| Markdown：“书籍可以外借” | 借阅规则下首段，原文件第 7 行。 |
-| HTML：“雨天仍开放” | `opening` 内的 `p2`。 |
-| EPUB：“书籍二十四册” | `EPUB/chapter.xhtml` 的 `chapter-one` 内 `p2`。 |
-| PDF：“期刊” | 物理第 2 页；直接采用普通测试的页码断言，不重复人工定位。 |
-| Word：“24” | 首表第 2 行第 2 列，即零起始 `table=0,row=1,column=1`；直接采用普通测试按返回坐标读回原件的断言，不重复人工定位。 |
+RP-12 从已提交稿提出乙项目请求，提供 `program-b.md` 并明确复用文献和通用方案。开始前保存第一稿及同资料范围其他教授的相关状态/正文副本，结束后直接比较这些文件，检查新稿的项目、用途、栏目与独立状态；不重验全部写作。
 
-章节、段落、行的等价表达均可，但对应位置必须含有该片段；把所有定位写成 1、指向错误网页片段或错误表格单元格都不通过。只检查上述既有片段，不逐块重放或新增定位判定程序；扫描图另按下列原定步骤检查。
+RP-13 已完成且原路径与正常配置已恢复，直接采用现有结果。本项的缺配置输入与偶发环境故障分开。若以后产品修正直接影响本项，仍采用已批准的原路径办法：确认前序请求与写入结束，完整快照已有稿件和正常项目配置；在消费者内新目录放同一残损扫描图，唯一合成表达式改用 `RP_VISION_MISSING_CONFIG`；通过主技能提供该材料；自然结束后保存响应与稿件 after，确认无未完请求或写入，再将原目录移至本次结果目录并把快照原样恢复原位置、恢复正常配置。副作用不明时不恢复覆盖而交负责人判断；正常扫描引用 RP-06，不额外采样。不得手改状态绝对路径或确认。
 
-RP-06 扫描图采用真实产品读取入口，独立于文字载体普通测试；先复制样本，再用 `jq` 构造公开请求：
+### 结束、失败与交接
 
-```bash
-cp "$RP_WORKTREE/test/fixtures/materials/damaged-scan.png" "$RP_CONSUMER/input/damaged-scan.png"
-jq -n --arg path "$RP_CONSUMER/input/damaged-scan.png" \
-  --arg output "$RP_CONSUMER/input/scan-reading" \
-  '{path: $path, material_type: "合成史料扫描图", source: "残损扫描测试输入", output_dir: $output}' \
-  > "$RP_RUN/config/read-scan.json"
-RP_SCAN_EXIT=0
-VISION_ENV_FILE="$RP_VISION_CONFIG" \
-  "$RP_RUNTIME/bin/proposal-runtime" read_material --request "$RP_RUN/config/read-scan.json" \
-  > "$RP_RUN/logs/rp06-scan.json" 2> "$RP_RUN/logs/rp06-scan.stderr" \
-  || RP_SCAN_EXIT=$?
-printf '%s\n' "$RP_SCAN_EXIT" > "$RP_RUN/logs/rp06-scan.exit"
-if [ "$RP_SCAN_EXIT" -ne 0 ] && [ "$RP_SCAN_EXIT" -ne 2 ]; then
-  exit "$RP_SCAN_EXIT"
-fi
-jq '{status, issues, material: {material_id: .material.material_id,
-    blocks: .material.blocks, issues: .material.issues}}' "$RP_RUN/logs/rp06-scan.json"
-```
+每项读取实际结果后记录通过、失败或无法判断，直接注明正式日志和产物位置；准备与静态检查不计作业务结果。旧失败不覆盖，新范围撤回的上游验收不再阻塞本仓库测试。已保存进度按真实状态续接，不重新采集、分析或生成上游候选。
 
-对照原图阅读解析后的文字、像素定位和缺项；缺损数量没有标准答案，不能补成确定数字，图形解释不得混入逐字转录。业务缺项的退出 2 按实际字段和原图判断，不按退出码一项认定失败。该命令属于正式 RP-06，准备阶段未运行。
+格式/路径等测试准备错误交本地测试工程师；本仓库行为错误交本地执行工程师修复；目标或判断方法缺项交测试计划负责人。已有业务失败不能为取得满意输出原条件重采样。偶发外部故障只在确认请求、子进程及写入已经结束、环境确已恢复且副作用可判定后，保持业务输入、模型和配置不变，最多补一次（总计两次）；否则保留原始结果并停止受影响项。超时或响应丢失时先查已有请求状态，不并行重发，不自行启停服务。
 
-### 各项输入与具体安排
-
-| 编号 | 准备与执行安排 |
-|---|---|
-| RP-01 | 使用前述 Nix 目录及无关安装输入，执行四输出构建和共享缓存激活，检查资源、六项直接依赖、原代理及保留项；实际功能引用 RP-04、RP-06、RP-08。 |
-| RP-02 | 用固定 skills@1.7.2 从同一发布提交在另一目录安装，检查发现结果、随附资源和资源引用，阅读文档的环境边界；不运行完整前置流程。 |
-| RP-03 | 从 RP-04 的真实产物做隔离副本，以专攻目录、教授研究目录、单教授目录、正式产物四种路径分别输入组件；输入包及候选俱全的副本保持原样，只缺候选的副本仅移除该候选产物。另保留两个有效可选方向或教授，在实际交互先不选择，待真实选项出现后作决定；已有明确决定的分支继续采用它。若 RP-04 不足两个有效选项，补齐第二份真实上游材料，不能手造状态。运行 DiscoveryTests；真实用户选择和第三阶段委派仍由既有 eval 交互检查。 |
-| RP-04 | 采用准备好的 2027 招生目录和官方教员、研究者来源，初始目录没有教授研究产物。实际交互按原提示提供所需教授、方向和访问决定，保留原命名代理的工作安排。只有原流程真正完成目标、快照、输入包及候选后，才把该目录作为后续基准；不得提前标完成。 |
-| RP-05 | 在 RP-04 成果的独立副本中保留论文分析及事实文件，移除该副本的正式输入包、目标文件和原流程记录的第一阶段快照。删除范围只能在该副本内。通过主技能继续，观察原流程补齐目标与快照、第二阶段复用判断及最终结果；不修改缓存校验器。 |
-| RP-06 | 普通组件测试使用 `materials/` 六类文字载体及未支持文件；定位与原文对照见输入说明。第七类扫描 PNG 使用上述正式读取命令及视觉配置，按原图核对实际结果。实际候选交互使用 `input/nonpaper/` 中真实《罗生门》作品，首次不指定问题，待候选出现后选择；载体合成记录不当成现实研究证据。 |
-| RP-07 | 在已选问题上提供真实相关研究文件；先给出未定位私人手稿且没有备选的条件，观察缺项和稿件状态。补充官方阅览条件后，用户可以明确将已定位公开版本改为主材料，特殊阅览仅作可选补充；若所选问题仍必须依赖未取得途径的私人材料，保持受阻，不把一般申请规则当成具体材料存在证明。方案条件成立后先观察尚未确认的中文方案和稿件状态，再取得用户对该版的真实确认；两处确认和不得提前成稿的检查沿用上表。 |
-| RP-08 | 论文路线复用 RP-04、RP-07，采用甲项目日文要求；非论文路线复用 RP-06、RP-07，采用甲项目中文要求。个人资料只取 `applicant.md` 的合成事实。每条路线完成一稿，直接读双格式、待确认事项、输入状态和产品页面预览；不再从头采集材料。 |
-| RP-09 | 复用 RP-08 同一已确认正文，运行 TemplateTests 分别给出可填写 Word 与转填 PDF，然后直接检查本次输出的填写区、全部页图、Markdown 及转填说明。另通过主技能读取真实 research-plan-cover-2027.pdf 的空白表要求；不把真实封面与合成学校栏目混为一份要求。 |
-| RP-10 | RevisionImportTests 用 revisions/ 短样本检查内容和标记。实际交互从 RP-08 稿件副本制作对应修改：纯措辞、明确要求修改核心方法并改成英文、文件内把未核实条件改为已获得但未解释意图、两份核心方法冲突且未选定的稿件。先保存原件与基准，由用户对未决修订作决定，批注不直接作为正文。实际编辑位置取已交付稿件对应段落，不把短样本冒充它。 |
-| RP-11 | 运行 RecoveryTests，覆盖两种单格式失败及首次无当前稿、内容不一致、受控页面核对失败、材料/方案/正文保存中断、目录已完成而未切换、切换后中断、四类恢复输入变化、另一轮先更新基准。只使用正式 API、文件条件和公开 os.replace 边界；保存旧稿与每例工作结果，直接读状态及内容。正常完整成稿引用 RP-08，受控页面结果不能作真实页面通过证据。 |
-| RP-12 | 沿 RP-08 稿件继续，提出以同题用于乙项目的明确请求，提供 `program-b.md` 并明确复用文献与通用方案。操作前后只比较第一稿输入、状态、正文及已有其他教授状态，检查新稿绑定和栏目变化，不重验全部写作。 |
-| RP-13 | 空输入使用准备的空目录；学校名称输入使用 `school-name-only.txt`。外部能力失败只选扫描视觉配置缺项：按下文先备份已有进度及正常配置，在原稿路径通过产品入口指向 `vision-missing.env`，检查缺项及保存结果；确认结束和副作用后归档本次结果并恢复原路径及配置。正常扫描沿用 RP-06 的同一样本结果，不制造第二种外部故障或重跑完整流程。 |
-
-### RP-13 的原路径备份和恢复
-
-未提交工作版的 `directory` 是绝对路径，普通复制不会重新定位。RP-13 因此沿用 RP-09、RP-11 的原路径快照办法。执行者将 `RP13_PROPOSAL` 绑定到本轮消费者内已有进度的真实稿件目录；当前为非论文甲项目，状态仍为版本 6、没有当前提交稿。先确认所有前序请求、委派和写入均已结束，期间独占该稿件和消费者配置，不与其他业务请求并行。已有方案内容及未确认决定按原记录保留，不手改状态路径、确认或完成标记。
-
-先保存完整稿件与正常配置，再复制同一 `damaged-scan.png`；扫描输入和快照都留在本轮目录。以下命令只由第二关后的执行者运行：
-
-```bash
-: "${RP13_PROPOSAL:?绑定本轮消费者内已有进度的稿件绝对目录}"
-case "$RP13_PROPOSAL" in
-  "$RP_CONSUMER/input/"*) ;;
-  *) printf '%s\n' 'RP13_PROPOSAL 必须位于本轮消费者 input 内' >&2; exit 1 ;;
-esac
-test -d "$RP13_PROPOSAL"
-test ! -L "$RP13_PROPOSAL"
-test -f "$RP13_PROPOSAL/研究计划状态.json"
-RP_REQUEST_DIR="$RP_RUN/requests/rp13-missing-vision"
-test ! -e "$RP_REQUEST_DIR"
-RP_PROJECT_CONFIG="$RP_CONSUMER/.codex/config.toml"
-RP13_OUTPUT="$(mktemp -d "$RP_RUN/rp13-vision.XXXXXX")"
-cp -pR "$RP13_PROPOSAL" "$RP13_OUTPUT/proposal.before"
-cp -p "$RP_PROJECT_CONFIG" "$RP13_OUTPUT/project-config.before.toml"
-RP13_SCAN_DIR="$(mktemp -d "$RP_CONSUMER/input/rp13-vision.XXXXXX")"
-cp -p "$RP_WORKTREE/test/fixtures/materials/damaged-scan.png" "$RP13_SCAN_DIR/damaged-scan.png"
-export RP_VISION_FILE="$RP_VISION_MISSING_CONFIG"
-export RP_THREAD_BUDGET=1
-RP_TIMEOUT=600
-RP_CONFIG_OUTPUT="$RP13_OUTPUT/consumer-missing.toml"
-yq -p=toml -o=toml --from-file "$RP_WORKTREE/test/config/consumer-runtime.yq" \
-  "$RP_INSTALLED_CONFIG" > "$RP_CONFIG_OUTPUT"
-yq -e -p=toml -o=json \
-  '.features.multi_agent_v2.enabled == true and .sandbox_workspace_write.network_access == true' \
-  "$RP_CONFIG_OUTPUT" > /dev/null
-cp "$RP_CONFIG_OUTPUT" "$RP_PROJECT_CONFIG.new"
-mv "$RP_PROJECT_CONFIG.new" "$RP_PROJECT_CONFIG"
-```
-
-保持本请求原定预算 1、600 秒超时、模型与其他配置；配置合成仍使用前面已绑定的环境与唯一表达式。业务输入只给出 `RP13_PROPOSAL` 和 `RP13_SCAN_DIR/damaged-scan.png` 的实际路径，请主技能继续处理这份扫描材料；不提供组件步骤或预填缺项结论。按前述固定入口生成请求并发送，保留请求、响应和实际缺项说明。直接比较 `proposal.before` 与执行后原目录的状态及已有步骤成果，检查有效进度仍在、扫描缺项没有变成完整材料或成稿。
-
-先根据实际响应及现有执行记录确认本次请求与委派已结束，再核对原稿和扫描目录的实际写入。若超时、结束不确定或不能确认副作用，停止后续请求及下面的恢复，不边写入边挪动目录，交执行负责人处理。能确认结束时，即使用例结果失败，也先保留结果再恢复；归档目录只供读取，不从其中恢复业务，也不修改归档中的绝对路径：
-
-```bash
-cp -p "$RP_PROJECT_CONFIG" "$RP13_OUTPUT/project-config.after.toml"
-test ! -e "$RP13_OUTPUT/proposal.after"
-mv "$RP13_PROPOSAL" "$RP13_OUTPUT/proposal.after"
-cp -pR "$RP13_OUTPUT/proposal.before" "$RP13_PROPOSAL"
-cp -p "$RP13_OUTPUT/project-config.before.toml" "$RP_PROJECT_CONFIG.new"
-mv "$RP_PROJECT_CONFIG.new" "$RP_PROJECT_CONFIG"
-export RP_VISION_FILE="$RP_VISION_CONFIG"
-diff -qr "$RP13_OUTPUT/proposal.before" "$RP13_PROPOSAL"
-cmp "$RP13_OUTPUT/project-config.before.toml" "$RP_PROJECT_CONFIG"
-```
-
-请求目录、扫描输入、`proposal.after` 和缺配置输出全部保留；恢复失败时保留快照和已归档结果并停止，不继续操作部分恢复的稿件。后续交互从已还原的原稿和原有未决事项继续，不把故障请求中新增的内容当成用户确认。外部条件补齐后的正常扫描采用 RP-06 对同一原图、同一读取实现及正常视觉配置的已有结果；不再次调用视觉模型或另跑完整流程。r7/r8 的全部故障、失败和真实用户决定仍保留。
-
-### RP-04 修正后的换版和原路径续接
-
-用户已授权修正教授姓名到实际路径的使用说明后复验。旧 `rp04-03` 已自然结束；本次仅沿其真实方向决定继续，已有 183 条采集记录、10 个方向及所选 `dir_9dee2150fa6a456bc4e5` 保留，不重新采集或把正确教授路径、工具用法补进提示。产品的新完整提交由主代理发布后绑定为 `RP_NEW_REVISION`。模型仍为 `gpt-6-luna`／`low`，预算 3、超时 1800 秒；未批准的 sol/medium 候选不使用。
-
-未提交稿件可能保存绝对路径，不能把业务资料搬到新消费者路径再手改状态。本次仅新建构建、日志和请求根 `RP_RUN`，`RP_CONSUMER` 保持旧安装的原绝对位置。执行者先确认所有请求、委派、安装和写入均已结束，独占该消费者；以下代码块在同一 Bash 环境顺序执行。构建复用已有 Nix 缓存，按新远端固定提交使用原正式四输出；不重跑未受影响的 RP-01 验收、RP-02 或组件用例。
-
-```bash
-set -euo pipefail
-: "${RP_NEW_REVISION:?需要主代理已发布的完整修正提交}"
-source "$RP_RUN/config/run.env"
-RP_RUN_BEFORE_PATH_FIX="$RP_RUN"
-source "$RP_PREP/config/runtime-locations.env"
-source "$RP_RUN_BEFORE_PATH_FIX/config/runtime-bindings.env"
-RP_REVISION="$RP_NEW_REVISION"
-RP_REF="github:$RP_REPOSITORY/$RP_REVISION"
-RP_RUN="$(mktemp -d /private/tmp/research-proposal-run.XXXXXX)"
-mkdir -p "$RP_RUN/logs" "$RP_RUN/config" "$RP_RUN/requests" "$RP_RUN/activation-home"
-export XDG_CACHE_HOME="$RP_NIX_CACHE"
-nix build "$RP_REF#research-proposal-runtime" --out-link "$RP_RUN/runtime" \
-  > "$RP_RUN/logs/build-runtime.log" 2>&1
-nix build "$RP_REF#research-proposal" --out-link "$RP_RUN/package" \
-  > "$RP_RUN/logs/build-package.log" 2>&1
-nix build "$RP_REF#research-proposal-environment" --out-link "$RP_RUN/environment" \
-  > "$RP_RUN/logs/build-environment.log" 2>&1
-nix build "$RP_REF#research-proposal-activate" --out-link "$RP_RUN/activate" \
-  > "$RP_RUN/logs/build-activate.log" 2>&1
-```
-
-四条构建命令各自确认退出后才继续，失败时原消费者尚未改变。构建成功后将旧消费者完整归档，只读保留其产品、配置和业务数据；原位置建立空目录，仅预置原无关安装样本，再从新正式激活器安装。不得从旧归档复制 `.agents`、`.codex` 或产品代码来补装。安装成功后只原样恢复全部 `input` 及 `.test-runtime` 运行数据，后者包含已有知识库资料；不改任何 JSON 路径、确认、摘要或阶段状态。
-
-```bash
-test -d "$RP_CONSUMER"
-test ! -L "$RP_CONSUMER"
-mv "$RP_CONSUMER" "$RP_RUN/consumer.before"
-mkdir "$RP_CONSUMER"
-cp -pR "$RP_WORKTREE/test/fixtures/install/.agents" "$RP_CONSUMER/.agents"
-cp -pR "$RP_WORKTREE/test/fixtures/install/.codex" "$RP_CONSUMER/.codex"
-CODEX_HOME="$RP_RUN/activation-home" \
-  "$RP_RUN/activate/bin/research-proposal-activate" --project "$RP_CONSUMER" \
-  > "$RP_RUN/logs/activate.log" 2>&1
-test ! -e "$RP_CONSUMER/input"
-cp -pR "$RP_RUN/consumer.before/input" "$RP_CONSUMER/input"
-mkdir -p "$RP_CONSUMER/.test-runtime"
-cp -pR "$RP_RUN/consumer.before/.test-runtime/." "$RP_CONSUMER/.test-runtime/"
-RP_RUNTIME="$RP_RUN/runtime"
-RP_INSTALLED_CONFIG="$RP_RUN/config/installed-config.toml"
-cp -p "$RP_CONSUMER/.codex/config.toml" "$RP_INSTALLED_CONFIG"
-cp -p "$RP_RUN_BEFORE_PATH_FIX/config/runtime-bindings.env" "$RP_RUN/config/runtime-bindings.env"
-source "$CHROME_FIXTURE_ENV"
-source "$ZOTERO_FIXTURE_ENV"
-export RP_FIXTURES RP_KB_DATA RP_KB_CACHE RP_BROWSER_DATA RP_KB_SERVER_PATH
-export RP_VISION_FILE="$RP_VISION_CONFIG"
-export RP_THREAD_BUDGET=3
-```
-
-现在按前文唯一 `consumer-runtime.yq` 的完整配置合成块执行；`RP_RUN` 已是新根，其 `installed-config.toml` 必须是刚安装的新快照，不能读取旧根的同名文件。旧 r10 配置和安装快照不覆盖。原 Chrome、Zotero 的 profile/data 及视觉配置均在 `RP_PREP` 的独占路径，归档消费者不移动它们；采用原 `fixture.env` 的端点，不启停服务，不读取或重写视觉密钥。默认模型准备入口及原 `send-request.sh` 继续使用固定共享 defaults，不使用模型候选封装。
-
-配置合成成功后，以下绑定将新请求输出根与原消费者位置明确分开。旧 `RP_RUN_INITIAL`、`RP_RUN_PREVIOUS` 继续指向原有结果；新增 `RP_RUN_BEFORE_PATH_FIX` 保留这次换版前的根。实际新安装、配置和返回路径写入正常结果记录，不新增状态或来源证明程序。
-
-```bash
-for RP_BINDING in RP_WORKTREE RP_PREP RP_REPOSITORY RP_REVISION RP_REF RP_RUN \
-  RP_CONSUMER RP_NPX_CONSUMER RP_RUNTIME RP_RUN_INITIAL RP_RUN_PREVIOUS \
-  RP_NIX_CACHE RP_RUN_BEFORE_PATH_FIX; do
-  printf '%s=%q\n' "$RP_BINDING" "${!RP_BINDING}"
-done > "$RP_RUN/config/run.env"
-RP_REQUEST_DIR="$RP_RUN/requests/rp04-03-path-fix1"
-test ! -e "$RP_REQUEST_DIR"
-RP_TIMEOUT=1800
-RP_PROMPT="$(cat "$RP_RUN_BEFORE_PATH_FIX/requests/rp04-03/prompt.txt")"
-```
-
-随后按前文固定准备及评估入口发出这一次受影响请求；若复用现有 `send-request.sh`，向它传新 `config/run.env`、请求名 `rp04-03-path-fix1`、1800 秒、旧 `rp04-03/prompt.txt` 及旧 `thread-budget.md`。这些资料路径仍指向原位置，提示保持原自然语言决定，不添加教授绝对路径或组件参数。结果在新 `RP_RUN/requests/rp04-03-path-fix1/`，旧 `requests/rp04-03/`、183 条记录、预筛方向和所有失败历史仍保留。根据原 RP-04 的阶段成果与相关委派判断，不把安装成功、委派创建或先前采集完成当成本项通过。
-
-若归档后、请求发出前的安装、资料恢复或配置合成失败，先等待该操作明确结束，保存原错误与半成品；确认没有并行写入时按下列顺序回退。若结束或副作用不明，停止并交执行负责人，不移动正在使用的目录：
-
-```bash
-RP_FAILED_RUN="$RP_RUN"
-if [ -e "$RP_CONSUMER" ]; then
-  mv "$RP_CONSUMER" "$RP_FAILED_RUN/consumer.failed"
-fi
-mv "$RP_FAILED_RUN/consumer.before" "$RP_CONSUMER"
-source "$RP_RUN_BEFORE_PATH_FIX/config/run.env"
-```
-
-回退后只恢复旧运行绑定，保留新根中的构建日志、失败配置与半成品，不自动用旧产品重发请求；回退不完整时停止并保留两份目录。请求一旦发出，不自动覆盖业务资料或回退消费者；依已有结束及副作用规则保留本次实际状态。修正后仍失败或不确定时停止并交相应负责人，不重复采样、不换模型，也不清除已有成果来重跑采集。本次只修教授路径说明及必要安装续接，不引入通用迁移能力。
-
-### 外部故障、输出与清理
-
-正式尝试最多两次，即首次加一次有依据的外部恢复后重试。可重试的原因只包括明确发生在业务动作之前的临时网络失败，或已确认恢复的服务不可达；产品版本、输入、用户决定、模型、配置、入口与超时保持不变。额度不足、权限拒绝、已知配置缺失、线程失败或观察字段缺失没有恢复证据时停止，不能连续完整采样。改变任何上述条件属于步骤修订，不算同条件重试。
-
-本轮仅对 RP-04 首请求按用户逐次恢复后的明确指示追加尝试，累计上限为四次，不适用于其他请求。前两次分别连接服务失败，以及收到 HTTP 503 `app-server runtime is not READY`，均未进入业务。用户随后告知“现在应该好了，看看”；主对话只读确认日志已有 `initial_start_ok`，r6 据此允许第三次，结果仍在业务前因模型接口缺少认证头返回 401，保存在 `requests/rp04-01-recovery1/`。执行者达到上限后停止，未自行更换模型或认证。
-
-用户再次明确表示“你试试看，我弄好了”，本 r7 仅据此允许第四次。执行者沿用保存的原请求、同一产品与安装、输入、配置、模型、线程预算及超时，另存 `requests/rp04-01-auth-recovery1/`，不覆盖前三次记录。此次若再发生外部故障，停止自动尝试并交环境负责人；不得据此放宽其他重试上限，也不得为业务结果不满意重跑。主对话没有启动、停止或重启服务，也没有读写认证值；用户恢复服务及认证不被记为产品修正或业务通过。
-
-本次 r8 另处理新隔离消费者的 RP-04-02：首请求已由原代理返回 8 位教员，合成申请者已据实际选项选择石川巧；随后原采集代理的 Zotero 检查被沙箱拒绝，已保存的响应显示 `termination_reason=completed`、实际 `sandbox.networkAccess=false`。这次配置修正不作为原条件下的无条件重试，也不重新选择教授。执行者须确认上一请求及当前独立请求均已结束、没有未完成的写入或委派，并核对已保存资料仍无该次教授采集产物，再应用获批配置；将同一资料路径及石川巧决定交回原负责代理，从原 Zotero 前置步骤继续，另存请求目录。保留旧 `rp04-02/response.json`、`zotero-probe-result.json`、配置和全部此前失败记录；不跳过 Zotero、不用外部探针替代业务，不改写阶段状态。若不能确认结束或副作用，继续停止并交执行负责人；新请求仍受本节既有停止规则约束。
-
-本次 r10 仅落实用户在核对“不调用就声称工具不存在”的失败后明确提出的“你要不再试试看，我总感觉很奇怪”：允许 `rp04-02-network-recovery1` 再执行一次。此授权不依赖外部故障恢复，不表示发现或修复了产品缺陷，也不批准模型候选。执行者先沿用已有记录确认前序请求及子代理结束、没有待完成写入，并检查同一招生目录尚无新的有效上游成果；前提不成立则停止本次追加请求，报告差异，不清除业务状态来制造相同条件。
-
-本次复用产品 `677055164c06d549f99b6e04a2e80d30f7b871c3` 的现有正式安装，沿用原资料、石川巧决定、`gpt-6-luna`／`low`、线程预算 6、1800 秒超时及 r8 网络设置。按原配置表达式和既有绑定恢复该请求的消费者配置，与该失败请求保存的配置比较；请求直接采用其 `eval-request.json` 原字节，另存唯一的 `requests/rp04-02-user-retry1` 目录，沿用原评估入口、输出保存和判断方式。不向提示词添加委派提示，不修改技能，不另外发送模型预检，不重装仍有效的产品，不操作评估服务。若原配置或必要隔离服务无法保持，保留具体差异并停止，不能悄悄替换后记为同条件。
-
-此次追加授权只覆盖一个实际请求。若发生委派，等待本请求自然结束并按 RP-04 原观察点判断已完成阶段；仅创建子代理不等于 RP-04 通过。再次未委派、请求失败或超时都保存本次结果并停止自动重复，不覆盖原业务失败，也不把本次成功作为此前失败已修复的证明。后续新的用户决定和原必测项仍按其已有步骤处理，本授权不放宽其他请求的重试次数。
-
-本次 r12 仅落实用户对 `rp04-04-access` 失败后明确提出的“那我觉得这个有点像是模型能力问题，你再试一次说不定就ok了”：允许该访问决定请求按原条件再执行一次。此授权不要求先证明产品或外部环境已经修复，也不批准模型更换。执行者先采用原记录确认请求及委派均结束、没有待完成写入，核对目标和第一阶段快照仍为上个返回点且尚未下载全文；若已有变化则报告差异，不清除成果来制造相同条件。
-
-本次复用产品 `b983497308157dedec6b4d97f16c95dc0b0f60f9` 的现有正式安装及同一消费者位置，原模型 `gpt-6-luna`／`low`、预算 3、1800 秒、`oa_only` 决定及请求配置保持不变。使用保存的 `rp04-04-access/eval-request.json` 原字节，另存同一 r11 结果根的唯一 `requests/rp04-04-access-user-retry1` 目录，沿用原评估入口、输出及判断方式。比较实际消费者配置与原请求所存配置，确认必要隔离服务仍适用；无法保持时停止并报告，不擅自替换。不补操作提示、不预先生成或改写模型所需业务请求 JSON、不删除旧临时文件、不修改产品或业务状态，不重装、不另发模型预检，也不操作评估服务。
-
-本次授权只覆盖一个追加请求；不因再次失败自动延长上限。等待本请求自然结束并按 RP-04 原观察点记录实际推进，成功也不能证明旧失败已修复或整体通过。新出现的真实用户决定仍按已有交互步骤及合成申请者授权继续；原 `rp04-04-access`、路径修正通过及更早失败均保留。
-
-请求超时或返回 `termination_uncertain` 时，不启动第二份等价工作。先按现有服务状态与已保存产品状态确认上轮已停止及副作用；无法确认时保持无法判断并交执行负责人。已确认的业务失败不因网络、记录或清理错误被覆盖。新的用户决定是连续业务输入，不是重试；只提交当次真实决定，沿用先前有效成果。
-
-每次请求的请求文件、响应、HTTP 状态和必需业务产物都保存在自己的目录，前次不得覆盖。只有 RP-03 至 RP-05 留存所需相关调用片段，其余不额外保存全环境快照或逐调用账本。敏感配置仅在本轮受控目录，公开记录只写必要结论。
-
-Chrome、Zotero 在真正需要时按固定夹具启动入口分配独占状态，记录其返回的 `fixture.env`；结束后只用同一入口的 `stop <fixture.env>` 清理本轮实例，不按程序名称停止进程。配置准备目录只用现有 `prepare_codex_project_config.py --cleanup-run-dir` 清理带归属标记的本轮目录。测试结果交接前保留输入、失败尝试和必要输出；清理失败单列，不覆盖业务结论。评估服务不属于本轮可清理对象。
-
-### 执行时绑定及依赖顺序
-
-| 项目 | 已准备的安排与执行时绑定值 | 下一负责人 |
-|---|---|---|
-| D1 | 四输出、共享激活与固定 npx 命令已写明。RP_REPOSITORY、RP_REVISION 由产品发布交接绑定；RP_RUN 与两个消费者目录由上述 mktemp/mkdir 命令生成。 | 产品负责人交付实现；执行工程师绑定后运行 RP-01、RP-02。 |
-| D2 | 九个公开操作及数据约定来自已批准执行计划 r3；普通测试已经按该契约编写。RP_RUNTIME 由 RP-01 构建输出绑定；缺产品模块时不得改用开发代码或跳过。 | 执行工程师在实现交付后按各类命令运行；不一致按实际事实归属产品或测试问题。 |
-| D3 | 固定服务键、环境传递、配置合成和请求生成步骤已写明。动态端点取本轮 fixture.env，评估端口与已有程序位置取现有 direnv 配置。RP_THREAD_BUDGET 按本请求固定上游处理范围及累计创建数，在请求开始前绑定。最终消费者配置在正式安装后按给定表达式生成。 | 执行工程师绑定本轮值；外部访问故障交环境负责人。 |
-| D4 | RP-04 生成真实输入包、候选、快照、有效分析和选择范围；随后绑定 RP_INPUT_CASES。RP-08 生成真实成稿、决定和步骤保存件；随后绑定 RP_TEST_PROPOSAL、RP_SAVE_REQUESTS、RP_TEMPLATE_MAPPING、RP_RELATED_MATERIAL，并派生 RP-10、RP-12 输入。 | 正式执行工程师按顺序产生并保留，测试准备阶段不代跑、不伪造。 |
-
-本轮有限预检只确认：苹果芯片架构；`uv`、`jq`、`yq`、`xmllint`、Nix、Node/npm 可用；固定夹具及默认配置可读；共享资产重建成功；视觉必需配置值存在；小型载体、模板及修改稿已经生成且 ZIP/XML 结构和页面可检查。样本渲染使用现有文档工具随附的 LibreOfficeDev 26.8，不是产品计划要求的 LibreOffice 26.2.4 构建结果；作者环境 Pandoc 3.1.11.1 也不替代产品固定 3.7.0.2。没有把这些预检当作 RP-01、RP-06、RP-09 或 RP-10 的通过结果。
-
-## 结果、复验与交接
-
-正式执行时，每个编号及其必需场景仅记录实际产品版本、命令、通过／业务失败／无法判断／未执行、必要结果位置和简短说明。标准测试报告和直接阅读结果即可，不要求统一 JSON 或独立证据系统。JSON 或 XML 结果需要读取时按项目指定解析器检查相关字段，不靠文本关键词猜测。
-
-失败归属按事实处理：目标或检查方式有缺口由测试计划工程师补齐；执行步骤未落实交本地测试工程师；执行偏离交执行工程师；产品错误交产品负责人；外部访问或服务故障在无产品错误依据时记为无法判断。不得用后续清理、记录或网络错误覆盖已确认的业务失败。
-
-修改后只复核受影响的目标和步骤，未受影响的有效结果直接引用。文档调整、提交编号变化或审核偏好不自动触发完整重跑。只有本清单全部必要场景取得当前有效通过结果，且范围内已发现业务缺陷处理完成，才能申请第三关；本计划文件和计划审核通过均不表示产品测试已通过。
-
-下一负责人：主对话负责第二关审核；第二关通过且产品按计划交付后，本地执行工程师绑定实际值，按适用步骤执行。产品尚未实现不单独构成 Recipe 不完整。
+本次准备只运行本地输入构造、文件解析、语法和配置传输有限检查，不运行 unittest、产品入口或评估请求。准备审核与第二关完成后，正式执行由本地执行工程师按上述剩余项负责；全部历史及有效结果继续由 `test-results.md` 管理，不新增重复证据账本。

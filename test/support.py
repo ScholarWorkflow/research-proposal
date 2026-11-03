@@ -81,9 +81,9 @@ class SavedDraftCase(ComponentCase):
     def setUp(self):
         super().setUp()
         self.proposal = required_path("RP_TEST_PROPOSAL")
-        run = required_path("RP_RUN")
-        if not self.proposal.is_relative_to(run) or self.proposal == run:
-            raise RuntimeError("组件测试只可使用本轮独占运行目录中的真实稿件")
+        data_root = required_path("RP_CONSUMER") / "input"
+        if not self.proposal.is_relative_to(data_root) or self.proposal == data_root:
+            raise RuntimeError("组件测试只可使用本轮独占消费者 input 中的真实稿件")
         self.state_path = self.proposal / "研究计划状态.json"
         self.initial = read_json(self.state_path)
         self.assertIsNotNone(self.initial["current"], "须先取得 RP-08 的真实成稿")

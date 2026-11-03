@@ -252,9 +252,13 @@ class RecoveryTests(SavedDraftCase):
                     from support import FIXTURES
                     inputs["template_path"] = str(FIXTURES / "templates/transfer-form.pdf")
                 elif changed == "material":
-                    material = required_path("RP_RELATED_MATERIAL")
-                    self.assertTrue(material.is_relative_to(required_path("RP_RUN")))
-                    self.assertIn(str(material), inputs["material_paths"])
+                    material_record_path = required_path("RP_RELATED_MATERIAL_RECORD")
+                    material_record = read_json(material_record_path, ".material")
+                    material = Path(material_record["original_path"])
+                    if not material.is_absolute():
+                        material = material_record_path.parent / material
+                    material = material.resolve(strict=True)
+                    self.assertTrue(material.is_relative_to(required_path("RP_CONSUMER") / "input"))
                     original_material = material.read_bytes()
                     (self.output / "related-material-before").write_bytes(original_material)
                     # 临时替换可见正文，保证实际引用内容改变；不解码 Shift_JIS 原件。

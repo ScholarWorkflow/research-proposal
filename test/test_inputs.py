@@ -1,4 +1,4 @@
-"""RP-03、RP-06、RP-10 的组件检查；正式执行条件见 plan/test-plan.md。"""
+"""RP-03 至 RP-06、RP-10 的组件检查；正式执行条件见 plan/test-plan.md。"""
 
 from pathlib import Path
 import shutil
@@ -12,7 +12,7 @@ from support import (
 class DiscoveryTests(ComponentCase):
     def setUp(self):
         super().setUp()
-        # 路径与预期来自 RP-04 的真实保存件；缺少绑定应报错，不能跳过。
+        # 路径来自 prepare_inputs.py 的合成外部输入；缺少绑定不能跳过。
         self.cases = read_json(required_path("RP_INPUT_CASES"))
 
     def check_discovery(self, path, case, next_step):
@@ -54,6 +54,64 @@ class DiscoveryTests(ComponentCase):
         case = self.cases["without_candidates"]
         self.assertFalse(Path(case["candidate_file"]).exists())
         self.check_discovery(case["path"], case, "stage3")
+
+    def test_multiple_objects_and_directions_require_actual_selection(self):
+        case = self.cases["multiple"]
+        result = self.call("discover", {"path": case["application_root"]})
+        self.assertEqual(result["status"], "needs_input")
+        self.assertIsNone(result["selected"])
+        self.assertIn("professor_selection_required", {item["kind"] for item in result["issues"]})
+        self.assertEqual(
+            {Path(item["professor_path"]).resolve() for item in result["objects"]},
+            {Path(case["professor_path"]).resolve(), Path(case["other_professor_path"]).resolve()},
+        )
+        result = self.call("discover", {
+            "path": case["application_root"],
+            "selection": {"professor_path": case["professor_path"]},
+        })
+        self.assertEqual(result["status"], "needs_input")
+        self.assertIn("direction_selection_required", {item["kind"] for item in result["issues"]})
+        self.check_discovery(case["application_root"], case, "proposal")
+
+
+class UpstreamRoutingTests(ComponentCase):
+    def test_missing_inputs_return_the_required_next_step(self):
+        cases = read_json(required_path("RP_INPUT_CASES"))
+        # stage3 已由 RP-03 的缺候选用例覆盖，不重复执行。
+        for next_step in ("collect", "preview", "stage0", "stage1", "stage2"):
+            with self.subTest(next_step=next_step):
+                case = cases[next_step]
+                request = {"path": case["path"]}
+                if "selection" in case:
+                    request["selection"] = case["selection"]
+                result = self.call("discover", request)
+                self.assertEqual(result["status"], "ready")
+                self.assertEqual(len(result["objects"]), 1)
+                item = result["objects"][0]
+                self.assertEqual(item["next_step"], next_step)
+                self.assertEqual(Path(item["application_root"]).resolve(), Path(case["application_root"]).resolve())
+                if next_step == "collect":
+                    self.assertIsNone(item["professor_path"])
+                else:
+                    self.assertEqual(Path(item["professor_path"]).resolve(), Path(case["professor_path"]).resolve())
+
+
+class AnalysisRoutingTests(ComponentCase):
+    def test_loose_analysis_keeps_its_owner_and_required_prerequisites(self):
+        cases = read_json(required_path("RP_INPUT_CASES"))
+        for next_step in ("stage0", "stage1", "stage2"):
+            with self.subTest(next_step=next_step):
+                case = cases["analysis_" + next_step]
+                result = self.call("discover", {"path": case["path"], "selection": case["selection"]})
+                self.assertEqual(result["status"], "ready")
+                self.assertEqual(Path(result["selected"]).resolve(), Path(case["professor_path"]).resolve())
+                self.assertEqual(len(result["objects"]), 1)
+                item = result["objects"][0]
+                self.assertEqual(item["next_step"], next_step)
+                self.assertEqual(Path(item["application_root"]).resolve(), Path(case["application_root"]).resolve())
+                materials = {Path(value).resolve() for value in item["materials"]}
+                self.assertIn(Path(case["analysis_file"]).resolve(), materials)
+                self.assertIn(Path(case["facts_file"]).resolve(), materials)
 
 
 class MaterialTests(ComponentCase):
