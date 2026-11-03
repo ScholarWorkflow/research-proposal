@@ -8,7 +8,7 @@
 - 需求版本：`rp-requirements-2026-11-02-q6-q16`。
 - 执行计划：[implementation-plan.md](implementation-plan.md)，版本 `rp-plan-r3-2026-11-03`，校验值 `edf6692023be0e717ff454482c10763cc74c42885cc41ea8458fd1915fb69bcf`；批准依据见 [implementation-plan-review.md](implementation-plan-review.md)。
 - 目标仓库：`research-proposal`；工作树：`worktrees/research-proposal-plan`；分支：`feat/research-proposal`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r10-user-retry-2026-11-03`：保留 r5 至 r9 的配置修正、恢复授权、RP-13 原路径备份恢复及全部失败记录；本次仅落实用户明确授权的 RP-04 同条件追加一次请求，模型仍取原默认。准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录；r9 第三关不通过的结论保留，追加请求结果另记。
+- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r11-2026-11-03`：保留 r5 至 r10 的配置修正、恢复授权及全部失败记录；本次仅补齐用户授权的教授路径说明修正后，正式换版安装与 RP-04 原路径续接步骤，模型仍取原默认。准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录；此前第三关和正式失败结论保留，修正后结果另记。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
@@ -182,7 +182,7 @@
 
 ### 已准备的版本、输入和配置
 
-本节版本为 `rp-recipe-r9-2026-11-03`。它保留上面的全部业务检查，不增加通过条件。产品提交、发布来源、独占目录和服务端口在正式执行前按下文绑定；真实上游成果和成稿由指定的前序用例产生。执行结果和已经绑定的实际值见 `test-results.md` 及受控交接，不能将准备记录视作产品通过结果。
+本节版本为 `rp-recipe-r11-2026-11-03`。它保留上面的全部业务检查，不增加通过条件。产品提交、发布来源、独占目录和服务端口在正式执行前按下文绑定；真实上游成果和成稿由指定的前序用例产生。执行结果和已经绑定的实际值见 `test-results.md` 及受控交接，不能将准备记录视作产品通过结果。
 
 共享夹具已先在干净 `master` 上执行 `git pull --ff-only origin master`，结果为已是最新；本轮固定 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`。共享缓存原记录属于 `8cecafc694e4591dee47372f38903e5ac2b689fe`，所以只复用其中的不可变插件与下载缓存，在独立临时根重跑现有 `prepare_shared_test_assets_macos.sh`，没有修改旧缓存或生产配置。本轮新记录与固定夹具版本一致、工作树干净。没有启动 Chrome、Zotero 或模型业务请求。
 
@@ -553,6 +553,92 @@ cmp "$RP13_OUTPUT/project-config.before.toml" "$RP_PROJECT_CONFIG"
 ```
 
 请求目录、扫描输入、`proposal.after` 和缺配置输出全部保留；恢复失败时保留快照和已归档结果并停止，不继续操作部分恢复的稿件。后续交互从已还原的原稿和原有未决事项继续，不把故障请求中新增的内容当成用户确认。外部条件补齐后的正常扫描采用 RP-06 对同一原图、同一读取实现及正常视觉配置的已有结果；不再次调用视觉模型或另跑完整流程。r7/r8 的全部故障、失败和真实用户决定仍保留。
+
+### RP-04 修正后的换版和原路径续接
+
+用户已授权修正教授姓名到实际路径的使用说明后复验。旧 `rp04-03` 已自然结束；本次仅沿其真实方向决定继续，已有 183 条采集记录、10 个方向及所选 `dir_9dee2150fa6a456bc4e5` 保留，不重新采集或把正确教授路径、工具用法补进提示。产品的新完整提交由主代理发布后绑定为 `RP_NEW_REVISION`。模型仍为 `gpt-6-luna`／`low`，预算 3、超时 1800 秒；未批准的 sol/medium 候选不使用。
+
+未提交稿件可能保存绝对路径，不能把业务资料搬到新消费者路径再手改状态。本次仅新建构建、日志和请求根 `RP_RUN`，`RP_CONSUMER` 保持旧安装的原绝对位置。执行者先确认所有请求、委派、安装和写入均已结束，独占该消费者；以下代码块在同一 Bash 环境顺序执行。构建复用已有 Nix 缓存，按新远端固定提交使用原正式四输出；不重跑未受影响的 RP-01 验收、RP-02 或组件用例。
+
+```bash
+set -euo pipefail
+: "${RP_NEW_REVISION:?需要主代理已发布的完整修正提交}"
+source "$RP_RUN/config/run.env"
+RP_RUN_BEFORE_PATH_FIX="$RP_RUN"
+source "$RP_PREP/config/runtime-locations.env"
+source "$RP_RUN_BEFORE_PATH_FIX/config/runtime-bindings.env"
+RP_REVISION="$RP_NEW_REVISION"
+RP_REF="github:$RP_REPOSITORY/$RP_REVISION"
+RP_RUN="$(mktemp -d /private/tmp/research-proposal-run.XXXXXX)"
+mkdir -p "$RP_RUN/logs" "$RP_RUN/config" "$RP_RUN/requests" "$RP_RUN/activation-home"
+export XDG_CACHE_HOME="$RP_NIX_CACHE"
+nix build "$RP_REF#research-proposal-runtime" --out-link "$RP_RUN/runtime" \
+  > "$RP_RUN/logs/build-runtime.log" 2>&1
+nix build "$RP_REF#research-proposal" --out-link "$RP_RUN/package" \
+  > "$RP_RUN/logs/build-package.log" 2>&1
+nix build "$RP_REF#research-proposal-environment" --out-link "$RP_RUN/environment" \
+  > "$RP_RUN/logs/build-environment.log" 2>&1
+nix build "$RP_REF#research-proposal-activate" --out-link "$RP_RUN/activate" \
+  > "$RP_RUN/logs/build-activate.log" 2>&1
+```
+
+四条构建命令各自确认退出后才继续，失败时原消费者尚未改变。构建成功后将旧消费者完整归档，只读保留其产品、配置和业务数据；原位置建立空目录，仅预置原无关安装样本，再从新正式激活器安装。不得从旧归档复制 `.agents`、`.codex` 或产品代码来补装。安装成功后只原样恢复全部 `input` 及 `.test-runtime` 运行数据，后者包含已有知识库资料；不改任何 JSON 路径、确认、摘要或阶段状态。
+
+```bash
+test -d "$RP_CONSUMER"
+test ! -L "$RP_CONSUMER"
+mv "$RP_CONSUMER" "$RP_RUN/consumer.before"
+mkdir "$RP_CONSUMER"
+cp -pR "$RP_WORKTREE/test/fixtures/install/.agents" "$RP_CONSUMER/.agents"
+cp -pR "$RP_WORKTREE/test/fixtures/install/.codex" "$RP_CONSUMER/.codex"
+CODEX_HOME="$RP_RUN/activation-home" \
+  "$RP_RUN/activate/bin/research-proposal-activate" --project "$RP_CONSUMER" \
+  > "$RP_RUN/logs/activate.log" 2>&1
+test ! -e "$RP_CONSUMER/input"
+cp -pR "$RP_RUN/consumer.before/input" "$RP_CONSUMER/input"
+mkdir -p "$RP_CONSUMER/.test-runtime"
+cp -pR "$RP_RUN/consumer.before/.test-runtime/." "$RP_CONSUMER/.test-runtime/"
+RP_RUNTIME="$RP_RUN/runtime"
+RP_INSTALLED_CONFIG="$RP_RUN/config/installed-config.toml"
+cp -p "$RP_CONSUMER/.codex/config.toml" "$RP_INSTALLED_CONFIG"
+cp -p "$RP_RUN_BEFORE_PATH_FIX/config/runtime-bindings.env" "$RP_RUN/config/runtime-bindings.env"
+source "$CHROME_FIXTURE_ENV"
+source "$ZOTERO_FIXTURE_ENV"
+export RP_FIXTURES RP_KB_DATA RP_KB_CACHE RP_BROWSER_DATA RP_KB_SERVER_PATH
+export RP_VISION_FILE="$RP_VISION_CONFIG"
+export RP_THREAD_BUDGET=3
+```
+
+现在按前文唯一 `consumer-runtime.yq` 的完整配置合成块执行；`RP_RUN` 已是新根，其 `installed-config.toml` 必须是刚安装的新快照，不能读取旧根的同名文件。旧 r10 配置和安装快照不覆盖。原 Chrome、Zotero 的 profile/data 及视觉配置均在 `RP_PREP` 的独占路径，归档消费者不移动它们；采用原 `fixture.env` 的端点，不启停服务，不读取或重写视觉密钥。默认模型准备入口及原 `send-request.sh` 继续使用固定共享 defaults，不使用模型候选封装。
+
+配置合成成功后，以下绑定将新请求输出根与原消费者位置明确分开。旧 `RP_RUN_INITIAL`、`RP_RUN_PREVIOUS` 继续指向原有结果；新增 `RP_RUN_BEFORE_PATH_FIX` 保留这次换版前的根。实际新安装、配置和返回路径写入正常结果记录，不新增状态或来源证明程序。
+
+```bash
+for RP_BINDING in RP_WORKTREE RP_PREP RP_REPOSITORY RP_REVISION RP_REF RP_RUN \
+  RP_CONSUMER RP_NPX_CONSUMER RP_RUNTIME RP_RUN_INITIAL RP_RUN_PREVIOUS \
+  RP_NIX_CACHE RP_RUN_BEFORE_PATH_FIX; do
+  printf '%s=%q\n' "$RP_BINDING" "${!RP_BINDING}"
+done > "$RP_RUN/config/run.env"
+RP_REQUEST_DIR="$RP_RUN/requests/rp04-03-path-fix1"
+test ! -e "$RP_REQUEST_DIR"
+RP_TIMEOUT=1800
+RP_PROMPT="$(cat "$RP_RUN_BEFORE_PATH_FIX/requests/rp04-03/prompt.txt")"
+```
+
+随后按前文固定准备及评估入口发出这一次受影响请求；若复用现有 `send-request.sh`，向它传新 `config/run.env`、请求名 `rp04-03-path-fix1`、1800 秒、旧 `rp04-03/prompt.txt` 及旧 `thread-budget.md`。这些资料路径仍指向原位置，提示保持原自然语言决定，不添加教授绝对路径或组件参数。结果在新 `RP_RUN/requests/rp04-03-path-fix1/`，旧 `requests/rp04-03/`、183 条记录、预筛方向和所有失败历史仍保留。根据原 RP-04 的阶段成果与相关委派判断，不把安装成功、委派创建或先前采集完成当成本项通过。
+
+若归档后、请求发出前的安装、资料恢复或配置合成失败，先等待该操作明确结束，保存原错误与半成品；确认没有并行写入时按下列顺序回退。若结束或副作用不明，停止并交执行负责人，不移动正在使用的目录：
+
+```bash
+RP_FAILED_RUN="$RP_RUN"
+if [ -e "$RP_CONSUMER" ]; then
+  mv "$RP_CONSUMER" "$RP_FAILED_RUN/consumer.failed"
+fi
+mv "$RP_FAILED_RUN/consumer.before" "$RP_CONSUMER"
+source "$RP_RUN_BEFORE_PATH_FIX/config/run.env"
+```
+
+回退后只恢复旧运行绑定，保留新根中的构建日志、失败配置与半成品，不自动用旧产品重发请求；回退不完整时停止并保留两份目录。请求一旦发出，不自动覆盖业务资料或回退消费者；依已有结束及副作用规则保留本次实际状态。修正后仍失败或不确定时停止并交相应负责人，不重复采样、不换模型，也不清除已有成果来重跑采集。本次只修教授路径说明及必要安装续接，不引入通用迁移能力。
 
 ### 外部故障、输出与清理
 
