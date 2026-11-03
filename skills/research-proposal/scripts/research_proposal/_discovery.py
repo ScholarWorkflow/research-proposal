@@ -103,6 +103,22 @@ def _analysis_directory(path: Path, root: Path | None) -> Path | None:
     return None
 
 
+def _analysis_locations(path: Path) -> list[Path]:
+    """Locate analysis clues in the given scope without assigning an owner."""
+    directories = set()
+    current = _analysis_directory(path, None)
+    if current is not None:
+        directories.add(current)
+    if path.is_dir():
+        for entry in _files(path):
+            if entry.suffix.lower() != ".md" and entry.name != "_index.json" and not entry.name.endswith((".facts.json", ".future_work.json")):
+                continue
+            directory = _analysis_directory(entry, None)
+            if directory is not None:
+                directories.add(directory)
+    return sorted(directories)
+
+
 def _linked_analysis_owner(path: Path, root: Path) -> Path | None:
     """Resolve a routing association, not the validity of an analysis.
 
@@ -168,14 +184,30 @@ def _professors(path: Path, root: Path) -> list[Path]:
         # Application ownership does not widen an explicit material subfolder
         # to every professor in that application.
         return []
-    return sorted({
-        entry.parent for entry in _files(scope)
-        if entry.name in _MARKERS and entry.parent != research
-    })
+    professors = set()
+    for entry in _files(scope):
+        if entry.name in _MARKERS and entry.parent != research:
+            professors.add(entry.parent)
+        elif entry.name == "_index.json" and entry.parent.name == "论文分析":
+            # A container may hold only associated reports, before any target,
+            # snapshot or pack exists. Resolve the directory rather than the
+            # index file so the recorded report association is still required.
+            owner = _linked_analysis_owner(entry.parent, root)
+            if owner is not None:
+                professors.add(owner)
+    return sorted(professors)
 
 
 def _materials(path: Path) -> list[str]:
-    return [str(entry.resolve()) for entry in _files(path) if entry.suffix.lower() in _CARRIERS or entry.name in _MARKERS or entry.name in {"info.json", "boshu_analysis.json"}]
+    materials = []
+    for entry in _files(path):
+        analysis_record = (
+            (entry.name == "_index.json" or entry.name.endswith((".facts.json", ".future_work.json")))
+            and _analysis_directory(entry, None) is not None
+        )
+        if entry.suffix.lower() in _CARRIERS or entry.name in _MARKERS or entry.name in _APPLICATION_FILES or analysis_record:
+            materials.append(str(entry.resolve()))
+    return materials
 
 
 def _material_scope(path: Path, root: Path | None, selection: dict) -> dict:
@@ -186,17 +218,18 @@ def _material_scope(path: Path, root: Path | None, selection: dict) -> dict:
     if not materials:
         return result("needs_input", [issue("application_materials_required", "给定范围内缺少可读取材料；请补充实际研究材料或合格招生项目路径。", str(path))], objects=[], selected=None)
     directory = path if path.is_dir() else path.parent
-    analysis_directory = _analysis_directory(path, None)
+    analysis_locations = _analysis_locations(path)
     ambiguous = (
         bool(selection)
-        or analysis_directory is not None
+        or bool(analysis_locations)
         or path.is_file() and path.name in _UPSTREAM_FILES | _APPLICATION_FILES
         or path.is_dir() and any((path / name).is_file() for name in _MARKERS + ("boshu_analysis.json",))
     )
     problems = []
     if ambiguous:
-        if analysis_directory is not None:
-            problems.append(issue("input_role_required", "当前论文分析索引未能确认本次报告与教授的关联；请明确这是哪位教授的既有分析，还是独立研究材料。原范围保留，不默认转入非论文路线。", str(analysis_directory / "_index.json")))
+        if analysis_locations:
+            for analysis_location in analysis_locations:
+                problems.append(issue("input_role_required", "该论文分析目录中的报告或事实文件尚未确认与教授的关联；请明确这是哪位教授的既有分析，还是独立研究材料。给定范围与文件位置已保留，不默认转入非论文路线。", str(analysis_location)))
         else:
             problems.append(issue("input_role_required", "该范围含项目或上游材料线索，但尚不能确定本次要读取研究材料还是继续某位教授的流程；请明确用途或给出对应项目/教授目录。当前保留给定范围，不扩大到其他教授。", str(path)))
     item = {
@@ -345,9 +378,12 @@ def discover(request: dict) -> dict:
     root = _root(path)
     if root is None:
         return _material_scope(path, None, selection)
-    professors = _professors(path, root)
-    if not professors and path not in {root, root / "教授研究"}:
-        return _material_scope(path, root, selection)
+    # These explicit project artifacts identify the application itself. Other
+    # files and subfolders keep their supplied scope, even beside project data.
+    scope = root if path.is_file() and path.name in _APPLICATION_FILES else path
+    professors = _professors(scope, root)
+    if not professors and (scope not in {root, root / "教授研究"} or _analysis_locations(scope)):
+        return _material_scope(scope, root, selection)
     if selected_path is not None and professors:
         if selected_path not in professors:
             inventory = [{"application_root": str(root), "professor_path": str(professor), "materials": [], "valid_artifacts": {}, "next_step": "needs_input"} for professor in professors]
@@ -359,7 +395,7 @@ def discover(request: dict) -> dict:
     if not objects:
         problems: list[dict] = []
         metadata = _read(root / "info.json", problems)
-        materials = _materials(path if path.is_dir() else root)
+        materials = _materials(scope if scope.is_dir() else root)
         source_files = [value for value in materials if Path(value).suffix.lower() in _CARRIERS]
         eligible = bool(metadata and metadata.get("university") and metadata.get("department") and source_files)
         step = "collect" if eligible else "needs_input"

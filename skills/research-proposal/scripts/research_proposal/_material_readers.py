@@ -406,6 +406,18 @@ def read_epub(path: Path, directory: Path, *, movable_root: Path | None = None) 
                     for node in document.iter():
                         if isinstance(node.tag, str):
                             node.tag = etree.QName(node).localname
+                            if node.tag.lower() == "meta":
+                                attributes = {name.lower(): name for name in node.attrib}
+                                if "charset" in attributes:
+                                    node.set(attributes["charset"], "utf-8")
+                                equivalent = node.get(attributes.get("http-equiv", "http-equiv"), "")
+                                if equivalent.strip().lower() == "content-type" and "content" in attributes:
+                                    content_type = Message()
+                                    content_type["content-type"] = node.get(attributes["content"], "text/html")
+                                    content_type.set_param("charset", "utf-8", header="content-type", replace=True)
+                                    node.set(attributes["content"], str(content_type["content-type"]))
+                    # XML has already decoded the source; old HTML metadata must describe
+                    # this UTF-8 serialization rather than trigger a false second conflict.
                     content = etree.tostring(document, encoding="utf-8", method="html")
                     content = b'<meta charset="utf-8">' + content
                 chapter_blocks, chapter_issues, body = _read_html_bytes(content, member, "epub", directory)
