@@ -15,12 +15,13 @@ from zipfile import BadZipFile
 
 from lxml import etree
 
-from ._common import hash_file, issue, json_digest, read_json, result, write_json
+from ._common import hash_file, issue, json_digest, result
 from ._material_readers import (
     ast_text, decode_text, pandoc_body, read_docx, read_epub, read_html,
     read_image, read_pdf, read_text,
 )
 from ._material_word import read_word_structure, without_comments
+from ._record_paths import decode_record_paths, read_record, write_record
 
 
 def _path(request: dict, field: str) -> Path:
@@ -65,15 +66,18 @@ def read_material(request: dict) -> dict:
     }
     extension = path.suffix.lower()
     readers = {
-        ".txt": lambda: read_text(path, directory, False),
-        ".md": lambda: read_text(path, directory, True),
-        ".markdown": lambda: read_text(path, directory, True),
-        ".html": lambda: read_html(path, directory), ".htm": lambda: read_html(path, directory),
-        ".xhtml": lambda: read_html(path, directory), ".epub": lambda: read_epub(path, directory),
-        ".docx": lambda: read_docx(path, directory), ".pdf": lambda: read_pdf(path, directory),
+        ".txt": lambda: read_text(path, directory, False, movable_root=output),
+        ".md": lambda: read_text(path, directory, True, movable_root=output),
+        ".markdown": lambda: read_text(path, directory, True, movable_root=output),
+        ".html": lambda: read_html(path, directory, movable_root=output),
+        ".htm": lambda: read_html(path, directory, movable_root=output),
+        ".xhtml": lambda: read_html(path, directory, movable_root=output),
+        ".epub": lambda: read_epub(path, directory, movable_root=output),
+        ".docx": lambda: read_docx(path, directory, movable_root=output),
+        ".pdf": lambda: read_pdf(path, directory, movable_root=output),
     }
     if extension in {".png", ".jpg", ".jpeg", ".webp", ".gif", ".tif", ".tiff", ".bmp"}:
-        readers[extension] = lambda: read_image(path, directory)
+        readers[extension] = lambda: read_image(path, directory, movable_root=output)
     record_path = directory / "材料.json"
     if extension not in readers:
         material["issues"] = [issue("conversion_required", f"尚不支持 {extension or '无扩展名'} 载体，请转换为 PDF、图片、TXT、Markdown、HTML、EPUB 或 DOCX；原文件保留。", str(path))]
@@ -96,7 +100,7 @@ def read_material(request: dict) -> dict:
             material["issues"] = [issue("material_read_failed", f"材料未能读完：{type(error).__name__}: {error}", str(path))]
             # A failed retry must not erase a previously readable extraction of these bytes.
             if record_path.is_file():
-                previous = read_json(record_path)
+                previous = read_record(record_path)
                 if previous.get("digest") == digest:
                     material["blocks"] = previous.get("blocks", [])
                     material["reader"] = previous.get("reader", material["reader"])
@@ -105,7 +109,7 @@ def read_material(request: dict) -> dict:
                         if field in previous:
                             material[field] = previous[field]
             status = "blocked"
-    write_json(record_path, material)
+    write_record(record_path, material, movable_root=output)
     return result(status, material["issues"], material=material, material_path=str(record_path))
 
 
@@ -148,7 +152,7 @@ def import_revision(request: dict) -> dict:
 
     baseline = None
     try:
-        baseline = read_json(baseline_path)
+        baseline = read_record(baseline_path)
         if not isinstance(baseline, dict) or not isinstance(baseline.get("blocks"), list) or not baseline.get("pandoc-api-version"):
             raise ValueError("基准不是 Pandoc 正文结构。")
         _preserve(baseline_path, directory / "基准")
@@ -164,12 +168,15 @@ def import_revision(request: dict) -> dict:
             comments.extend(structure["comments"])
             unsupported.extend(structure["unsupported"])
             body = without_comments(pandoc_body(original, "docx+styles", media_dir=directory / "media", track_changes=True))
+            body = decode_record_paths(body, path.parent)
             if structure["changes"]:
                 issues.append(issue("unresolved_changes", "已保留插入、删除及其他未决修订；需按用户已有决定处理，导入没有接受或拒绝它们。", str(original)))
             for item in unsupported:
                 issues.append(issue("unsupported_word_object", item["text"], item["location"]))
         elif path.suffix.lower() in {".md", ".markdown"}:
             body = pandoc_body(None, "markdown", data=decode_text(original).encode("utf-8"))
+            # Relative media belong to the submitted source, not its archived copy or the process cwd.
+            body = decode_record_paths(body, path.parent)
         else:
             issues.append(issue("conversion_required", "修改稿需为 DOCX 或 Markdown；请转换后重新导入，原件已保留。", str(original)))
         if body is not None and baseline is not None:
@@ -183,9 +190,9 @@ def import_revision(request: dict) -> dict:
                       source_digest=source_digest, baseline_digest=baseline_digest)
     if body is not None:
         body_path = directory / "待处理正文.json"
-        write_json(body_path, body)
+        write_record(body_path, body, movable_root=output)
         imported["body_path"] = str(body_path)
     record_path = directory / "导入记录.json"
     imported["import_record"] = str(record_path)
-    write_json(record_path, imported)
+    write_record(record_path, imported, movable_root=output)
     return imported

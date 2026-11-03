@@ -1,14 +1,16 @@
-# 论文前置与交接
+# 招生项目与教授资料前置
+
+`discover` 返回 `collect`、`preview` 或 `stage0` 至 `stage3` 时必须执行本文件对应分支。它包括从招生项目开始的流程，当前没有论文、没有教授选择或研究主题属于任何学科，都不改变这个路由。只有发现结果为 `read_materials` 时才转入主技能的独立材料路线。
 
 本文件只安排缺少的阶段；各阶段的事实生成、参数校验、缓存和收尾继续由原仓库负责。使用当前环境已安装的 `professor-contact`、`professor-collector`、`professor-topic-clustering`，不引用开发目录或从上游 Markdown 拼造正式 JSON。
 
-执行任一 contact 阶段前，读取已安装 `professor-contact/SKILL.md` 的运行入口、原生委派、收尾要求，以及该阶段**完整章节**。调用时只给本阶段业务输入，不把 caller 路由说明复制进子任务。原命名代理必须委派、等待、消费；主线程不得因自己能读论文而代替它。
+执行采集或预筛前，读取对应已安装技能的调用规则；执行任一 contact 阶段前，读取已安装 `professor-contact/SKILL.md` 的运行入口、原生委派、收尾要求，以及该阶段**完整章节**。随后使用本会话 `spawn_agent` 调用下表准确名称，等待子代理结束并消费结果。调用时只给本阶段业务输入，不把 caller 路由说明复制进子任务。主线程不得因自己能读取招生材料、网页或论文而代替该阶段。
 
 ## 按发现结果继续
 
 | `next_step` | 必要业务与已安装代理 |
 |---|---|
-| `collect` | `professor-collector`：`folder_path` 为申请资料根，传用户已有教授范围，`skip_pdf:true`。只做初始采集，定向补全文留给第一阶段。 |
+| `collect` | `professor-collector`：`folder_path` 为发现结果的 `application_root`，`skip_pdf:true`。用户已有教授范围才传入；没有选择时仍真实委派，让 collector 返回实际教授选择需求，不能由主线程先读网页选教授或编研究问题。只做初始采集，定向补全文留给第一阶段。 |
 | `preview` | `professor-topic-clustering`：同一 `folder_path`、已有教授范围、`preview:true`。摘要分类用于选择范围，不证明全文结论。 |
 | `stage0` | `professor-contact`：同一 `folder_path`；用户已有明确教授/方向决定才传其正式选择输入。没有决定也要先委派，让 owner 返回当前真实选项；向用户展示后再把决定交回。 |
 | `stage1` | `professor-contact-downloader`：同一 `folder_path`；将阶段 0 成功事务返回的教授本地 `target_state` 原路径按其 `target_files` 格式传入。原 owner 建立/核对候选快照，只补缺少全文。 |
@@ -16,7 +18,7 @@
 | `stage3` | `professor-contact-idea-generator`：只用原检查认可的输入包，指定方向时传精确 `direction_id`。完成下面的 Codex caller 收尾后再重新发现。 |
 | `proposal` | 读取已认可输入与候选，进入研究计划自己的问题选择与设计，不运行邮件阶段。 |
 
-每个阶段结束后消费它返回的真实状态和缺项，再运行发现检查以判断下一项。不要为了“从第一步开始”重跑有效输入；也不要把已有分析、某个 Markdown 或候选文件存在当成阶段完成。
+每个阶段完成原收尾后，消费它返回的真实状态和缺项，再运行 `discover` 并执行新 `next_step`。缺少选择时保留原阶段，向用户呈现该代理返回的实际问题；不要改成主线程生成研究计划候选。只有本轮真实原生委派返回运行时错误才能报告委派阻塞，不能以尚未调用或没有论文作为阻塞理由。有效产物继续复用；文件存在或已阅读招生资料不表示上游阶段完成。
 
 零散分析缺 `套磁候选输入.json` 时，先落实该教授的有效 `套磁目标.json` 和 `套磁阶段1候选.json`。目标缺失/失效就补预筛和阶段 0；快照缺失/失效就交阶段 1。两者成立后才能交阶段 2 复用分析，随后阶段 3。有效输入包可直接交阶段 3，不必重跑阶段 2。
 

@@ -14,6 +14,10 @@ import tempfile
 from uuid import uuid4
 
 from ._common import hash_file, issue, json_digest, read_json, result, write_json
+from ._record_paths import (
+    LITERAL_FIELDS, PATH_FIELDS, PATH_LIST_FIELDS, decode_record_paths, encode_record_paths,
+    write_record,
+)
 
 
 STATE_NAME = "研究计划状态.json"
@@ -21,6 +25,7 @@ BODY_NAME = "正文.json"
 REFERENCE_NAME = "引用定位.json"
 STAGES = ("materials", "question", "scheme", "body", "docx", "md", "review")
 FORMAT_NAMES = {"docx": "研究计划草稿.docx", "md": "研究计划草稿.md"}
+STORED_PATH_BASE = "."
 
 
 def _absolute(value: str | Path) -> str:
@@ -274,13 +279,20 @@ def _sync_work(work: dict, inputs: dict | None = None) -> bool:
     return work != before
 
 
-def _remap(value, old: Path, new: Path):
+def _remap(value, old: Path, new: Path, field=None):
     """只更新位于本轮目录内的记录路径，不改写源材料。"""
     if isinstance(value, dict):
-        return {_remap(key, old, new): _remap(item, old, new) for key, item in value.items()}
+        return {
+            _remap(key, old, new, "path"): deepcopy(item) if key in LITERAL_FIELDS else _remap(item, old, new, key)
+            for key, item in value.items()
+        }
     if isinstance(value, list):
-        return [_remap(item, old, new) for item in value]
-    if isinstance(value, str) and Path(value).is_absolute():
+        return [_remap(item, old, new, field) for item in value]
+    state_paths = {
+        "directory", "work_directory", "target_directory", "data", "body", "references",
+        "docx", "md", "preview_pdf", "location",
+    }
+    if field in PATH_FIELDS | PATH_LIST_FIELDS | state_paths and isinstance(value, str) and Path(value).is_absolute():
         try:
             return str(new / Path(value).relative_to(old))
         except ValueError:
@@ -324,7 +336,7 @@ def _existing_artifacts(work: dict, *, valid_only=False) -> dict:
 
 def _support_files(work: dict) -> None:
     directory = Path(work["directory"])
-    write_json(directory / "研究计划输入.json", work["inputs"])
+    write_record(directory / "研究计划输入.json", work["inputs"], movable_root=directory)
     notes = []
     for name in ("question", "scheme"):
         if work["confirmations"][name]["status"] != "confirmed":
@@ -358,6 +370,7 @@ def _new_work(directory: Path, inputs: dict, base_revision=None) -> dict:
         "checks": {"content_consistent": False, "pages_ok": False},
         "pending_commit": None, "committed": False, "artifacts": {},
         "template_path": inputs.get("template_path"), "mapping": None,
+        "stored_path_base": STORED_PATH_BASE,
     }
     work["fingerprints"] = _snapshot(work)
     return work
@@ -438,7 +451,7 @@ def begin_revision(request: dict) -> dict:
             for stage in ("docx", "md", "review"):
                 work["steps"][stage] = {"status": "pending", "artifacts": {}, "issues": []}
             work["checks"] = {"content_consistent": False, "pages_ok": False}
-            _sync_work(work, inputs)
+            _sync_work(work, _remap(inputs, old_directory, work_directory))
         else:
             work_directory.mkdir(parents=True)
             work = _new_work(work_directory, inputs)
@@ -454,7 +467,7 @@ def _stage_content(stage: str, data):
         return {"scheme": data["scheme"], "conditions": data["conditions"]}
     if stage == "body":
         return {"body": data["body"], "references": data["references"]}
-    return data
+    return {key: value for key, value in data.items() if key != "path_base"} if isinstance(data, dict) else data
 
 
 def save_revision(request: dict) -> dict:
@@ -484,6 +497,9 @@ def save_revision(request: dict) -> dict:
         work, rejected = _work_for_write(directory, state, request)
         if rejected:
             return rejected
+        work_directory = Path(work["directory"])
+        if isinstance(data, dict) and data.get("path_base") == STORED_PATH_BASE:
+            data = decode_record_paths(data, work_directory)
         changed = _sync_work(work)
         if stage == "body":
             problems = _body_prerequisites(work)
@@ -491,7 +507,8 @@ def save_revision(request: dict) -> dict:
                 if changed:
                     _persist_work(directory, state, work)
                 return _response(state, "needs_input", problems)
-        content_digest = json_digest(_stage_content(stage, data))
+        saved_data = encode_record_paths(data, work_directory, movable_root=work_directory)
+        content_digest = json_digest(_stage_content(stage, saved_data))
         differs = work["steps"][stage].get("content_digest") != content_digest
         if differs:
             dependent = {
@@ -503,10 +520,10 @@ def save_revision(request: dict) -> dict:
             _invalidate(work, dependent, issue("step_changed", "上游步骤已更新，需要继续对应的后续步骤。", stage))
             if stage == "question":
                 _unconfirm(work, ("scheme",))
-        work_directory = Path(work["directory"])
         # 每次保存件独立命名；状态替换中断也不会覆盖先前保存件。
-        data_path = work_directory / "步骤" / f"{stage}-{uuid4().hex}.json"
-        write_json(data_path, data)
+        # 步骤快照与正文同在修订根，嵌入的 Pandoc 目标使用相同文件基准。
+        data_path = work_directory / f"步骤-{stage}-{uuid4().hex}.json"
+        write_record(data_path, saved_data, movable_root=work_directory)
         artifacts = {"data": str(data_path)}
         if stage in {"question", "scheme"}:
             work["confirmations"][stage] = deepcopy(data["confirmation"])
@@ -518,14 +535,15 @@ def save_revision(request: dict) -> dict:
         if stage == "scheme":
             work["conditions"] = deepcopy(data["conditions"])
         if stage == "body":
-            write_json(work_directory / BODY_NAME, data["body"])
-            write_json(work_directory / REFERENCE_NAME, data["references"])
+            write_record(work_directory / BODY_NAME, saved_data["body"], movable_root=work_directory)
+            write_record(work_directory / REFERENCE_NAME, saved_data["references"], movable_root=work_directory)
             artifacts.update(body=str(work_directory / BODY_NAME), references=str(work_directory / REFERENCE_NAME))
         if isinstance(data, dict) and "pending_items" in data:
             work["pending_items"] = deepcopy(data["pending_items"])
         work["steps"][stage] = {
             "status": "complete", "artifacts": artifacts, "issues": [],
             "content_digest": content_digest, "fingerprints": _artifact_digests(artifacts),
+            "path_base": STORED_PATH_BASE,
         }
         _persist_work(directory, state, work)
         return _response(state, revision_id=request["revision_id"], directory=work["directory"])

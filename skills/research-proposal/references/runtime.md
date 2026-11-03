@@ -8,17 +8,29 @@
 
 九个操作均接收一个 JSON 对象，输出一个 JSON 对象。标准输出是结果，诊断在标准错误。`status` 为 `ready` 或 `committed` 时退出 0，`needs_input`、`blocked`、`conflict` 时退出 2；程序意外错误保留非零错误，不能忽略。`ready` 只表示本次操作完成。
 
-结果都有 `issues: [{kind, message, location}]`，路径均为绝对路径。用结构化解析读取结果，不按日志关键词推断成功。请求文件与结果放在资料工作目录或独立临时目录，用户资料不能写入安装目录。
+结果都有 `issues: [{kind, message, location}]`，公开操作返回的路径均为绝对路径，可直接消费。用结构化解析读取结果，不按日志关键词推断成功。请求文件与结果放在资料工作目录或独立临时目录，用户资料不能写入安装目录。
+
+产品保存的记录使用自己的文件目录作为路径基准：非 AST 的 JSON 字典以 `path_base: "."` 声明，已知本地引用按**该记录文件所在目录**解释；标准 Pandoc JSON 和列表记录保留原结构，不增加此字段，但同样以各自 JSON 文件所在目录解释相对引用。属于同一修订内的引用可以包含 `..`，独立外部来源仍保留绝对路径。正文中的本地图片及链接目标也遵守这一规则，不能按当前工作目录解释。
+
+读取保存件时，先用状态入口或公开操作返回的实际文件路径定位记录，再据该文件目录解析相对引用。跨稿复用先把源记录中的相对引用解析为源文件目录下的绝对目标，再传给现有业务操作；不要用新稿目录或另一个修订根替换来源基准。Markdown 修改稿的本地媒体以用户原稿所在目录为准，保留副本不改变此基准。原件字节、服务原始输出和用户原话保持原样；这些文本里的路径不作为产品引用自动改写。
 
 ## 发现和材料读取
 
 | 操作 | 请求 | 消费结果 |
 |---|---|---|
 | `discover` | `path`，可选 `selection: {professor_path, direction_id}`，只传真实已有选择 | `objects` 每项含 `application_root`、`professor_path`、`materials`、`valid_artifacts`、`next_step`；`selected` 为选中路径或空。有效产物以原检查为准；多对象未选择时先取得决定。 |
-| `read_material` | `path`、`material_type`、`source`、`output_dir` | 保存 `material` 全部字段与原件位置；不可只复制提取正文。`source` 是已知出处字符串，未知时如实标记待核，不伪造出版社、页码等。 |
+| `read_material` | `path`、`material_type`、`source`、`output_dir` | 将 `output_dir` 设在资料或本稿工作目录，保存完整返回 JSON；后续 `materials` 直接采用其中完整的 `material` 对象，不手工重建或缩写材料记录。`source` 是已知出处字符串，未知时如实标记待核，不伪造出版社、页码等。 |
 | `import_revision` | `path`、`baseline_body`、`output_dir` | `body` 是待处理 AST，`original_copy` 是保留原件；`changes`、`comments`、`unsupported` 均为 `{kind,text,location}` 数组。导入不更新正式正文或确认。 |
 
+消费 `discover` 后，按主技能的 `next_step` 表执行。`collect`、`preview`、`stage0` 至 `stage3` 立即转入 [招生项目与教授资料前置](upstream.md)，读取对应原规则并真实委派、等待和消费；其中需要的教授或方向选择由原代理返回。`proposal` 才采用已有正式候选进入本稿选题，`read_materials` 才进入独立材料路线。`ready` 表示发现操作完成，不能将它解读为上游资料已经齐全，也不能按学科自行跳过返回的阶段。
+
 `material` 包含 `material_id`、`material_type`、`source`、`original_path`、`digest`、`reader`、`blocks`、`issues`。块为 `{block_id,text,locator}`；扫描识别的 `text` 在回图核对前只是候选转录，附加字段见下文。`interpretation` 中带 `unverified_output_structure` 的片段来源尚未核对，字段名称不能证明它一定是模型解释。引用采用实际返回定位：PDF 物理页从 1 开始；图片区域为 `bbox`；文本行、段落从 1 开始；EPUB/HTML 有 `fragment`、`paragraph`；Word 的段落或表格行列从 0 开始，没有稳定分页不填页码。
+
+从读取结果进入保存步骤时，先把完整返回 JSON 保存为资料或本稿工作目录内的实际文件；命令行调用可将标准输出直接写入该结果文件，再用 `jq` 解析，不必在会话中回显全部原文。请求和处理中间文件可使用本次独立临时目录，但会继续采用的材料结果及其引用文件必须保存在资料或稿件目录，不能只留固定临时路径后手抄梗概。
+
+从保存的读取结果提取完整 `.material` 对象，直接放入 `save_revision.data.materials`；保留每块的 `block_id`、`text`、`locator`、读取方式、来源字段及缺项。不要为节省篇幅只选几块，也不要把中文概述、翻译或情节解释写回 `blocks.text`。主技能写的摘要、解释和核对记录放在材料步骤数据的独立条目中，用原 `material_id`、`block_id` 和 `locator` 关联；候选问题的解释也引用这些实际定位。组件按前述规则保存相对路径不改变这些记录的来源，主技能不能借此更换身份或原件目标。
+
+出现乱码、解码失败或正文无法核对时，保留完整读取结果并记录缺项；通过组件重读能够正确解码的原件，不能手工拼出“已读原文”。确需转换载体或编码时，保留原文件，把转换结果另存为副本，再以副本路径调用 `read_material`。原件和副本是两份材料记录，各自保留组件返回的 `material_id`、`digest`、`original_path`；转换说明及已核对的对应位置另外关联。不得保留副本指纹却把 `original_path` 改为原件，也不得用副本定位直接冒充原件定位。尚不能确认的对应关系继续列为缺项。
 
 扫描图片由安装后的 `vision-glance` 读取，使用用户明确提供的 `VISION_ENV_FILE`。服务输出是自由文本，不保证标出遮挡、缺字或可靠区分转录与解读。密集小字必要时分区读取并保留原页区域；消费以下实际字段：
 
@@ -27,7 +39,7 @@
 | `blocks[].verification`、`raw_output_path` | 识别块标记为 `needs_input`；`raw_output_path` 保留完整输出或旧缓存原字符串，普通段落也须回看原图。 |
 | `interpretation[]` | 来源未核对的结构片段，如引用块或 HTML 注释；每项有 `kind: unverified_output_structure`、`text`、`locator`、`verification: needs_input`、`raw_output_path`。保留它们，逐处核对来源，不能一律断言是服务添加的解读。 |
 | `ocr_outputs[]` | 每项保留 `raw_output_path`、`input_image`、`input_bbox`、`locator`、`origin`。`input_image` 是实际送入客户端的图片或页图，`input_bbox` 是实际 `--region` 像素框，`locator` 对应原图或 PDF 区域；`origin` 区分 `live_stdout` 与 `legacy_cache_text`。 |
-| `issues` | 所有未核对识别区域有 `ocr_visual_review_required`；已有 `[?]` 另有 `uncertain_transcription`，来源未核对的结构片段有 `ocr_output_structure_unverified`。保留这些缺项，不能因服务未输出 `[?]` 就认定文字完整。 |
+| `issues` | 所有未核对识别区域有 `ocr_visual_review_required`；已有 `[?]` 另有 `uncertain_transcription`，来源未核对的结构片段有 `ocr_output_structure_unverified`。保留这些缺项，不能因服务未输出 `[?]` 就认定文字完整。识别错误的诊断文件由 `location.diagnostic_path` 指定，不从 `message` 文本提取路径。 |
 
 读取结果后实际查看 `original_path` 对应原页/图片及 `ocr_outputs` 中的输入区域，逐处确认采用的原文。在 `materials` 步骤数据中附核对记录：材料编号、块或片段、实际页/区域、采用原文、具体不能辨认处及其定位；保留原输出和原有缺项，使后来能区分服务候选与已核对摘录。笼统的“识别结果待核”不能作为已完成核对的记录。无法判断的片段继续待核，不能当作已确认原文引用，也不能把遮挡或缺字改写成原文空白。
 
@@ -64,7 +76,7 @@
 
 | `stage` | `data` |
 |---|---|
-| `materials` | `{materials:[完整材料记录], candidates:[候选], literature:[补查记录], issues:[缺项], pending_items:[待确认文字]}`。候选说明问题、材料编号和定位、价值、方法、缺项；补查记录保留来源、读取范围、结论及定位。组件保存整个对象，路径在 `steps.materials.artifacts.data`。 |
+| `materials` | `{materials:[read_material返回的完整material对象], candidates:[候选], literature:[补查记录], issues:[缺项], pending_items:[待确认文字]}`。摘要、解释、转换与原文核对可在同一 `data` 内另记，不能改写 `materials` 中的组件记录。候选说明问题、材料编号和定位、价值、方法、缺项；补查记录保留来源、读取范围、结论及定位。组件保存整个对象，路径在 `steps.materials.artifacts.data`。 |
 | `question` | `{question_id, text, confirmation, pending_items}`。先保存具体候选或待选问题，再取得用户真实决定；选定后固定本稿核心问题编号。 |
 | `scheme` | `{scheme, conditions:{resolved,notes}, confirmation, pending_items}`。`scheme` 保存实际中文方案、方法、验证、期限、备用和来源；未解决的条件用 `resolved:false`。 |
 | `body` | `{body: Pandoc文档对象, references:[引用关联], pending_items}`。正文必须基于当前有效的问题与方案确认、已解决关键条件。 |

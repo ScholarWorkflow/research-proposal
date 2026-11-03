@@ -19,6 +19,8 @@ _MARKERS = (
     "papers.json", "方向预筛.json", "套磁目标.json", "套磁阶段1候选.json",
     "套磁候选输入.json", "套磁候选状态.json",
 )
+_UPSTREAM_FILES = {*_MARKERS, "套磁候选分析.md", "套磁想法候选.md", "套磁选择.json", "方向素材.json"}
+_APPLICATION_FILES = {"info.json", "boshu_analysis.json"}
 _CARRIERS = {".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".txt", ".md", ".epub", ".html", ".htm", ".docx"}
 _OMIT = {".git", ".agents", ".codex", ".venv", "__pycache__", "node_modules"}
 
@@ -90,20 +92,82 @@ def _root(path: Path) -> Path | None:
     return None
 
 
+def _analysis_directory(path: Path, root: Path | None) -> Path | None:
+    directory = path if path.is_dir() else path.parent
+    research = root / "教授研究" if root else None
+    for candidate in (directory, *directory.parents):
+        if candidate.name == "论文分析" and (
+            research is None or candidate.parent != research and candidate.is_relative_to(research)
+        ):
+            return candidate
+    return None
+
+
+def _linked_analysis_owner(path: Path, root: Path) -> Path | None:
+    """Resolve a routing association, not the validity of an analysis.
+
+    The installed analyzer records an absolute path in
+    ``论文分析/_index.json`` -> ``papers[item_key].file``. Its original Stage-2
+    checks remain responsible for identity, successful level and cache reuse.
+    A report can identify that workflow while targets/snapshots/packs are absent.
+    """
+    directory = _analysis_directory(path, root)
+    if directory is None:
+        return None
+    if path.is_file() and (path.name == "_index.json" or path.name.endswith((".facts.json", ".future_work.json"))):
+        return directory.parent
+    try:
+        index = read_json(directory / "_index.json")
+    except (OSError, ValueError, UnicodeError):
+        return None
+    papers = index.get("papers") if isinstance(index, dict) else None
+    if not isinstance(papers, dict):
+        return None
+    for entry in papers.values():
+        recorded = entry.get("file") if isinstance(entry, dict) else None
+        if not isinstance(recorded, str) or not recorded.strip():
+            continue
+        report = Path(recorded.strip()).expanduser()
+        # The source contract stores absolute paths. An unresolved relative or
+        # stale association needs clarification, never a guessed base directory.
+        if not report.is_absolute():
+            continue
+        report = report.resolve()
+        if not report.is_relative_to(directory) or not report.is_file():
+            continue
+        if report == path or path.is_dir() and report.is_relative_to(path):
+            return directory.parent
+    return None
+
+
 def _professors(path: Path, root: Path) -> list[Path]:
     research = root / "教授研究"
     if not research.is_dir():
         return []
-    directory = path if path.is_dir() else path.parent
-    if directory.is_relative_to(research):
+    analysis_owner = _linked_analysis_owner(path, root)
+    if analysis_owner is not None:
+        return [analysis_owner]
+    if path.is_file():
+        # A supplied source document is its own scope, even when kept beside
+        # upstream artifacts. Only a recognized workflow artifact may resolve
+        # its owning professor and the owner's required supporting state.
+        if not path.is_relative_to(research) or path.name not in _UPSTREAM_FILES:
+            return []
+        directory = path.parent
         for candidate in (directory, *directory.parents):
             if candidate == research:
                 break
             if any((candidate / name).is_file() for name in _MARKERS):
                 return [candidate]
-        scope = directory
-    else:
+        return []
+    if path == root:
         scope = research
+    elif path.is_relative_to(research):
+        scope = path
+    else:
+        # Application ownership does not widen an explicit material subfolder
+        # to every professor in that application.
+        return []
     return sorted({
         entry.parent for entry in _files(scope)
         if entry.name in _MARKERS and entry.parent != research
@@ -112,6 +176,35 @@ def _professors(path: Path, root: Path) -> list[Path]:
 
 def _materials(path: Path) -> list[str]:
     return [str(entry.resolve()) for entry in _files(path) if entry.suffix.lower() in _CARRIERS or entry.name in _MARKERS or entry.name in {"info.json", "boshu_analysis.json"}]
+
+
+def _material_scope(path: Path, root: Path | None, selection: dict) -> dict:
+    materials = _materials(path)
+    if path.is_file() and not materials:
+        # The reader must see an explicitly supplied unsupported carrier too.
+        materials = [str(path)]
+    if not materials:
+        return result("needs_input", [issue("application_materials_required", "给定范围内缺少可读取材料；请补充实际研究材料或合格招生项目路径。", str(path))], objects=[], selected=None)
+    directory = path if path.is_dir() else path.parent
+    analysis_directory = _analysis_directory(path, None)
+    ambiguous = (
+        bool(selection)
+        or analysis_directory is not None
+        or path.is_file() and path.name in _UPSTREAM_FILES | _APPLICATION_FILES
+        or path.is_dir() and any((path / name).is_file() for name in _MARKERS + ("boshu_analysis.json",))
+    )
+    problems = []
+    if ambiguous:
+        if analysis_directory is not None:
+            problems.append(issue("input_role_required", "当前论文分析索引未能确认本次报告与教授的关联；请明确这是哪位教授的既有分析，还是独立研究材料。原范围保留，不默认转入非论文路线。", str(analysis_directory / "_index.json")))
+        else:
+            problems.append(issue("input_role_required", "该范围含项目或上游材料线索，但尚不能确定本次要读取研究材料还是继续某位教授的流程；请明确用途或给出对应项目/教授目录。当前保留给定范围，不扩大到其他教授。", str(path)))
+    item = {
+        "application_root": str(root or directory), "professor_path": None,
+        "materials": materials, "valid_artifacts": {},
+        "next_step": "needs_input" if ambiguous else "read_materials",
+    }
+    return result("needs_input" if ambiguous else "ready", problems, objects=[item], selected=None if ambiguous else str(path))
 
 
 def _profile(root: Path) -> Path | None:
@@ -251,17 +344,10 @@ def discover(request: dict) -> dict:
         raise ValueError("direction_id 必须是非空字符串")
     root = _root(path)
     if root is None:
-        materials = _materials(path)
-        if path.is_file() and not materials:
-            # Preserve an explicitly supplied unsupported carrier so its reader
-            # can report the actual conversion requirement without discarding it.
-            materials = [str(path)]
-        if not materials:
-            return result("needs_input", [issue("application_materials_required", "缺少合格招生项目或可读取研究材料；学校名称或空目录不足以开始上游流程。", str(path))], objects=[], selected=None)
-        directory = path if path.is_dir() else path.parent
-        item = {"application_root": str(directory), "professor_path": None, "materials": materials, "valid_artifacts": {}, "next_step": "read_materials"}
-        return result(objects=[item], selected=str(path))
+        return _material_scope(path, None, selection)
     professors = _professors(path, root)
+    if not professors and path not in {root, root / "教授研究"}:
+        return _material_scope(path, root, selection)
     if selected_path is not None and professors:
         if selected_path not in professors:
             inventory = [{"application_root": str(root), "professor_path": str(professor), "materials": [], "valid_artifacts": {}, "next_step": "needs_input"} for professor in professors]
