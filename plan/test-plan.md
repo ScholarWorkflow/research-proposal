@@ -8,7 +8,7 @@
 - 需求版本：`rp-requirements-2026-11-02-q6-q16`。
 - 执行计划：[implementation-plan.md](implementation-plan.md)，版本 `rp-plan-r3-2026-11-03`，校验值 `edf6692023be0e717ff454482c10763cc74c42885cc41ea8458fd1915fb69bcf`；批准依据见 [implementation-plan-review.md](implementation-plan-review.md)。
 - 目标仓库：`research-proposal`；工作树：`worktrees/research-proposal-plan`；分支：`feat/research-proposal`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r8-2026-11-03`：保留 r5 的配置读取修正、r6/r7 的恢复授权和四次尝试记录，本次补齐既定业务所需的沙箱网络设置及 RP-04-02 续接条件；准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录，第三关尚未执行。
+- 第一关已通过，正式审核结论见 `plan/test-plan-review.md`。执行说明版本为 `rp-recipe-r9-2026-11-03`：保留 r5 至 r8 的配置修正、恢复授权和失败记录，本次仅将 RP-13 改为在原稿路径备份、执行并恢复，避免副本中的绝对路径指回原稿；模型仍取原默认。准备符合性结论见 `plan/test-preparation-review.md`，第二关结论由主代理记录，第三关尚未执行。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
@@ -182,7 +182,7 @@
 
 ### 已准备的版本、输入和配置
 
-本节版本为 `rp-recipe-r8-2026-11-03`。它保留上面的全部业务检查，不增加通过条件。产品提交、发布来源、独占目录和服务端口在正式执行前按下文绑定；真实上游成果和成稿由指定的前序用例产生。执行结果和已经绑定的实际值见 `test-results.md` 及受控交接，不能将准备记录视作产品通过结果。
+本节版本为 `rp-recipe-r9-2026-11-03`。它保留上面的全部业务检查，不增加通过条件。产品提交、发布来源、独占目录和服务端口在正式执行前按下文绑定；真实上游成果和成稿由指定的前序用例产生。执行结果和已经绑定的实际值见 `test-results.md` 及受控交接，不能将准备记录视作产品通过结果。
 
 共享夹具已先在干净 `master` 上执行 `git pull --ff-only origin master`，结果为已是最新；本轮固定 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`。共享缓存原记录属于 `8cecafc694e4591dee47372f38903e5ac2b689fe`，所以只复用其中的不可变插件与下载缓存，在独立临时根重跑现有 `prepare_shared_test_assets_macos.sh`，没有修改旧缓存或生产配置。本轮新记录与固定夹具版本一致、工作树干净。没有启动 Chrome、Zotero 或模型业务请求。
 
@@ -327,7 +327,7 @@ UV_CACHE_DIR="$RP_PREP/uv-cache" uv run \
 
 固定准备器的 `resolved-config.toml` 只记录默认文件与所选范例合并的设置，不是完整消费者配置快照；其中没有网络字段不能单独判定网络开关未加载。网络设置保存在上一步的 `.codex/config.toml`，由 Codex 原生加载。固定 [准备器](../../../skills-test-fixtures/scripts/prepare_codex_project_config.py)只为项目尚未提供的已声明值生成参数；[评估入口约定](../../../eval-server/README.md)及其 `commands.py`、`evals.py` 维持项目配置和单次请求设置的原有加载路径，不硬编码网络或审批值。此处只做配置解析及传输准备，实际 Zotero 能否使用仍由原负责代理在 RP-04 的既定步骤判断。
 
-上面的普通范例与已合成的消费者配置共同使用；模型默认仍只来自固定夹具。准备入口发现缺少变量、未安装服务、受保护设置冲突或配置不能传输时停止受影响项，不改为连接生产服务。RP-13 将 `RP_VISION_FILE` 设为 `RP_VISION_MISSING_CONFIG`，重新执行同一配置合成和请求准备步骤；恢复时改回 `RP_VISION_CONFIG`。两次都保留各自请求目录，不修改视觉凭据文件。
+上面的普通范例与已合成的消费者配置共同使用；模型默认仍只来自固定夹具。准备入口发现缺少变量、未安装服务、受保护设置冲突或配置不能传输时停止受影响项，不改为连接生产服务。RP-13 依下文的原路径快照步骤将 `RP_VISION_FILE` 设为 `RP_VISION_MISSING_CONFIG`，使用同一配置表达式和请求准备入口；结束且副作用可确认后恢复原稿及正常配置，正常扫描结果沿用 RP-06，不为恢复另发一次视觉请求。不修改视觉凭据文件。
 
 实际请求采用已核对的服务协议：
 
@@ -498,7 +498,61 @@ jq '{status, issues, material: {material_id: .material.material_id,
 | RP-10 | RevisionImportTests 用 revisions/ 短样本检查内容和标记。实际交互从 RP-08 稿件副本制作对应修改：纯措辞、明确要求修改核心方法并改成英文、文件内把未核实条件改为已获得但未解释意图、两份核心方法冲突且未选定的稿件。先保存原件与基准，由用户对未决修订作决定，批注不直接作为正文。实际编辑位置取已交付稿件对应段落，不把短样本冒充它。 |
 | RP-11 | 运行 RecoveryTests，覆盖两种单格式失败及首次无当前稿、内容不一致、受控页面核对失败、材料/方案/正文保存中断、目录已完成而未切换、切换后中断、四类恢复输入变化、另一轮先更新基准。只使用正式 API、文件条件和公开 os.replace 边界；保存旧稿与每例工作结果，直接读状态及内容。正常完整成稿引用 RP-08，受控页面结果不能作真实页面通过证据。 |
 | RP-12 | 沿 RP-08 稿件继续，提出以同题用于乙项目的明确请求，提供 `program-b.md` 并明确复用文献与通用方案。操作前后只比较第一稿输入、状态、正文及已有其他教授状态，检查新稿绑定和栏目变化，不重验全部写作。 |
-| RP-13 | 空输入使用准备的空目录；学校名称输入使用 `school-name-only.txt`。外部能力失败只选扫描视觉配置缺项：在已保存进度的副本上，按产品入口指向 `vision-missing.env`，检查缺项及保存结果。恢复原 `vision.env` 后续接对应 RP-06 的正常步骤，不制造第二种外部故障或重跑完整流程。 |
+| RP-13 | 空输入使用准备的空目录；学校名称输入使用 `school-name-only.txt`。外部能力失败只选扫描视觉配置缺项：按下文先备份已有进度及正常配置，在原稿路径通过产品入口指向 `vision-missing.env`，检查缺项及保存结果；确认结束和副作用后归档本次结果并恢复原路径及配置。正常扫描沿用 RP-06 的同一样本结果，不制造第二种外部故障或重跑完整流程。 |
+
+### RP-13 的原路径备份和恢复
+
+未提交工作版的 `directory` 是绝对路径，普通复制不会重新定位。RP-13 因此沿用 RP-09、RP-11 的原路径快照办法。执行者将 `RP13_PROPOSAL` 绑定到本轮消费者内已有进度的真实稿件目录；当前为非论文甲项目，状态仍为版本 6、没有当前提交稿。先确认所有前序请求、委派和写入均已结束，期间独占该稿件和消费者配置，不与其他业务请求并行。已有方案内容及未确认决定按原记录保留，不手改状态路径、确认或完成标记。
+
+先保存完整稿件与正常配置，再复制同一 `damaged-scan.png`；扫描输入和快照都留在本轮目录。以下命令只由第二关后的执行者运行：
+
+```bash
+: "${RP13_PROPOSAL:?绑定本轮消费者内已有进度的稿件绝对目录}"
+case "$RP13_PROPOSAL" in
+  "$RP_CONSUMER/input/"*) ;;
+  *) printf '%s\n' 'RP13_PROPOSAL 必须位于本轮消费者 input 内' >&2; exit 1 ;;
+esac
+test -d "$RP13_PROPOSAL"
+test ! -L "$RP13_PROPOSAL"
+test -f "$RP13_PROPOSAL/研究计划状态.json"
+RP_REQUEST_DIR="$RP_RUN/requests/rp13-missing-vision"
+test ! -e "$RP_REQUEST_DIR"
+RP_PROJECT_CONFIG="$RP_CONSUMER/.codex/config.toml"
+RP13_OUTPUT="$(mktemp -d "$RP_RUN/rp13-vision.XXXXXX")"
+cp -pR "$RP13_PROPOSAL" "$RP13_OUTPUT/proposal.before"
+cp -p "$RP_PROJECT_CONFIG" "$RP13_OUTPUT/project-config.before.toml"
+RP13_SCAN_DIR="$(mktemp -d "$RP_CONSUMER/input/rp13-vision.XXXXXX")"
+cp -p "$RP_WORKTREE/test/fixtures/materials/damaged-scan.png" "$RP13_SCAN_DIR/damaged-scan.png"
+export RP_VISION_FILE="$RP_VISION_MISSING_CONFIG"
+export RP_THREAD_BUDGET=1
+RP_TIMEOUT=600
+RP_CONFIG_OUTPUT="$RP13_OUTPUT/consumer-missing.toml"
+yq -p=toml -o=toml --from-file "$RP_WORKTREE/test/config/consumer-runtime.yq" \
+  "$RP_INSTALLED_CONFIG" > "$RP_CONFIG_OUTPUT"
+yq -e -p=toml -o=json \
+  '.features.multi_agent_v2.enabled == true and .sandbox_workspace_write.network_access == true' \
+  "$RP_CONFIG_OUTPUT" > /dev/null
+cp "$RP_CONFIG_OUTPUT" "$RP_PROJECT_CONFIG.new"
+mv "$RP_PROJECT_CONFIG.new" "$RP_PROJECT_CONFIG"
+```
+
+保持本请求原定预算 1、600 秒超时、模型与其他配置；配置合成仍使用前面已绑定的环境与唯一表达式。业务输入只给出 `RP13_PROPOSAL` 和 `RP13_SCAN_DIR/damaged-scan.png` 的实际路径，请主技能继续处理这份扫描材料；不提供组件步骤或预填缺项结论。按前述固定入口生成请求并发送，保留请求、响应和实际缺项说明。直接比较 `proposal.before` 与执行后原目录的状态及已有步骤成果，检查有效进度仍在、扫描缺项没有变成完整材料或成稿。
+
+先根据实际响应及现有执行记录确认本次请求与委派已结束，再核对原稿和扫描目录的实际写入。若超时、结束不确定或不能确认副作用，停止后续请求及下面的恢复，不边写入边挪动目录，交执行负责人处理。能确认结束时，即使用例结果失败，也先保留结果再恢复；归档目录只供读取，不从其中恢复业务，也不修改归档中的绝对路径：
+
+```bash
+cp -p "$RP_PROJECT_CONFIG" "$RP13_OUTPUT/project-config.after.toml"
+test ! -e "$RP13_OUTPUT/proposal.after"
+mv "$RP13_PROPOSAL" "$RP13_OUTPUT/proposal.after"
+cp -pR "$RP13_OUTPUT/proposal.before" "$RP13_PROPOSAL"
+cp -p "$RP13_OUTPUT/project-config.before.toml" "$RP_PROJECT_CONFIG.new"
+mv "$RP_PROJECT_CONFIG.new" "$RP_PROJECT_CONFIG"
+export RP_VISION_FILE="$RP_VISION_CONFIG"
+diff -qr "$RP13_OUTPUT/proposal.before" "$RP13_PROPOSAL"
+cmp "$RP13_OUTPUT/project-config.before.toml" "$RP_PROJECT_CONFIG"
+```
+
+请求目录、扫描输入、`proposal.after` 和缺配置输出全部保留；恢复失败时保留快照和已归档结果并停止，不继续操作部分恢复的稿件。后续交互从已还原的原稿和原有未决事项继续，不把故障请求中新增的内容当成用户确认。外部条件补齐后的正常扫描采用 RP-06 对同一原图、同一读取实现及正常视觉配置的已有结果；不再次调用视觉模型或另跑完整流程。r7/r8 的全部故障、失败和真实用户决定仍保留。
 
 ### 外部故障、输出与清理
 
