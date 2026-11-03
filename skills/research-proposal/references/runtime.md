@@ -22,7 +22,15 @@
 | `read_material` | `path`、`material_type`、`source`、`output_dir` | 将 `output_dir` 设在资料或本稿工作目录，保存完整返回 JSON；后续 `materials` 直接采用其中完整的 `material` 对象，不手工重建或缩写材料记录。`source` 是已知出处字符串，未知时如实标记待核，不伪造出版社、页码等。 |
 | `import_revision` | `path`、`baseline_body`、`output_dir` | `body` 是待处理 AST，`original_copy` 是保留原件；`changes`、`comments`、`unsupported` 均为 `{kind,text,location}` 数组。导入不更新正式正文或确认。 |
 
+### 教授选择与发现参数
+
+`selection.professor_path` 使用已发现对象 `objects[].professor_path` 返回的绝对路径原值。用户只给教授姓名、当前尚无已发现的对应路径时，先仅以用户给定的 `path` 调用 `discover`，不传 `selection`。从返回对象核对用户的真实选择；能够唯一对应时，原样采用该对象的教授路径，再带上用户已选的 `direction_id` 调用 `discover`，未选择方向则省略该字段。不能用姓名、当前工作目录或目录模板拼接教授路径。尚无教授目录而返回 `collect` 时，保留已有姓名决定交原采集代理；已有对象仍无法唯一对应用户选择时，才请用户区分。
+
+`selection_outside_scope` 表示传入的选择路径未对上给定范围。该错误返回的 `materials: []`、`valid_artifacts: {}` 尚未经过材料和上游产物检查，不能据此判断资料缺失。若返回对象能唯一对应用户已经选定的教授，就以它的实际路径和已有方向决定纠正请求，实际再次调用 `discover`，按新结果继续；只有对应仍有歧义时才向用户取得区分，不把已经明确的决定重新交回用户。
+
 消费 `discover` 后，按主技能的 `next_step` 表执行。`collect`、`preview`、`stage0` 至 `stage3` 立即转入 [招生项目与教授资料前置](upstream.md)，读取对应原规则并真实委派、等待和消费；其中需要的教授或方向选择由原代理返回。`proposal` 才采用已有正式候选进入本稿选题，`read_materials` 才进入独立材料路线。`ready` 表示发现操作完成，不能将它解读为上游资料已经齐全，也不能按学科自行跳过返回的阶段。
+
+### 材料读取结果
 
 `material` 包含 `material_id`、`material_type`、`source`、`original_path`、`digest`、`reader`、`blocks`、`issues`。块为 `{block_id,text,locator}`；扫描识别的 `text` 在回图核对前只是候选转录，附加字段见下文。`interpretation` 中带 `unverified_output_structure` 的片段来源尚未核对，字段名称不能证明它一定是模型解释。引用采用实际返回定位：PDF 物理页从 1 开始；图片区域为 `bbox`；文本行、段落从 1 开始；EPUB/HTML 有 `fragment`、`paragraph`；Word 的段落或表格行列从 0 开始，没有稳定分页不填页码。
 
