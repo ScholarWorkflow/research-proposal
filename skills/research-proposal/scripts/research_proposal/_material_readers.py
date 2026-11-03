@@ -1,0 +1,447 @@
+"""Carrier readers with source locations; no paper-analysis or state writes."""
+
+from __future__ import annotations
+
+import copy
+import json
+import os
+from pathlib import Path
+import posixpath
+import subprocess
+from zipfile import ZipFile
+
+from lxml import etree, html
+
+from ._common import hash_file, issue, json_digest, read_json, run_tool, write_json
+from ._material_word import read_word_structure
+
+
+def ast_text(value) -> str:
+    """Read Pandoc constructors, never attribute strings or numeric table metadata."""
+    if isinstance(value, list):
+        return "".join(ast_text(item) for item in value)
+    if not isinstance(value, dict):
+        return ""
+    kind, content = value.get("t"), value.get("c")
+    if kind == "Str":
+        return content
+    if kind in {"Space", "SoftBreak", "LineBreak"}:
+        return "\n" if kind == "LineBreak" else " "
+    if kind in {"Code", "CodeBlock", "Math", "RawInline", "RawBlock"}:
+        return content[-1]
+    if kind in {"Span", "Div", "Cite"}:
+        return ast_text(content[1])
+    if kind in {"Link", "Image"}:
+        return ast_text(content[1])
+    if kind == "Header":
+        return ast_text(content[2])
+    if kind in {"Para", "Plain"}:
+        return ast_text(content) + "\n"
+    if "blocks" in value:
+        return ast_text(value["blocks"])
+    return ast_text(content)
+
+
+def pandoc_body(path: Path | None, reader: str, *, data: bytes | None = None,
+                media_dir: Path | None = None, track_changes: bool = False) -> dict:
+    arguments = ["-f", reader, "-t", "json"]
+    if track_changes:
+        arguments.append("--track-changes=all")
+    if media_dir is not None:
+        arguments.extend(["--extract-media", str(media_dir)])
+    if path is not None:
+        arguments.append(str(path))
+    output = run_tool("pandoc", arguments, input=data)
+    body = json.loads(output.stdout)
+    if not isinstance(body, dict) or not isinstance(body.get("blocks"), list) or not body.get("pandoc-api-version"):
+        raise ValueError("Pandoc 没有返回可读的正文结构。")
+    return body
+
+
+def decode_text(path: Path) -> str:
+    data = path.read_bytes()
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return data.decode("utf-16")
+    return data.decode("utf-8-sig")
+
+
+def read_text(path: Path, directory: Path, markdown: bool) -> tuple[list, list, str]:
+    source = decode_text(path)
+    lines = source.splitlines()
+    if not markdown:
+        blocks = []
+        for number, line in enumerate(lines, 1):
+            if not line.strip():
+                continue
+            locator = {"kind": "text", "line": number}
+            blocks.append({"text": line, "locator": locator})
+        return blocks, [], "原始文本（UTF-8 或带字节序标记的 UTF-16）"
+    body = pandoc_body(None, "markdown", data=source.encode("utf-8"))
+    write_json(directory / "结构.json", body)
+    blocks, issues, cursor, section = [], [], 0, None
+    characters, source_lines = [], []
+    for number, line in enumerate(lines, 1):
+        for character in line:
+            if not character.isspace():
+                characters.append(character)
+                source_lines.append(number)
+    searchable = "".join(characters)
+    for index, block in enumerate(body["blocks"]):
+        text = ast_text(block).strip()
+        if not text:
+            continue
+        if block.get("t") == "Header":
+            section = text
+        # Find actual source text; punctuation/markup-only blocks retain a missing-locator issue.
+        def strings(node):
+            if isinstance(node, dict):
+                if node.get("t") == "Str":
+                    yield node["c"]
+                elif node.get("t") in {"Code", "CodeBlock", "Math"}:
+                    yield node["c"][-1]
+                elif node.get("t") == "Note":
+                    # A footnote's definition can appear later; it must not move the main-text cursor.
+                    return
+                else:
+                    for child in node.values():
+                        yield from strings(child)
+            elif isinstance(node, list):
+                for child in node:
+                    yield from strings(child)
+        tokens = ["".join(token.split()) for token in strings(block) if token.strip()]
+        offset, located = cursor, None
+        for token in tokens:
+            found = searchable.find(token, offset)
+            if found < 0:
+                located = None
+                break
+            if located is None:
+                located = source_lines[found]
+            offset = found + len(token)
+        locator = {"kind": "text", "ast_block": index}
+        if located is not None:
+            locator["line"] = located
+            # Character offsets distinguish repeated paragraphs and multiple blocks on one source line.
+            cursor = offset
+        else:
+            issues.append(issue("location_unresolved", "已读入此 Markdown 块，但不能可靠映射到原文件行号；引用前需核对。", {"path": str(path), "ast_block": index}))
+        if section:
+            locator["section"] = section
+        blocks.append({"text": text, "locator": locator})
+    return blocks, issues, "Pandoc Markdown AST，原始行定位"
+
+
+_FLOW = {"p", "div", "section", "article", "main", "aside", "header", "footer", "nav", "body",
+         "blockquote", "ul", "ol", "li", "dl", "dt", "dd", "pre", "table", "thead", "tbody", "tfoot",
+         "tr", "td", "th", "h1", "h2", "h3", "h4", "h5", "h6", "figure", "figcaption"}
+_IGNORE = {"head", "script", "style", "noscript"}
+
+
+def _name(element) -> str:
+    return etree.QName(element).localname.lower() if isinstance(element.tag, str) else ""
+
+
+def _html_segments(root, fragment: str, kind: str) -> tuple[list, dict]:
+    """Wrap source flow segments with private IDs for one structured Pandoc pass."""
+    fragments, locations = [], {}
+    paragraph = 0
+
+    def add(element, payload):
+        nonlocal paragraph
+        if not "".join(payload.itertext()).strip() and not payload.xpath(".//img"):
+            return
+        paragraph += 1
+        ancestors = [element, *element.iterancestors()]
+        anchor = next((item.get("id") for item in ancestors if item.get("id")), None)
+        identifier = f"rp-material-{paragraph}"
+        locator = {"kind": kind, "fragment": fragment + (f"#{anchor}" if anchor else ""),
+                   "paragraph": paragraph, "xpath": root.getroottree().getpath(element)}
+        heading = next(("".join(item.itertext()).strip() for item in element.itersiblings(preceding=True)
+                        if _name(item) in {"h1", "h2", "h3", "h4", "h5", "h6"}), None)
+        if heading:
+            locator["section"] = heading
+        locations[identifier] = locator
+        wrapper = etree.Element("div", id=identifier)
+        payload.tail = None
+        wrapper.append(payload)
+        fragments.append(etree.tostring(wrapper, encoding="unicode", method="html"))
+
+    def visit(element):
+        name = _name(element)
+        if not name or name in _IGNORE:
+            return
+        if not any(_name(child) in _FLOW for child in element.iterdescendants()):
+            add(element, copy.deepcopy(element))
+            return
+        pending = etree.Element("p")
+        pending.text = element.text
+        for child in element:
+            if _name(child) in _IGNORE:
+                pass
+            elif _name(child) in _FLOW or any(_name(node) in _FLOW for node in child.iterdescendants()):
+                add(element, pending)
+                pending = etree.Element("p")
+                visit(child)
+            else:
+                duplicate = copy.deepcopy(child)
+                duplicate.tail = None
+                pending.append(duplicate)
+            if child.tail:
+                if len(pending):
+                    pending[-1].tail = (pending[-1].tail or "") + child.tail
+                else:
+                    pending.text = (pending.text or "") + child.tail
+        add(element, pending)
+
+    body = next((element for element in root.iter() if _name(element) == "body"), root)
+    visit(body)
+    return fragments, locations
+
+
+def _read_html_bytes(data: bytes, fragment: str, kind: str, directory: Path) -> tuple[list, list, dict]:
+    # The HTML parser honors BOM/meta charset (including Shift_JIS). Pandoc receives normalized UTF-8.
+    parser = html.HTMLParser(no_network=True, recover=True)
+    root = html.document_fromstring(data, parser=parser)
+    fragments, locations = _html_segments(root, fragment, kind)
+    normalized = ("<!doctype html><html><head><meta charset='utf-8'></head><body>" + "\n".join(fragments) + "</body></html>").encode("utf-8")
+    body = pandoc_body(None, "html+native_divs", data=normalized)
+    blocks, issues = [], []
+
+    def consume(node):
+        if isinstance(node, dict):
+            if node.get("t") == "Div" and node["c"][0][0] in locations:
+                locator = locations[node["c"][0][0]]
+                text = ast_text(node["c"][1]).strip()
+                if text:
+                    blocks.append({"text": text, "locator": locator})
+                else:
+                    issues.append(issue("nontext_object", "此原文区域没有可提取文字，图像或对象需另行查看。", locator))
+                return
+            for value in node.values():
+                consume(value)
+        elif isinstance(node, list):
+            for value in node:
+                consume(value)
+    consume(body)
+    if len(blocks) + len(issues) != len(locations):
+        issues.append(issue("unmapped_structure", "部分网页结构未能可靠读入，原文件仍保留。", {"kind": kind, "fragment": fragment}))
+    return blocks, issues, body
+
+
+def read_html(path: Path, directory: Path) -> tuple[list, list, str]:
+    blocks, issues, body = _read_html_bytes(path.read_bytes(), path.name, "html", directory)
+    write_json(directory / "结构.json", body)
+    return blocks, issues, "按原编码解析 HTML，再由 Pandoc 读取结构"
+
+
+def read_epub(path: Path, directory: Path) -> tuple[list, list, str]:
+    blocks, issues, structures = [], [], []
+    parser = etree.XMLParser(resolve_entities=False, no_network=True)
+    with ZipFile(path) as archive:
+        container = etree.fromstring(archive.read("META-INF/container.xml"), parser)
+        roots = container.xpath("//*[local-name()='rootfile']/@full-path")
+        if not roots:
+            raise ValueError("EPUB 没有声明内容清单。")
+        package_path = roots[0]
+        package = etree.fromstring(archive.read(package_path), parser)
+        namespace = {"o": "http://www.idpf.org/2007/opf"}
+        manifest = {item.get("id"): item for item in package.findall("o:manifest/o:item", namespace)}
+        for position, reference in enumerate(package.findall("o:spine/o:itemref", namespace), 1):
+            item = manifest.get(reference.get("idref"))
+            if item is None:
+                issues.append(issue("missing_epub_item", "阅读顺序引用的章节不在内容清单中。", {"kind": "epub", "spine": position}))
+                continue
+            href = item.get("href", "")
+            from urllib.parse import unquote
+            member = posixpath.normpath(posixpath.join(posixpath.dirname(package_path), unquote(href.split("#", 1)[0])))
+            if member.startswith("../") or member.startswith("/"):
+                issues.append(issue("invalid_epub_path", "电子书章节路径无法安全读取。", {"kind": "epub", "fragment": href}))
+                continue
+            if item.get("media-type") not in {"application/xhtml+xml", "text/html"}:
+                issues.append(issue("unsupported_epub_item", "此电子书章节需转换为 HTML 或图像后读取。", {"kind": "epub", "fragment": member}))
+                continue
+            try:
+                content = archive.read(member)
+                # XHTML's XML declaration is authoritative; emit UTF-8 for the HTML reader.
+                if item.get("media-type") == "application/xhtml+xml":
+                    document = etree.fromstring(content, parser)
+                    for node in document.iter():
+                        if isinstance(node.tag, str):
+                            node.tag = etree.QName(node).localname
+                    content = etree.tostring(document, encoding="utf-8", method="html")
+                    content = b'<meta charset="utf-8">' + content
+                chapter_blocks, chapter_issues, body = _read_html_bytes(content, member, "epub", directory)
+                blocks.extend(chapter_blocks)
+                issues.extend(chapter_issues)
+                structures.append({"fragment": member, "body": body})
+            except (KeyError, ValueError, etree.XMLSyntaxError, subprocess.SubprocessError, OSError) as error:
+                issues.append(issue("epub_chapter_failed", f"此章节未能读取：{type(error).__name__}；已读章节保留。", {"kind": "epub", "fragment": member}))
+    write_json(directory / "章节结构.json", structures)
+    return blocks, issues, "EPUB 原阅读顺序、章节片段与 Pandoc HTML AST"
+
+
+def read_docx(path: Path, directory: Path) -> tuple[list, list, str]:
+    structure = read_word_structure(path)
+    issues = [issue("unsupported_word_object", item["text"], item["location"]) for item in structure["unsupported"]]
+    if structure["changes"]:
+        issues.append(issue("unresolved_changes", "材料含未决 Word 修订，插入和删除均保留；引用前须确定采用的版本。", str(path)))
+    # XML supplies original positions; Pandoc supplies the retained structured representation.
+    try:
+        body = pandoc_body(path, "docx+styles", media_dir=directory / "media", track_changes=True)
+        write_json(directory / "结构.json", body)
+    except (OSError, subprocess.SubprocessError, ValueError) as error:
+        issues.append(issue("word_structure_failed", f"Pandoc 结构读取失败（{type(error).__name__}）；已从原 XML 取得的文字和位置保留。", str(path)))
+    write_json(directory / "Word标记.json", {key: structure[key] for key in ("changes", "comments", "unsupported")})
+    return structure["blocks"], issues, "Pandoc docx+styles 与原 Word XML"
+
+
+def _vision_configuration() -> tuple[str | None, list]:
+    supplied = os.environ.get("VISION_ENV_FILE")
+    if not supplied:
+        return None, [issue("vision_configuration", "图片文字识别需要显式设置 VISION_ENV_FILE。", "VISION_ENV_FILE")]
+    path = Path(supplied).expanduser().resolve()
+    if not path.is_file():
+        return None, [issue("vision_configuration", "指定的图片识别配置文件不存在。", str(path))]
+    values = {}
+    # Match the fixed upstream client's env-file syntax; do not reveal values in results.
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, _, value = line.partition("=")
+            values[key.strip()] = value.strip().strip('"').strip("'")
+    missing = [key for key in ("VISION_API_KEY", "VISION_BASE_URL", "VISION_MODEL") if not values.get(key, "").strip()]
+    if missing:
+        return None, [issue("vision_configuration", "指定配置文件缺少：" + "、".join(missing), str(path))]
+    return hash_file(path), []
+
+
+def _positions(length: int, limit: int = 1024, overlap: int = 96) -> list[int]:
+    if length <= limit:
+        return [0]
+    points = list(range(0, length - limit + 1, limit - overlap))
+    if points[-1] != length - limit:
+        points.append(length - limit)
+    return points
+
+
+def _ocr_image(path: Path, width: int, height: int, directory: Path, locator: dict,
+               *, transform=None) -> tuple[list, list]:
+    configuration, issues = _vision_configuration()
+    blocks = []
+    cache = directory / "ocr"
+    cache.mkdir(parents=True, exist_ok=True)
+    image_digest = hash_file(path)
+
+    def retain(text, location):
+        if not text:
+            return
+        blocks.append({"text": text, "locator": location})
+        if "[?]" in text:
+            issues.append(issue("uncertain_transcription", "此区域含无法辨认的文字或符号，已原样保留 [?]；引用前需核对，不能补猜。", location))
+
+    for top in _positions(height):
+        for left in _positions(width):
+            box = [left, top, min(left + 1024, width), min(top + 1024, height)]
+            location = {**locator, "bbox": transform(box) if transform else box}
+            if transform:
+                location["image_bbox"] = box
+            key = json_digest({"image": image_digest, "box": box})
+            cache_file = cache / f"{key}.json"
+            previous = read_json(cache_file) if cache_file.is_file() else None
+            if previous and previous.get("configuration") == configuration and configuration:
+                text = previous["text"]
+            elif configuration:
+                try:
+                    response = run_tool("vision-glance", [str(path), "--ocr", "--region", ",".join(map(str, box))], timeout=300)
+                    text = response.stdout.decode("utf-8").strip()
+                    write_json(cache_file, {"configuration": configuration, "text": text, "locator": location})
+                except (OSError, subprocess.SubprocessError, UnicodeError) as error:
+                    diagnostic = cache / f"{key}-error.txt"
+                    detail = getattr(error, "stderr", None)
+                    if isinstance(detail, bytes):
+                        detail = detail.decode("utf-8", errors="replace")
+                    detail = detail or str(error)
+                    # Keep the useful original client error, with known credential values removed.
+                    secret = os.environ.get("VISION_API_KEY")
+                    if secret:
+                        detail = detail.replace(secret, "[已隐藏密钥]")
+                    configuration_file = Path(os.environ["VISION_ENV_FILE"]).expanduser()
+                    for line in configuration_file.read_text(encoding="utf-8").splitlines():
+                        key_name, separator, value = line.partition("=")
+                        if separator and key_name.strip() == "VISION_API_KEY":
+                            secret = value.strip().strip('"').strip("'")
+                            if secret:
+                                detail = detail.replace(secret, "[已隐藏密钥]")
+                    diagnostic.write_text(detail, encoding="utf-8")
+                    issues.append(issue("ocr_failed", f"图片文字识别未完成（{type(error).__name__}）；原错误见 {diagnostic}，可读结果和原图保留，未猜测内容。", location))
+                    if previous:
+                        retain(previous["text"], location)
+                    continue
+            else:
+                # Already saved transcriptions remain available when a later dependency fails.
+                if previous:
+                    retain(previous["text"], location)
+                continue
+            if not text:
+                issues.append(issue("ocr_empty", "此区域未返回可读文字；不能把它认定为空白材料。", location))
+                continue
+            retain(text, location)
+    return blocks, issues
+
+
+def read_image(path: Path, directory: Path) -> tuple[list, list, str]:
+    from PIL import Image
+    blocks, issues = [], []
+    with Image.open(path) as original:
+        for frame in range(getattr(original, "n_frames", 1)):
+            original.seek(frame)
+            normalized = directory / f"图像-{frame + 1}.png"
+            # Do not rotate/resize: returned pixel boxes use the original pixel coordinate system.
+            original.convert("RGB").save(normalized)
+            locator = {"kind": "image", "image": str(path)}
+            if getattr(original, "n_frames", 1) > 1:
+                locator["frame"] = frame + 1
+            read_blocks, read_issues = _ocr_image(normalized, *original.size, directory, locator)
+            blocks.extend(read_blocks)
+            issues.extend(read_issues)
+    return blocks, issues, "Pillow 原像素归一及固定 vision-glance --ocr 分区识别"
+
+
+def read_pdf(path: Path, directory: Path) -> tuple[list, list, str]:
+    import pymupdf
+    blocks, issues = [], []
+    with pymupdf.open(path) as document:
+        if document.needs_pass:
+            return [], [issue("encrypted_pdf", "PDF 需要密码；请提供有读取权限的可打开副本。", str(path))], "PyMuPDF"
+        for number, page in enumerate(document, 1):
+            location = {"kind": "pdf", "page": number}
+            label = page.get_label()
+            if label:
+                location["printed_label"] = label
+            try:
+                extracted = page.get_text("blocks")
+                text_length, image_area = 0, 0
+                for item in extracted:
+                    if item[6] == 0 and item[4].strip():
+                        text_length += len(item[4].strip())
+                        blocks.append({"text": item[4].strip(), "locator": {
+                            **location, "bbox": [float(value) for value in item[:4]], "block": item[5], "bbox_units": "PDF points"
+                        }})
+                    elif item[6] == 1:
+                        image_area += max(0, item[2] - item[0]) * max(0, item[3] - item[1])
+                if text_length == 0 or (text_length < 80 and image_area > page.rect.get_area() * 0.2):
+                    page_image = directory / f"原页-{number}.png"
+                    pixmap = page.get_pixmap(matrix=pymupdf.Matrix(2, 2), alpha=False)
+                    pixmap.save(page_image)
+                    def transform(box):
+                        return [round(page.rect.x0 + box[0] * page.rect.width / pixmap.width, 4),
+                                round(page.rect.y0 + box[1] * page.rect.height / pixmap.height, 4),
+                                round(page.rect.x0 + box[2] * page.rect.width / pixmap.width, 4),
+                                round(page.rect.y0 + box[3] * page.rect.height / pixmap.height, 4)]
+                    read_blocks, read_issues = _ocr_image(page_image, pixmap.width, pixmap.height, directory,
+                                                        {**location, "bbox_units": "PDF points", "page_image": str(page_image)}, transform=transform)
+                    blocks.extend(read_blocks)
+                    issues.extend(read_issues)
+            except (OSError, ValueError, RuntimeError) as error:
+                issues.append(issue("pdf_page_failed", f"本页未能完整读取（{type(error).__name__}）；其余页的有效结果保留。", location))
+    return blocks, issues, "PyMuPDF 物理页与文字块；扫描区域使用固定 vision-glance --ocr"
