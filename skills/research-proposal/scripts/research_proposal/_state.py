@@ -300,7 +300,8 @@ def _pending(stage: dict, reason: dict) -> None:
 def _invalidate(work: dict, stages, reason: dict) -> None:
     for name in stages:
         _pending(work["steps"][name], reason)
-    if any(name in stages for name in ("docx", "md", "review")):
+    # 只有本版交付要求的步骤失效才清空核对；延期 Word 单独失效不影响 Markdown。
+    if any(name in stages for name in _delivery_stages(work)):
         work["checks"] = {
             "content_consistent": False, "checked_formats": [], "notes": reason["message"],
         }
