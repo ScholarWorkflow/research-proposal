@@ -63,7 +63,7 @@ description: 从日本修士招生项目、已有教授研究或论文分析、�
 
 将采用正文保存为一个 Pandoc JSON 文档，引用另关联材料编号及真实定位，用 `save_revision(stage="body")` 保存。当前交付的 Markdown 只由这同一正文导出。
 
-按 [改稿、模板与恢复](references/revisions.md) 调用 `export_revision`，使用 `formats:["md"]`。当前只交付 Markdown：不读取或复制 Word 模板，不生成 Word，也不转换页面。
+按 [改稿、交付格式与恢复](references/revisions.md) 调用 `export_revision`，使用 `formats:["md"]`。当前只交付 Markdown：不读取或复制 Word 模板，不生成 Word，也不转换页面。
 
 阅读导出的 Markdown，检查标题、段落、列表、表格、引用和链接是否与正式正文一致，以及栏目、语言和篇幅是否符合项目要求。调用 `review_revision` 实际读回 Markdown 核对，不接受调用者给出的成功标记。核对失败就修复受影响内容。
 

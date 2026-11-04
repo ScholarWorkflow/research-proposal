@@ -28,6 +28,7 @@ FORMAT_NAMES = {"docx": "研究计划草稿.docx", "md": "研究计划草稿.md"
 # 当前交付只要求 Markdown；Word 导出与页图为延期实现，状结构保留但不参与交付。
 DELIVERY_FORMATS = ["md"]
 DEFERRED_FORMATS = ("docx",)
+_FORMAT_LABELS = {"docx": "Word（.docx）", "md": "Markdown（.md）"}
 STORED_PATH_BASE = "."
 
 
@@ -37,9 +38,11 @@ def _absolute(value: str | Path) -> str:
 
 def _normal_inputs(value: dict) -> dict:
     inputs = deepcopy(value)
-    for name in ("application_id", "purpose", "question_id", "material_paths", "template_path"):
+    for name in ("application_id", "purpose", "question_id", "material_paths"):
         if name not in inputs:
             raise ValueError(f"inputs 缺少 {name}")
+    # 当前只交付 Markdown，template_path 为可选历史引用。
+    inputs.setdefault("template_path", None)
     if not inputs["application_id"] or not inputs["purpose"]:
         raise ValueError("申请项目和用途不能为空")
     if not isinstance(inputs["material_paths"], list):
@@ -215,8 +218,13 @@ def _material_source_paths(paths) -> dict:
             value = read_json(record_path)
         except (OSError, ValueError, TypeError):
             continue
-        material = value.get("material") if isinstance(value, dict) else None
-        original = material.get("original_path") if isinstance(material, dict) else None
+        if not isinstance(value, dict):
+            continue
+        # 完整操作返回是 {"material": {...}}；read_material 写出的记录文件是扁平对象。
+        material = value.get("material")
+        if not isinstance(material, dict):
+            material = value
+        original = material.get("original_path")
         if not isinstance(original, str) or not original:
             continue
         target = Path(original)
@@ -446,6 +454,13 @@ def _support_files(work: dict) -> None:
             continue
         notes.extend(item["message"] for item in work["steps"][name].get("issues", []))
     notes.extend(str(item) for item in work.get("pending_items", []))
+    # 交付要求本身也要写进待确认事项，避免旧记录里的格式承诺被当作当前要求。
+    formats = _delivery_formats(work)
+    notes.append("本版交付格式：" + "、".join(_FORMAT_LABELS.get(name, name) for name in formats) + "。")
+    deferred = [name for name in DEFERRED_FORMATS if name not in formats]
+    if deferred:
+        notes.append("以下格式已延期，不是本版的交付要求，也不影响本版提交："
+                     + "、".join(_FORMAT_LABELS.get(name, name) for name in deferred) + "。")
     unique = list(dict.fromkeys(notes))
     text = "# 研究计划待确认事项\n\n"
     text += "\n".join(f"- {note}" for note in unique) if unique else "本轮没有保存额外待确认事项。草稿仍可继续讨论。"
@@ -824,14 +839,16 @@ def _migrate_delivery(work: dict) -> bool:
         work["steps"]["md"]["dependencies"] = dependencies
     _pending(work["steps"]["review"], reason)
     work["checks"] = {"content_consistent": False, "checked_formats": [], "notes": reason["message"]}
-    work["fingerprints"] = _snapshot(work)
+    # 不在这里改写 fingerprints：保留迁移前的摘要，让随后的 _sync_work 仍能
+    # 发现迁移前就已经变化的正文或材料，迁移本身不掩盖这些改动。
     return True
 
 
 def _committed_response(state: dict, revision: str) -> dict:
     work = state["works"][revision]
     changed = _fingerprints_changed(work["fingerprints"], _snapshot(work))
-    for name in ("docx", "md"):
+    # 只核对本版交付要求内的步骤；延期 Word 未导出时的空指纹不算改动。
+    for name in _delivery_formats(work):
         step = work["steps"][name]
         changed = changed or step.get("fingerprints") != _artifact_digests(step.get("artifacts", {}))
     if changed:
@@ -862,7 +879,8 @@ def _finish_commit(directory: Path, state: dict, revision: str, work: dict) -> d
     state["current"] = {"revision_id": revision, "directory": str(target)}
     state["binding"]["question_id"] = moved["inputs"]["question_id"]
     _store_state(directory, state)
-    return _response(state, "committed", revision_id=revision, artifacts=_existing_artifacts(moved, valid_only=True), next_steps=[])
+    return _response(state, "committed", revision_id=revision,
+                     artifacts=_delivery_artifacts(moved, valid_only=True), next_steps=[])
 
 
 def commit_revision(request: dict) -> dict:
