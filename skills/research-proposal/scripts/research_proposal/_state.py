@@ -261,8 +261,11 @@ def _snapshot(work: dict) -> dict:
 LATE_FINGERPRINTS = ("material_sources",)
 
 
-def _fingerprints_changed(previous: dict, current: dict) -> bool:
+def _fingerprints_changed(previous: dict, current: dict, keys=None) -> bool:
+    """比较整体摘要；keys 指定时只比这些键，延期项不参与。"""
     for key, value in current.items():
+        if keys is not None and key not in keys:
+            continue
         if key in LATE_FINGERPRINTS and key not in previous:
             continue
         if previous.get(key) != value:
@@ -850,7 +853,10 @@ def _migrate_delivery(work: dict) -> bool:
 
 def _committed_response(state: dict, revision: str) -> dict:
     work = state["works"][revision]
-    changed = _fingerprints_changed(work["fingerprints"], _snapshot(work))
+    # 只比对本版交付相关的摘要；延期 Word 的模板等变化不阻塞 Markdown 重报。
+    # stage_files 覆盖已保存步骤文件，属交付依据，必须一并比较。
+    keys = set(_dependencies(work)) | {"stage_files"}
+    changed = _fingerprints_changed(work["fingerprints"], _snapshot(work), keys=keys)
     # 只核对本版交付要求内的步骤；延期 Word 未导出时的空指纹不算改动。
     for name in _delivery_formats(work):
         step = work["steps"][name]
