@@ -110,7 +110,7 @@ curl -sS -X POST http://127.0.0.1:17902/eval -H 'Content-Type: application/json'
 | `rp08-paper-writing-2` | RP-08 论文第 2 次 | 通过 | 新提交 `r-20261104T130101-eb70c825dea3`，7 栏目、1854 字符 |
 | `rp08-paper-writing-3` | RP-08 论文栏目用词 | 通过 | 新提交 `r-20261104T134308-ac18eee9fd46`，七栏目全为日文、1856 字符 |
 | `rp08-nonpaper-writing` | RP-08 非论文 | 通过 | 新提交 `r-20261104T125413-7d9cda35a792`，7 栏目、1465 字 |
-| `rp10-s1-wording` | RP-10 场景 1 | 通过 | 仅两处措辞差异，`confirmation_bindings` 与旧版完全相同 |
+| `rp10-s1-wording` | RP-10 场景 1 | 通过 | 2 处段落、3 处措辞替换；`confirmation_bindings` 与旧版完全相同 |
 | `rp10-s2-method-english` | RP-10 场景 2 | 通过 | `scheme`→`scheme-3-reader-response` 并重新确认，正文七英文栏目 |
 | `rp10-s3-unverified-condition` | RP-10 场景 3 | 业务失败 | 识别「已取得」并恢复真实状态、原件保留；但提交版整稿回退到 RP-08 交付版，丢弃场景 1/2 成果（IR-15） |
 | `rp10-s4-conflict` | RP-10 场景 4 | 通过 | 两份均导入保留，状态版本与 `current` 前后不变，未自动合并 |
