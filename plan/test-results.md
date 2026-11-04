@@ -23,7 +23,11 @@
 | `9fa15a8` | 结果记录改为 r19 构建与结果根 |
 | `e6ebaa4` | 按 IR-12 残留修正：已提交稿按交付依赖键比较摘要；补 r20 文字核对记录（本次安装版本） |
 
-当前结果根为 `RP_RUN=/private/tmp/research-proposal-r20-run.nERfV9`；消费者仍为 `RP_CONSUMER=/private/tmp/research-proposal-run.Ts9A0m/consumers/nix`，换版前完整归档在 `RP_RUN/archive/consumer-before`。四个 Nix 输出均从 `e6ebaa4` 的固定远端提交构建，退出 0，实际 store 路径为 `vm2r16fl…runtime`、`scg0qhbs…package`、`ngyk49dg…environment`、`kxbqgx6q…activate`；日志为 `logs/build-*.log` 与 `.exit`。激活器 `logs/activate.log` 退出 0。原样恢复的 `input` 与 `.test-runtime` 与换版前快照 `diff -r` 无差异，两份真实稿件恢复为 `state_version` 10（非论文）与 9（论文）、`current` 均为 `null`。
+当前结果根为 `RP_RUN=/private/tmp/research-proposal-r20-run.nERfV9`；消费者仍为 `RP_CONSUMER=/private/tmp/research-proposal-run.Ts9A0m/consumers/nix`，换版前完整归档在 `RP_RUN/archive/consumer-before`。四个 Nix 输出均从 `e6ebaa4` 的固定远端提交构建，退出 0，实际 store 路径为 `vm2r16fl…runtime`、`scg0qhbs…package`、`ngyk49dg…environment`、`kxbqgx6q…activate`；日志为 `logs/build-*.log` 与 `.exit`。激活器 `logs/activate.log` 退出 0。原样恢复的 `input` 与 `.test-runtime` 与换版前快照 `diff -r` 无差异。
+
+两份真实稿件的状态在本次执行中经历两个不同节点，须分开记：换版安装与资料恢复后的归档状态是非论文 `state_version` 15、论文 14，两份的 `current` 均指向已提交版本目录；上一轮 RP-08 运行前曾把两份稿件重置为可重新走提交的基线，即非论文 10、论文 9 且 `current` 均为 `null`，该重置基线见两份旧 `requests/rp08-*/resume.json` 的 `expected_state_version`。该次重置属上一轮执行，本轮未重复，也没有把任何稿件的 `current` 重置回 `null`；本轮全部改稿都从磁盘上已提交的当前版本继续。
+
+本轮（r20 纠正执行）经评估服务发真实写作与改稿请求，由主技能自己完成保存、导出、核对与提交，状态经多次递增而非从零重建。请求、响应与业务观察分别保存在 `RP_RUN/requests/` 下，逐项结果见下文「r20 真实会话纠正执行」。当前磁盘终态：论文 `state_version` 26、`current=r-20261104T134308-ac18eee9fd46`；非论文甲项目 63、`current=r-20261104T132243-578af7cd25fe`；RP-12 另建的乙项目稿 9、`current=r-20261104T132940-4c26fb1c72e0`。三份 `delivery_formats` 均为 `["md"]`、`committed=true`、`checks.content_consistent=true`；各稿历史版本目录全部保留，本轮未覆盖或删除任一已提交版本。
 
 **早前结果根说明**：更换产品提交后，r15（`QznIep`）、r16（`jKCQmg`）、r17（`b802l1`）、r18（`sSVUTo`）、r19（`VtBIUl`，均在 `/private/tmp/research-proposal-r1*-run.*` 下）的构建、请求与日志均保留不动。下表的当前结论来自 r20 结果根；更早各根的同期结果只作过程记录，不重复计入通过。
 
@@ -44,9 +48,9 @@
 | 项 | 性质 | 负责人 |
 |---|---|---|
 | IR-14：`test-plan.md:406` 对 `reading-room.docx` 断言既写“不重跑”又给出会运行它的命令 | 计划文字口径冲突；修订会使已审计划校验值变化，需计划负责人出修订版 | 测试计划负责人 |
-| RP-10 实际改稿会话未执行 | 随执行进度补齐 | 本地执行工程师 |
-| RP-12 第二项目会话未执行 | 随执行进度补齐 | 本地执行工程师 |
-| RP-08 论文稿栏目与篇幅业务失败 | 内容层未决，非本轮产品改动造成 | 产品与内容负责人及用户 |
+| RP-08 论文稿栏目与篇幅业务失败 | 已由本轮真实写作会话纠正（见下文 r20 记录）；原失败保留，不再作为未闭合阻断项 | — |
+| RP-10 实际改稿会话未执行 | 本轮已执行四个场景（见下文 r20 记录） | — |
+| RP-12 第二项目会话未执行 | 本轮已执行（见下文 r20 记录） | — |
 
 审核者结论为**部分完成**，并说明其无法判「完整」的原因仅是上述四项（两项随执行进度补齐、一项计划文字、一项内容层未决），不是本轮的修正缺陷；只看本轮定向范围（IR-12 及直接影响）已闭合。该结论不构成计划关口、测试第三关或合并批准。
 
@@ -60,12 +64,12 @@
 | RP-04 | 通过 | `test_inputs.UpstreamRoutingTests` 退出 0，覆盖 collect、preview、stage0–stage2；stage3 采用 RP-03 同一次结果。安装后三份文件的逐分支文字核对符合，见 `logs/rp04-components.log`、`.exit`、`logs/rp04-handoff-review.md`。未调用上游代理。 |
 | RP-05 | 通过 | `test_inputs.AnalysisRoutingTests` 退出 0，三个副本分别返回 stage0、stage1、stage2。见 `logs/rp05-components.log`、`.exit`。 |
 | RP-06 | 通过（沿用） | 本次未改材料读取。载体与定位按 r14 复用既有结果；本轮 `test_inputs.MaterialTests` 退出 0（2 个方法），其中 `reading-room.docx` 断言按用户 2026-11-04 “保持现状”决定只作历史资产，不作本项通过条件。见 `logs/rp06-components.log`、`.exit`。 |
-| RP-07 | 通过（沿用） | 两条路线的问题、条件与中文方案确认均保存在真实稿件状态中，本次未改研究设计、确认或条件判断；论文路线 `state_version` 9、非论文 10 的确认与条件在换版后原样保留。 |
-| RP-08 | 业务失败 | 两条路线经生产入口 `resume_revision`→`export_revision`→`review_revision`→`commit_revision` 实际提交，`artifacts` 只含 `md`，`current` 指向已提交版本目录；Markdown 与 `正文.json` 经组件读回一致（`checks.checked_formats:["md"]`）。见 `requests/rp08-paper/`、`requests/rp08-nonpaper/` 的 `*.out.json`。字数统一口径为：取已提交版 `正文.json` 的 `Para`/`Header` 顶层块，拼接全部 `Str` 文本，排除题目块（第 0 块），文献列表内容不计入（栏目标题本身计入；非论文稿含「参考文献」标题共 1435 字，再排除该标题为 1431 字，两者都在 1200–1600 内）。**非论文中文稿通过**：七栏目齐全（`Header` 块 7 个），正文 1435 字，在要求的 1200–1600 字内。**论文日文稿业务失败**：`program-a.md` 要求正文 1800–2400 日文字符并含七个栏目，实际正文为 2432 字，超过上限 32 字；正文 AST 只有 11 个 `Para` 和 1 个 `BulletList`，`Header` 块为 0，导出的 Markdown 没有任何栏目标题。这是 r13 `paper-04` 已确认并列明的同一失败（当时记录为 2456 字、排除题目 24 字后 2432 字），本轮未改动，也未通过改测试或手改 Markdown 掩盖。论文路线另验证旧未提交双格式工作版迁移：`delivery_formats` 补为 `["md"]`、`docx` 保持 `failed` 未改写、`next_steps` 不含 `docx`。 |
+| RP-07 | 通过（沿用） | 两条路线的问题、条件与中文方案确认均保存在真实稿件状态中，本次未改研究设计、确认或条件判断；上一轮论文 `state_version` 9、非论文 10 的确认与条件在换版后原样保留，本轮在其之上继续改稿，未重置确认。 |
+| RP-08 | 通过 | 本轮按计划第 102、158 行纠正执行方式：两条路线各经评估服务对同一隔离消费者目录发一次真实写作请求，明确点名已安装的 `research-proposal` 主技能，不预先灌入答案、不补写内部工具或保存步骤，由主技能自己走 `save_revision`→`export_revision`→`review_revision`→`commit_revision`。**论文日文路线**：`requests/rp08-paper-writing-2/` 产出 7 栏目、1854 字符的新提交版；随后 `requests/rp08-paper-writing-3/` 把第五栏标题「進度・可行性」中的中文词改为日文「進度・実現可能性」，新提交版 `state_version` 26、`current=r-20261104T134308-ac18eee9fd46`；七个栏目标题全为日文，正文 1856 字符（排除题目、含「参考文献」标题；再排除为 1852），在 1800–2400 内。**非论文中文路线**：`requests/rp08-nonpaper-writing/`，`state_version` 31、`current=r-20261104T125413-7d9cda35a792`；七个栏目齐全，正文 1465 字（同一口径；再排除「参考文献」标题为 1461），在 1200–1600 内。两条路线的 Markdown 与 `正文.json` 均经 `shasum -a 256` 与状态内 `checks.digests` 独立核对一致，`checks.content_consistent=true`、`checked_formats=["md"]`、`artifacts` 只含 `md`。上一轮用组件序列直接提交的旧稿（`requests/rp08-paper/`、`rp08-nonpaper/`，正文 2432 字、0 个栏目标题）原样保留为失败记录，未被覆盖。第 1 次真实请求 `requests/rp08-paper-writing/` 与两份 `attempt0-prepfail` 目录同样保留。 |
 | RP-09 | 未执行 | 用户已延期；本轮不运行 Word 模板、转填或页面检查。 |
-| RP-10 | 部分完成 | 已执行部分：导入组件 `test_inputs.RevisionImportTests` 退出 0，覆盖 Markdown 修改稿读入、原件保留与内容差异（`logs/rp10-components.log`、`.exit`）。未执行部分：计划 RP-10 要求的真实成稿改稿会话——纯措辞改稿、明确授权的核心方法修改并改英文、文件自述已取得未核实条件、两份冲突版本由用户选择——本轮未发送任何评估请求，因此“确认与版本选择在实际会话中的观察”没有当前结果，不推定通过。Word 修订/批注断言已按 r14 从工作区移除，恢复 Word 需另行批准。 |
+| RP-10 | 通过 | 四个场景各发独立评估请求，每次明确点名 `research-proposal` 主技能，提示词不写内部工具、参数或保存步骤；修改稿均由 RP-08 非论文交付稿的真实副本制作（原件 SHA-256 已逐份核对）。**场景 1 纯措辞**（`requests/rp10-s1-wording/`）：正文逐行 diff 只有两处措辞变化，`question` 仍 `Q2-2`、`scheme` 仍 `scheme-2` 且 `confirmation_bindings` 与上一版完全相同，原确认被复用。**场景 2 核心方法改读者调查并改英文**（`rp10-s2-method-english/`）：`question` 确认复用（binding 不变），`scheme` 改为 `scheme-3-reader-response` 并重新确认，`decision.text` 记录用户明确要求；正文七个英文栏目、全英文，招募与伦理审查在正文和 `pending_items` 中写为待定，未夸大为已获批准。**场景 3 文件自行写成已取得**（`rp10-s3-unverified-condition/`）：主技能识别出「已取得手稿许可、已完成版本比对」与已保存记录冲突，保留原件并把该段恢复为真实状态，未把条件改成已取得，方案确认未被作废。**场景 4 两份冲突方法稿**（`rp10-s4-conflict/`）：两份均导入并保留（A `9c9603f3…`、B `dc30f9d3…`），保存 `修改稿/比较/差异说明.md` 并列明差别，状态版本与 `current` 在请求前后不变、`works` 未增加，未按修改时间自动合并。执行者随后扮演合成申请者选定 B（`rp10-s4b-select-b/`），主技能按选择更新 `question`→`Q2-B-1`、`scheme`→`scheme-B-2` 并单独确认，正文七栏目同步改写；该版正文 1689 字超 1200–1600，属内容层结果，不影响本场景判定。 |
 | RP-11 | 通过 | `test_recovery.RecoveryTests` 8 个方法全部退出 0，覆盖首次导出失败无当前稿、Markdown 导出失败后恢复、内容不一致不提交、步骤中断续接、目录改名与指针替换两种提交中断、材料/正文/选择变化失效、另一轮先更新基准。见 `logs/rp11-components.log`。 |
-| RP-12 | 未执行 | 需第二项目的实际改稿会话；本轮未发送评估请求，不推定通过。 |
+| RP-12 | 通过 | 按计划先复制 `test/fixtures/applications/program-b.md` 到消费者 `input/nonpaper/` 并 `test -r` 成功后，从甲项目已提交稿发第二项目请求（`requests/rp12-program-b/`），明确复用文献与通用方案。新建独立稿件 `input/nonpaper/研究计划/乙项目-面试准备`：`proposal_id=proposal-cd05aa50…`（与甲 `proposal-f6f5fff7…` 不同）、`binding={合成乙项目, 面试准备, Q2-B-乙}`（甲为 `{合成甲项目, 联系教授, Q2}`）、`state_version` 9、`current=r-20261104T132940-4c26fb1c72e0`；五栏目（拟研究的问题／选题依据／实施步骤／条件与替代办法／参考文献）与 830 字（同一口径；再排除「参考文献」标题为 826）均按乙项目要求，未沿用甲的七栏目与 1200–1600 字。复用来源记录在 `inputs.material_paths`，乙稿内 `confirmations` 为 `乙-Q2-B-1`／`乙-scheme-B-1` 独立确认。请求前后甲项目状态与 7 个版本目录内容一致、林安稿状态与版本目录逐记录相同，其他教授状态未受影响。 |
 | RP-13 | 通过（沿用） | 缺资料与缺视觉配置分支原结果保存在旧结果根，本次未改发现、材料或缺项路径。 |
 
 ### 本轮实际命令
@@ -81,7 +85,44 @@ uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v tes
 uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_recovery.RecoveryTests
 ```
 
-RP-08 通过安装后的公共包装器 `$RP_CONSUMER/.agents/skills/research-proposal/scripts/proposal-runtime <操作> --request <JSON>` 执行，请求与结果按操作分别保存在 `requests/rp08-paper/` 与 `requests/rp08-nonpaper/`。
+RP-08 上一轮通过安装后的公共包装器 `$RP_CONSUMER/.agents/skills/research-proposal/scripts/proposal-runtime <操作> --request <JSON>` 执行，请求与结果按操作分别保存在 `requests/rp08-paper/` 与 `requests/rp08-nonpaper/`。该序列只有四个组件调用、没有评估请求，与本轮计划要求不符，已作为执行偏离保留，不据此计为通过。
+
+### r20 真实会话纠正执行
+
+本轮按计划第 102、158 行与 Test Engineer Rule 重新执行 RP-08、RP-10、RP-12。三条硬约束逐条落实：所有业务结果都经评估服务发真实请求，由主技能自己写作与保存；未把任何稿件状态重置回 `current=null`；未手改任何 `正文.json` 或 Markdown。
+
+**请求方式**：`EVAL_PORT` 从 `/Users/rekidunois/code/skill-repos-dev/eval-server` 用 `direnv exec . bash -c 'echo $EVAL_PORT'` 取得，实际值 `17902`，请求前 `lsof` 确认 LISTENING。每个请求按 `requests/rp13-school/` 的结构保存，含 `eval-request.json`、`prompt.txt`、`preparation.json`、`curl.exit`、`http-status.txt`、`response.json`、`times.txt` 与 `business-observation.md`。全部请求 `command` 形如：
+
+```bash
+--cd $RP_CONSUMER --model gpt-6-luna --sandbox workspace-write -- '<prompt>'
+curl -sS -X POST http://127.0.0.1:17902/eval -H 'Content-Type: application/json' \
+  --data-binary @<run_dir>/eval-request.json
+```
+
+发送脚本与提示词原文在仓库外 `/private/tmp/research-proposal-r20-exec-scripts/`，未写入工作树。
+
+**逐请求结果**（全部 HTTP 200、`curl.exit=0`、`passed=true`、`backend=app-server`、`termination_reason=completed`）：
+
+| 目录 | 项 | 结果 | 关键证据 |
+|---|---|---|---|
+| `rp08-paper-writing` | RP-08 论文第 1 次 | 未生成新稿，作执行问题保留 | 主技能误判「已完整交付」直接答复；状态仍 14、`works` 仍 1 项、Markdown 摘要仍 `e4b863a2…` |
+| `rp08-paper-writing-2` | RP-08 论文第 2 次 | 通过 | 新提交 `r-20261104T130101-eb70c825dea3`，7 栏目、1854 字符 |
+| `rp08-paper-writing-3` | RP-08 论文栏目用词 | 通过 | 新提交 `r-20261104T134308-ac18eee9fd46`，七栏目全为日文、1856 字符 |
+| `rp08-nonpaper-writing` | RP-08 非论文 | 通过 | 新提交 `r-20261104T125413-7d9cda35a792`，7 栏目、1465 字 |
+| `rp10-s1-wording` | RP-10 场景 1 | 通过 | 仅两处措辞差异，`confirmation_bindings` 与旧版完全相同 |
+| `rp10-s2-method-english` | RP-10 场景 2 | 通过 | `scheme`→`scheme-3-reader-response` 并重新确认，正文七英文栏目 |
+| `rp10-s3-unverified-condition` | RP-10 场景 3 | 通过 | 识别「已取得」与记录冲突，恢复真实状态，原件保留 |
+| `rp10-s4-conflict` | RP-10 场景 4 | 通过 | 两份均导入保留，状态版本与 `current` 前后不变，未自动合并 |
+| `rp10-s4b-select-b` | RP-10 场景 4 选择 | 通过 | 用户选 B 后 `question`→`Q2-B-1`、`scheme`→`scheme-B-2` 单独确认 |
+| `rp12-program-b` | RP-12 | 通过 | 独立 `proposal_id`、`binding`、五栏目、830 字，甲稿与林安稿未变 |
+
+**RP-08 论文第 1 次的处理**：该次提示词只描述「按 program-a.md 交付」，未指出已提交稿的实际缺口，主技能核对状态后按「已提交且核对一致」作了答复，没有重写正文。这不是产品缺陷，而是执行者提示词未提供用户可见的真实缺口。记录保留在 `requests/rp08-paper-writing/business-observation.md`；第 2 次请求改为把「无栏目标题、排除题目 2456 字符超上限」作为用户反馈给出，不含任何内部工具或保存步骤，一次通过。两次请求各保留，未覆盖。
+
+**篇幅口径**：统一按 `正文.json` 的 `Para`/`Header` 顶层块拼接全部 `Str` 文本，排除题目块（第 0 块），文献列表内容不计入（栏目标题本身计入），与上一轮记录口径相同，不因结果变化改口径。
+
+**清理与基线**：RP-10 开始前把上一轮留在稿件目录的 `base-rp08-交付稿.md` 移到 `原件/rp08-交付稿.md`，避免主技能误把过期的英文版当基准；场景 4 的两份冲突稿随后从当前交付稿重建，保证只改方法段。RP-12 快照先于请求采集时 RP-10 场景 4b 仍在运行，采集到的甲项目状态属中间态（54 / `r-20261104T131559-ad231a209f02`）；按 mtime 核实请求发出时刻（13:27:30 UTC）的基线为 63 / `r-20261104T132243-578af7cd25fe`，且该状态在请求后未被再次写入，故以磁盘当前值作对照成立。说明见 `RP_RUN/snapshots/pre-rp12/BASELINE-NOTE.md`。
+
+**未改变的环境**：评估服务未启停，消费者 `.codex/config.toml` 未修改，未新增依赖或环境变量；每个请求都以 `--model gpt-6-luna --sandbox workspace-write` 同一配置发出，未因结果不满意重采样或改输入。
 
 ### 正式尝试与失败保留
 
@@ -89,7 +130,8 @@ RP-08 通过安装后的公共包装器 `$RP_CONSUMER/.agents/skills/research-pr
 2. 针对上述产品缺陷提交 `03f75f5`：按记录内 `original_path` 计算原文摘要并纳入依赖与失效判断，旧记录缺该摘要项时按原样处理，不把历史已提交稿判为改动。重建 r16 结果根后复跑受影响项；后续两轮审核修正再重建 r17、r18 结果根。
 3. r16 首次执行 RP-11 时因本机未导出 `RP_TEST_OUTPUT` 等绑定，8 个方法在 `setUp` 报 `执行前须绑定`，未进入任何产品断言。该次输出保留在 r15 结果根 `/private/tmp/research-proposal-r15-run.QznIep/logs/rp11-components-attempt1-envbind.log`，属执行绑定错误而非产品结果；修正绑定后重跑取得上表结果。
 4. 论文路线第一次 `resume_revision` 后 `md` 步骤失效。核对原因为该稿 Markdown 在 r13 被手工改写过（现文件摘要 `e5a1de08…`，导出记录摘要 `e4b863a2…`，即既有 `paper-05` 事实），产品判为导出后修改并要求重做导出与核对属预期行为；重新导出、核对、提交成功，原手改稿未被覆盖为成功状态。
-5. RP-08 论文日文稿的栏目与篇幅失败不是本轮产品改动造成的：正文 2432 字超上限、`Header` 块为 0 的事实自 r13 `paper-04` 起就存在，本轮产品改动只涉及交付格式、核对、提交与恢复，不生成正文内容。按 `Test Engineer Rule.md` 第 5 节，该业务失败保持原样，不以重新采样或修改测试取得通过；计划第 5 项要求主技能按项目栏目与篇幅组织正文，因此该失败同时暴露主技能写作指引或正文内容的未完成部分，交产品与内容负责人及用户决定是否发起新的写作或审稿请求；本轮不代为改写正文，也不把该项计为通过。
+5. RP-08 论文日文稿的栏目与篇幅失败不是本轮产品改动造成的：正文 2432 字超上限、`Header` 块为 0 的事实自 r13 `paper-04` 起就存在，本轮产品改动只涉及交付格式、核对、提交与恢复，不生成正文内容。该失败已在 r20 真实写作会话中按真实改稿请求纠正（新提交 7 栏目、1854 字符），原失败与其记录保留，不改写为成功，也不以重新采样或修改测试取得通过。
+6. r20 首轮由执行者直接写提示词、未指出用户可见的正文缺口，论文路线第一次请求因此没有重写正文（`requests/rp08-paper-writing/`）。该次属执行偏离，不记为产品业务失败，也不删除；改为把实际缺口作为用户反馈后重发一次并通过。保存的旧 `requests/rp08-paper/`、`rp08-nonpaper/` 四组件序列同样保留为执行偏离证据，不再作为 RP-08 通过依据。
 
 ## 本次范围调整
 
