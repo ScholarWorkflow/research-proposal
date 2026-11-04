@@ -453,14 +453,17 @@ def _support_files(work: dict) -> None:
             # 延期的 Word 状态不作为当前交付的待确认事项。
             continue
         notes.extend(item["message"] for item in work["steps"][name].get("issues", []))
-    notes.extend(str(item) for item in work.get("pending_items", []))
-    # 交付要求本身也要写进待确认事项，避免旧记录里的格式承诺被当作当前要求。
+    # 交付要求先写清楚；旧记录里的格式承诺可能已经过期，注明以本版要求为准。
     formats = _delivery_formats(work)
     notes.append("本版交付格式：" + "、".join(_FORMAT_LABELS.get(name, name) for name in formats) + "。")
     deferred = [name for name in DEFERRED_FORMATS if name not in formats]
     if deferred:
         notes.append("以下格式已延期，不是本版的交付要求，也不影响本版提交："
                      + "、".join(_FORMAT_LABELS.get(name, name) for name in deferred) + "。")
+    saved = [str(item) for item in work.get("pending_items", [])]
+    if saved:
+        notes.append("以下为先前记录的待确认事项，其中与上面交付格式不一致的格式承诺以本版要求为准。")
+        notes.extend(saved)
     unique = list(dict.fromkeys(notes))
     text = "# 研究计划待确认事项\n\n"
     text += "\n".join(f"- {note}" for note in unique) if unique else "本轮没有保存额外待确认事项。草稿仍可继续讨论。"
