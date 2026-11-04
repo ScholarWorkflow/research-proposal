@@ -111,7 +111,7 @@ curl -sS -X POST http://127.0.0.1:17902/eval -H 'Content-Type: application/json'
 | `rp08-nonpaper-writing` | RP-08 非论文 | 通过 | 新提交 `r-20261104T125413-7d9cda35a792`，7 栏目、1465 字 |
 | `rp10-s1-wording` | RP-10 场景 1 | 通过 | 仅两处措辞差异，`confirmation_bindings` 与旧版完全相同 |
 | `rp10-s2-method-english` | RP-10 场景 2 | 通过 | `scheme`→`scheme-3-reader-response` 并重新确认，正文七英文栏目 |
-| `rp10-s3-unverified-condition` | RP-10 场景 3 | 通过 | 识别「已取得」与记录冲突，恢复真实状态，原件保留 |
+| `rp10-s3-unverified-condition` | RP-10 场景 3 | 部分通过 | 识别「已取得」与记录冲突并恢复真实状态、原件保留；未把「受影响部分」交回用户决定 |
 | `rp10-s4-conflict` | RP-10 场景 4 | 通过 | 两份均导入保留，状态版本与 `current` 前后不变，未自动合并 |
 | `rp10-s4b-select-b` | RP-10 场景 4 选择 | 通过 | 用户选 B 后 `question`→`Q2-B-1`、`scheme`→`scheme-B-2` 单独确认 |
 | `rp12-program-b` | RP-12 | 通过 | 独立 `proposal_id`、`binding`、五栏目、830 字，甲稿与林安稿未变 |
