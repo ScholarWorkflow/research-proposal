@@ -89,7 +89,7 @@ RP-08 上一轮通过安装后的公共包装器 `$RP_CONSUMER/.agents/skills/re
 
 ### r20 真实会话纠正执行
 
-本轮按计划第 102、158 行与 Test Engineer Rule 重新执行 RP-08、RP-10、RP-12。三条硬约束逐条落实：所有业务结果都经评估服务发真实请求，由主技能自己写作与保存；未把任何稿件状态重置回 `current=null`；未手改任何 `正文.json` 或 Markdown。
+本轮按计划第 102、158 行与 Test Engineer Rule 重新执行 RP-08、RP-10、RP-12。三条硬约束逐条落实：所有业务结果都经评估服务发真实请求，由主技能自己写作与保存；未把任何稿件状态重置回 `current=null`；未手改任何 `正文.json` 或 Markdown（三份当前稿的 `研究计划草稿.md` 与 `正文.json` 用 `shasum -a 256` 复核，都与状态内 `checks.digests` 相符）。
 
 **请求方式**：`EVAL_PORT` 从 `/Users/rekidunois/code/skill-repos-dev/eval-server` 用 `direnv exec . bash -c 'echo $EVAL_PORT'` 取得，实际值 `17902`，请求前 `lsof` 确认 LISTENING。每个请求按 `requests/rp13-school/` 的结构保存，含 `eval-request.json`、`prompt.txt`、`preparation.json`、`curl.exit`、`http-status.txt`、`response.json`、`times.txt` 与 `business-observation.md`。全部请求 `command` 形如：
 
