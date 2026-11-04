@@ -6,7 +6,7 @@
 
 ## r15：Markdown 单格式产品与正式执行
 
-当前适用产品提交为 `bb0efb4113edcc41267632bfd6ad7cf2a4d1e4a6`（`feat/research-proposal`）。该线按已批准的 `rp-plan-r4-markdown-2026-11-04` 第 4、5 项把产品从双格式改为 Markdown 单格式；计划正文校验值保持 `4776b1d7…b5f9a`，测试计划保持 `bc8cd431…ec259`，均未修改。
+当前适用产品提交为 `e6ebaa4224e8d12f3ba7d9e6c60e2c31b4d4254c`（`feat/research-proposal`）。该线按已批准的 `rp-plan-r4-markdown-2026-11-04` 第 4、5 项把产品从双格式改为 Markdown 单格式；计划正文校验值保持 `4776b1d7…b5f9a`，测试计划保持 `bc8cd431…ec259`，均未修改。
 
 提交沿革：
 
@@ -19,15 +19,19 @@
 | `9791023` | 按实现审核意见修正 IR-03、IR-04、IR-05、IR-06、IR-10、IR-11 |
 | `3240c25` | 待确认事项先列本版交付格式；修正 RP-10 口径与字数测量方法 |
 | `521792c` | 结果记录改为最终构建与 r18 结果根，补审核修正复验 |
-| `bb0efb4` | 按 IR-12 修正：延期 Word 单独失效不再清空 Markdown 核对；补 r19 文字核对记录与字数口径说明（本次安装版本） |
+| `bb0efb4` | 按 IR-12 修正：延期 Word 单独失效不再清空 Markdown 核对；补 r19 文字核对记录与字数口径说明 |
+| `9fa15a8` | 结果记录改为 r19 构建与结果根 |
+| `e6ebaa4` | 按 IR-12 残留修正：已提交稿按交付依赖键比较摘要；补 r20 文字核对记录（本次安装版本） |
 
-当前结果根为 `RP_RUN=/private/tmp/research-proposal-r19-run.VtBIUl`；消费者仍为 `RP_CONSUMER=/private/tmp/research-proposal-run.Ts9A0m/consumers/nix`，换版前完整归档在 `RP_RUN/archive/consumer-before`。四个 Nix 输出均从 `bb0efb4` 的固定远端提交构建，退出 0，实际 store 路径为 `0yvf662r…runtime`、`83r2kzms…package`、`g8mjhpva…environment`、`g9cfc9mc…activate`；日志为 `logs/build-*.log` 与 `.exit`。激活器 `logs/activate.log` 退出 0。原样恢复的 `input` 与 `.test-runtime` 与换版前快照 `diff -r` 无差异，两份真实稿件恢复为 `state_version` 10（非论文）与 9（论文）、`current` 均为 `null`。
+当前结果根为 `RP_RUN=/private/tmp/research-proposal-r20-run.nERfV9`；消费者仍为 `RP_CONSUMER=/private/tmp/research-proposal-run.Ts9A0m/consumers/nix`，换版前完整归档在 `RP_RUN/archive/consumer-before`。四个 Nix 输出均从 `e6ebaa4` 的固定远端提交构建，退出 0，实际 store 路径为 `vm2r16fl…runtime`、`scg0qhbs…package`、`ngyk49dg…environment`、`kxbqgx6q…activate`；日志为 `logs/build-*.log` 与 `.exit`。激活器 `logs/activate.log` 退出 0。原样恢复的 `input` 与 `.test-runtime` 与换版前快照 `diff -r` 无差异，两份真实稿件恢复为 `state_version` 10（非论文）与 9（论文）、`current` 均为 `null`。
 
-**早前结果根说明**：更换产品提交后，r15（`/private/tmp/research-proposal-r15-run.QznIep`）、r16（`/private/tmp/research-proposal-r16-run.jKCQmg`）、r17（`/private/tmp/research-proposal-r17-run.b802l1`）、r18（`/private/tmp/research-proposal-r18-run.sSVUTo`）的构建、请求与日志均保留不动。下表的当前结论来自 r19 结果根；更早各根的同期结果只作过程记录，不重复计入通过。
+**早前结果根说明**：更换产品提交后，r15（`QznIep`）、r16（`jKCQmg`）、r17（`b802l1`）、r18（`sSVUTo`）、r19（`VtBIUl`，均在 `/private/tmp/research-proposal-r1*-run.*` 下）的构建、请求与日志均保留不动。下表的当前结论来自 r20 结果根；更早各根的同期结果只作过程记录，不重复计入通过。
 
 审核修正项的复验记录：IR-03（已提交稿只比对交付格式内步骤）在 r18 构建上对两份真实已提交稿调用 `resume_revision` 均返回 `committed` 且无问题；IR-04（迁移不改写迁移前摘要）用「迁移前修改正文再迁移」的构造验证，`body` 与 `md` 均变为 `pending` 且 `content_consistent` 为 false；IR-05 提交返回只含 `md`；IR-06 用 `read_material` 实际写出的扁平 `材料.json` 验证，替换原件后返回 `committed_content_changed`；IR-10 省略 `template_path` 可正常建立工作版；IR-11 交付目录的 `研究计划待确认事项.md` 首列本版交付格式与已延期格式，并对先前记录条目注明格式承诺以本版为准。IR-09 已在 `logs/rp01-install-inspection.txt` 补齐配置条目检查。RP-10 的口径修正见下表。
 
 第二轮定向复核新增 IR-12 与记录问题，已在 `bb0efb4` 处理：IR-12 把 `_invalidate` 的清空条件改为只在本版交付步骤失效时成立，使延期 Word 模板或映射变化不再清掉 Markdown 的 `checked_formats`；用生产包装器在 r19 构建上验证：仅改模板文件后 `resume_revision` 返回 `ready`、无问题，`review`/`md` 保持 `complete`，`commit_revision` 返回 `committed` 且 `artifacts` 只含 `md`；反向验证 Markdown 文件被改时 `md`/`review` 转 `pending`、`checks` 清空、提交被拒。IR-13 在 r19 结果根补了本根的 `logs/rp04-handoff-review.md`。IR-07 的字数口径补明「栏目标题计入、文献列表内容不计入」。
+
+第三轮定向复核指出 IR-12 只修好未提交路径：已提交稿的恢复仍用整份快照比较，历史 `template_path` 的模板文件变化会误报 `committed_content_changed`。已在 `e6ebaa4` 修正：`_fingerprints_changed` 增加可选键过滤，`_committed_response` 只比对本版交付依赖键并纳入 `stage_files`。用生产包装器在 r20 构建上验证：已提交稿仅改模板文件后 `resume_revision` 返回 `committed`、无问题；改 Markdown 文件返回 `needs_input`/`committed_content_changed`；改正文、改已保存步骤文件同样返回 `needs_input`，检测能力未削弱。两份真实稿件提交后重报均为 `committed`。
 
 ### 结果表（四状态）
 
