@@ -201,6 +201,31 @@ def _review_artifact_digests(work: dict) -> dict:
     return _artifact_digests(artifacts)
 
 
+def _material_source_paths(paths) -> dict:
+    """材料读取记录指向的原文；记录变化或原文变化都要让依赖它的工作失效。
+
+    记录按各自 JSON 文件所在目录解释相对引用，其余仍保留绝对路径。
+    """
+    sources = {}
+    for path in paths:
+        record_path = Path(path)
+        if not record_path.is_file():
+            continue
+        try:
+            value = read_json(record_path)
+        except (OSError, ValueError, TypeError):
+            continue
+        material = value.get("material") if isinstance(value, dict) else None
+        original = material.get("original_path") if isinstance(material, dict) else None
+        if not isinstance(original, str) or not original:
+            continue
+        target = Path(original)
+        if not target.is_absolute():
+            target = record_path.parent / target
+        sources[str(target)] = _digest_file(target)
+    return sources
+
+
 def _snapshot(work: dict) -> dict:
     inputs = work["inputs"]
     directory = Path(work["directory"])
@@ -212,6 +237,7 @@ def _snapshot(work: dict) -> dict:
     return {
         "inputs": json_digest(inputs),
         "materials": {path: _digest_file(path) for path in inputs["material_paths"]},
+        "material_sources": _material_source_paths(inputs["material_paths"]),
         "template": {"path": template, "digest": _digest_file(template)},
         "mapping": json_digest(work.get("mapping")),
         "body": _digest_file(directory / BODY_NAME),
@@ -223,9 +249,25 @@ def _snapshot(work: dict) -> dict:
     }
 
 
+# 后加的摘要项：旧记录没有该键时不作为变化，避免把历史已提交稿判为改动。
+LATE_FINGERPRINTS = ("material_sources",)
+
+
+def _fingerprints_changed(previous: dict, current: dict) -> bool:
+    for key, value in current.items():
+        if key in LATE_FINGERPRINTS and key not in previous:
+            continue
+        if previous.get(key) != value:
+            return True
+    return False
+
+
 def _dependencies(work: dict) -> dict:
     snapshot = _snapshot(work)
-    names = ["inputs", "materials", "template", "mapping", "body", "references", "decisions", "conditions"]
+    names = [
+        "inputs", "materials", "material_sources", "template", "mapping", "body",
+        "references", "decisions", "conditions",
+    ]
     # 仅 Markdown 交付时不把 Word 模板算作 Markdown 的依赖。
     if "docx" not in _delivery_formats(work):
         names.remove("template")
@@ -278,7 +320,10 @@ def _sync_work(work: dict, inputs: dict | None = None) -> bool:
         _invalidate(work, _with_delivery(work, "question", "scheme", "body"), reason)
         _unconfirm(work, ("question", "scheme"))
         work["conditions"] = {"resolved": False, "notes": "研究问题改变后须核对对应条件。"}
-    if current["materials"] != previous.get("materials"):
+    if current["materials"] != previous.get("materials") or (
+        "material_sources" in previous
+        and current["material_sources"] != previous["material_sources"]
+    ):
         reason = issue("materials_changed", "材料内容或路径变化，须核对受影响的摘录、引用和正文。", "inputs.material_paths")
         _invalidate(work, _with_delivery(work, "materials", "body"), reason)
     old_other = {key: value for key, value in old_inputs.items() if key not in {"template_path", "material_paths", "question_id"}}
@@ -785,7 +830,7 @@ def _migrate_delivery(work: dict) -> bool:
 
 def _committed_response(state: dict, revision: str) -> dict:
     work = state["works"][revision]
-    changed = _snapshot(work) != work["fingerprints"]
+    changed = _fingerprints_changed(work["fingerprints"], _snapshot(work))
     for name in ("docx", "md"):
         step = work["steps"][name]
         changed = changed or step.get("fingerprints") != _artifact_digests(step.get("artifacts", {}))
