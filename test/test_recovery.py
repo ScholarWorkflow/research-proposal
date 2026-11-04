@@ -1,9 +1,8 @@
-"""RP-11 的受控失败分支；不代替真实成稿或页面验收。"""
+"""RP-11 的 Markdown 失败与恢复分支；基准来自真实成稿。"""
 
 import copy
 import os
 from pathlib import Path
-import shutil
 from unittest import mock
 
 from support import SavedDraftCase, digest, read_json, required_path, write_json
@@ -14,102 +13,81 @@ class Interrupted(BaseException):
 
 
 class RecoveryTests(SavedDraftCase):
-    def test_first_draft_partial_export_has_no_current(self):
+    def test_first_draft_export_failure_has_no_current(self):
         requests = read_json(required_path("RP_SAVE_REQUESTS"))
         current = self.initial["works"][self.initial["current"]["revision_id"]]
-        for failed_format, successful_format in (("docx", "md"), ("md", "docx")):
-            with self.subTest(format=failed_format):
-                proposal = self.output / f"first-{failed_format}"
-                proposal.mkdir()
-                started = self.call("begin_revision", {
-                    "proposal_dir": str(proposal), "expected_state_version": None,
-                    "inputs": current["inputs"],
-                })
-                self.assertEqual(started["status"], "ready")
-                revision = started["revision_id"]
-                state_path = proposal / "研究计划状态.json"
+        proposal = self.output / "first-md"
+        proposal.mkdir()
+        started = self.call("begin_revision", {
+            "proposal_dir": str(proposal), "expected_state_version": None,
+            "inputs": current["inputs"],
+        })
+        self.assertEqual(started["status"], "ready")
+        revision = started["revision_id"]
+        state_path = proposal / "研究计划状态.json"
 
-                def request(**fields):
-                    return {
-                        "proposal_dir": str(proposal), "revision_id": revision,
-                        "expected_state_version": read_json(state_path, ".state_version"),
-                        **fields,
-                    }
+        def request(**fields):
+            return {
+                "proposal_dir": str(proposal), "revision_id": revision,
+                "expected_state_version": read_json(state_path, ".state_version"),
+                **fields,
+            }
 
-                for stage in ("materials", "question", "scheme", "body"):
-                    saved = self.call("save_revision", request(stage=stage, data=requests[stage]["data"]))
-                    self.assertEqual(saved["status"], "ready")
-                self.assertEqual(self.call("export_revision", request(formats=[successful_format]))["status"], "ready")
-                work = read_json(state_path)["works"][revision]
-                successful_path = Path(work["directory"]) / f"研究计划草稿.{successful_format}"
-                successful_hash = digest(successful_path)
-                failed_path = Path(work["directory"]) / f"研究计划草稿.{failed_format}"
-                failed_path.mkdir()
-                try:
-                    result = self.call("export_revision", request(formats=[failed_format]))
-                    self.assertIn(result["status"], {"blocked", "needs_input"})
-                except OSError:
-                    pass
-                rejected = self.call("commit_revision", request())
-                self.assertNotEqual(rejected["status"], "committed")
-                self.assertIsNone(read_json(state_path)["current"])
-                self.assertEqual(digest(successful_path), successful_hash)
+        for stage in ("materials", "question", "scheme", "body"):
+            saved = self.call("save_revision", request(stage=stage, data=requests[stage]["data"]))
+            self.assertEqual(saved["status"], "ready")
+        work = read_json(state_path)["works"][revision]
+        directory = Path(work["directory"])
+        body_hash = digest(directory / "正文.json")
+        (directory / "研究计划草稿.md").mkdir()
+        try:
+            result = self.call("export_revision", request(formats=["md"]))
+            self.assertIn(result["status"], {"blocked", "needs_input"})
+        except OSError:
+            pass
+        rejected = self.call("commit_revision", request())
+        self.assertNotEqual(rejected["status"], "committed")
+        self.assertIsNone(read_json(state_path)["current"])
+        self.assertEqual(digest(directory / "正文.json"), body_hash)
 
-    def test_one_export_fails_then_recovers(self):
-        for failed_format, successful_format in (("docx", "md"), ("md", "docx")):
-            with self.subTest(format=failed_format):
-                revision = self.begin()
-                self.assertEqual(self.export(revision, [successful_format])["status"], "ready")
-                directory = Path(self.work(revision)["directory"])
-                successful = directory / f"研究计划草稿.{successful_format}"
-                saved_hash = digest(successful)
-                blocked_path = directory / f"研究计划草稿.{failed_format}"
-                blocked_path.mkdir()
-                try:
-                    result = self.export(revision, [failed_format])
-                    self.assertIn(result["status"], {"blocked", "needs_input"})
-                except OSError:
-                    # 正式文件条件触发的原错误允许直接保留；仍必须保存进度。
-                    pass
-                rejected = self.call("commit_revision", self.request(revision))
-                self.assertNotEqual(rejected["status"], "committed")
-                self.assert_current_unchanged()
-                self.assertEqual(digest(successful), saved_hash)
-                self.assertNotEqual(self.work(revision)["steps"][failed_format]["status"], "complete")
-                blocked_path.rmdir()
-                self.assertEqual(self.export(revision, [failed_format])["status"], "ready")
-                self.assertEqual(digest(successful), saved_hash)
-                review = self.controlled_review(revision)
-                self.assertTrue(review["checks"]["content_consistent"])
-                committed = self.call("commit_revision", self.request(revision))
-                self.assertEqual(committed["status"], "committed")
-                self.assertEqual(committed["state"]["current"]["revision_id"], revision)
-                for path in committed["artifacts"].values():
-                    if isinstance(path, str):
-                        self.assertTrue(Path(path).exists())
-                # 下一分支仍从同一真实 RP-08 基准开始。
-                shutil.rmtree(self.proposal)
-                shutil.copytree(self.before, self.proposal, symlinks=True)
+    def test_markdown_export_fails_then_recovers(self):
+        revision = self.begin()
+        directory = Path(self.work(revision)["directory"])
+        body_hash = digest(directory / "正文.json")
+        blocked_path = directory / "研究计划草稿.md"
+        blocked_path.mkdir()
+        try:
+            result = self.export(revision)
+            self.assertIn(result["status"], {"blocked", "needs_input"})
+        except OSError:
+            # 正式文件条件触发的原错误允许直接保留；仍必须保存进度。
+            pass
+        rejected = self.call("commit_revision", self.request(revision))
+        self.assertNotEqual(rejected["status"], "committed")
+        self.assert_current_unchanged()
+        self.assertEqual(digest(directory / "正文.json"), body_hash)
+        self.assertNotEqual(self.work(revision)["steps"]["md"]["status"], "complete")
+        blocked_path.rmdir()
+        self.assertEqual(self.export(revision)["status"], "ready")
+        self.assertEqual(digest(directory / "正文.json"), body_hash)
+        review = self.review(revision)
+        self.assertTrue(review["checks"]["content_consistent"])
+        self.assertEqual(review["checks"]["checked_formats"], ["md"])
+        committed = self.call("commit_revision", self.request(revision))
+        self.assertEqual(committed["status"], "committed")
+        self.assertEqual(committed["state"]["current"]["revision_id"], revision)
+        self.assertTrue(Path(committed["artifacts"]["md"]).is_file())
 
     def test_content_mismatch_does_not_commit(self):
         revision = self.ready_work()
         directory = Path(self.work(revision)["directory"])
         markdown = directory / "研究计划草稿.md"
-        markdown.write_text(markdown.read_text(encoding="utf-8") + "\n遗漏检查：与 Word 不一致。\n", encoding="utf-8")
-        result = self.controlled_review(revision)
+        markdown.write_text(markdown.read_text(encoding="utf-8") + "\n遗漏检查：与正式正文不一致。\n", encoding="utf-8")
+        result = self.review(revision)
         self.assertFalse(result["checks"]["content_consistent"])
         self.assertNotEqual(self.call("commit_revision", self.request(revision))["status"], "committed")
         self.assert_current_unchanged()
         self.assertTrue(markdown.exists())
-
-    def test_failed_page_review_does_not_commit(self):
-        revision = self.begin()
-        self.assertEqual(self.export(revision)["status"], "ready")
-        result = self.controlled_review(revision, passed=False)
-        self.assertFalse(result["checks"]["pages_ok"])
-        self.assertNotEqual(self.call("commit_revision", self.request(revision))["status"], "committed")
-        self.assert_current_unchanged()
-        self.assertTrue(Path(self.work(revision)["directory"]).exists())
 
     def test_saved_stage_survives_interruption(self):
         # 这些 data 来自 RP-08 实际保存件，不编写新的确认记录。
@@ -224,17 +202,16 @@ class RecoveryTests(SavedDraftCase):
             directory = Path(pending["target_directory"])
             self.assertTrue(directory.is_dir())
         before = {name: digest(directory / name) for name in (
-            "正文.json", "研究计划草稿.docx", "研究计划草稿.md",
+            "正文.json", "研究计划草稿.md",
         )}
         resumed = self.call("resume_revision", self.request(revision))
         self.assertEqual(resumed["state"]["current"]["revision_id"], revision)
         self.assertEqual(before, {name: digest(directory / name) for name in before})
         self.assertTrue(Path(self.initial["current"]["directory"]).exists())
-        for name in ("docx", "md"):
-            self.assertEqual(Path(resumed["artifacts"][name]).parent, directory)
+        self.assertEqual(Path(resumed["artifacts"]["md"]).parent, directory)
 
     def test_changed_inputs_invalidate_related_work(self):
-        for changed in ("body", "template", "material", "selection"):
+        for changed in ("body", "material", "selection"):
             with self.subTest(changed=changed):
                 revision = self.ready_work()
                 work = self.work(revision)
@@ -247,10 +224,6 @@ class RecoveryTests(SavedDraftCase):
                     body = read_json(body_path)
                     body["blocks"].append({"t": "Para", "c": [{"t": "Str", "c": "恢复前正文发生变化。"}]})
                     write_json(body_path, body)
-                elif changed == "template":
-                    # 选择已准备的另一类模板，不修改原件。
-                    from support import FIXTURES
-                    inputs["template_path"] = str(FIXTURES / "templates/transfer-form.pdf")
                 elif changed == "material":
                     material_record_path = required_path("RP_RELATED_MATERIAL_RECORD")
                     material_record = read_json(material_record_path, ".material")
@@ -275,10 +248,9 @@ class RecoveryTests(SavedDraftCase):
                     self.assertNotEqual(resumed["status"], "committed")
                     updated = resumed["state"]["works"][revision]
                     self.assertFalse(updated["checks"].get("content_consistent", False))
-                    self.assertFalse(updated["checks"].get("pages_ok", False))
                     self.assertNotEqual(self.call("commit_revision", self.request(revision))["status"], "committed")
                     self.assert_current_unchanged()
-                    if changed in {"body", "template"}:
+                    if changed == "body":
                         self.assertEqual(updated["steps"]["materials"], work["steps"]["materials"])
                         self.assertEqual(updated["confirmations"], work["confirmations"])
                     if changed == "selection":

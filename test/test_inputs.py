@@ -231,27 +231,6 @@ class RevisionImportTests(ComponentCase):
         self.assertTrue(result["body"]["pandoc-api-version"])
         return result
 
-    def test_word_keeps_unresolved_changes_comments_and_object_location(self):
-        result = self.import_source("marked.docx", ("ready", "needs_input", "blocked"))
-        self.assertTrue(result["changes"])
-        changes = [item["text"] for item in result["changes"]]
-        self.assertTrue(any("段落比较" in text for text in changes))
-        self.assertTrue(any("逐段比较" in text for text in changes))
-        for item in result["changes"]:
-            self.assertTrue(item["kind"])
-            self.assertTrue(item["location"])
-        self.assertTrue(result["comments"])
-        self.assertTrue(any(
-            "请核对材料取得条件" in item["text"] for item in result["comments"]
-        ))
-        self.assertTrue(all(item["location"] for item in result["comments"]))
-        self.assertTrue(result["unsupported"])
-        self.assertTrue(all(item["location"] for item in result["unsupported"]))
-        # 待处理正文与修订、批注分开返回；接受哪些变化由真实用户决定。
-        self.assertIn("材料取得条件尚未核实", ast_text(result["body"]))
-        self.assertNotIn("请核对材料取得条件", ast_text(result["body"]))
-        self.assertNotIn("此批注不是正文", ast_text(result["body"]))
-
     def test_markdown_import_returns_body_and_content_difference(self):
         result = self.import_source("wording.md")
         self.assertIn("逐段比较", ast_text(result["body"]))

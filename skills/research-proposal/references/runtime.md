@@ -107,12 +107,14 @@
 
 后三个操作仍带本稿目录、修订编号和当前版本号：
 
-1. `export_revision`：`formats` 为非空的 `["docx","md"]` 子集；可带 `template_path`、`mapping`。结果 `artifacts` 只列实际成功的 `docx`、`md`、`preview_pdf`、`page_images`。即使失败也消费返回的新状态与成功项，不能改当前指针。
-2. `review_revision`：带 `page_review:{passed,notes}`；`passed` 来自逐页查看**本轮实际页图**。组件同时检查 Word 填写区域和 Markdown 的内容一致性，返回 `checks.content_consistent`、`checks.pages_ok`。缺输出或预览不能用传入布尔值补齐。
-3. `commit_revision`：无额外字段。确认、条件、两种输出、内容和页面核对均有效才返回 `committed`。仅交付它返回的同一已提交目录下的两个文件；非关键待定项保留在该版待确认清单。
+1. `export_revision`：当前使用 `formats:["md"]`；省略 `formats` 时同样只导出 Markdown。仅 Markdown 时不读取或复制 Word 模板，不生成 Word 或预览。结果 `artifacts` 只列实际成功的 `md`。即使失败也消费返回的新状态与成功项，不能改当前指针。旧 Word 分支及其 `template_path`、`mapping` 参数作为延期实现保留，当前调用不使用。
+2. `review_revision`：无额外字段，当前不需要 `page_review`。组件实际读回 Markdown 与正式正文核对，返回 `checks.content_consistent`、`checks.checked_formats:["md"]` 及相关摘要。缺文件或内容不符不能由调用者给出成功标记补齐；不调用页面程序，不写页面成功。
+3. `commit_revision`：无额外字段。确认、条件、Markdown 输出及内容核对均有效才返回 `committed`，成功另返回已提交目录的 `artifacts.md`，不混入旧 Word。延期 Word 的状态不影响提交；非关键待定项保留在该版待确认清单。
 
 ## 恢复结果
 
 `resume_revision` 接收 `proposal_dir`、刚从正式文件读取的 `expected_state_version`，可带已明确采用的 `revision_id` 和当前 `inputs`。返回状态、仍有效的 `artifacts` 和 `next_steps`。多个工作版本未指定时先呈现供用户决定；存在冲突时保留本轮数据，不反复用旧计数强写。
+
+缺 `delivery_formats` 的旧未提交工作版由该操作在文件锁内补入 `["md"]` 并递增状态版本，只使旧交付核对待重做；材料、问题、中文方案、正文及仍有效的用户决定保留。已提交的双格式记录继续按历史要求只读解释，不原地迁移、不改动其文件。当前 `next_steps` 不要求 Word 或页面。
 
 当前版本只由 `研究计划状态.json.current` 指定。`works` 保存每版步骤、确认、条件与核对；已提交版只读。完成一个导出不会切换当前版本，目录已改名也不表示提交完成。恢复与输入变化的处理见 [改稿、模板与恢复](revisions.md)。

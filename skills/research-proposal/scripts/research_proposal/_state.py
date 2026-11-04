@@ -1,4 +1,4 @@
-"""每稿独立的保存、双格式提交与中断恢复。"""
+"""每稿独立的保存、Markdown 交付提交与中断恢复。"""
 
 from __future__ import annotations
 
@@ -25,6 +25,9 @@ BODY_NAME = "正文.json"
 REFERENCE_NAME = "引用定位.json"
 STAGES = ("materials", "question", "scheme", "body", "docx", "md", "review")
 FORMAT_NAMES = {"docx": "研究计划草稿.docx", "md": "研究计划草稿.md"}
+# 当前交付只要求 Markdown；Word 导出与页图为延期实现，状结构保留但不参与交付。
+DELIVERY_FORMATS = ["md"]
+DEFERRED_FORMATS = ("docx",)
 STORED_PATH_BASE = "."
 
 
@@ -165,6 +168,39 @@ def _artifact_digests(artifacts: dict) -> dict:
     return {path: _digest_file(path) for path in _file_paths(artifacts)}
 
 
+def _delivery_formats(work: dict) -> list:
+    """本版交付要求；历史已提交记录缺该字段时按原双格式只读解释。"""
+    value = work.get("delivery_formats")
+    if isinstance(value, list) and value:
+        return [name for name in value if name in FORMAT_NAMES]
+    if work.get("committed"):
+        return ["docx", "md"]
+    return list(DELIVERY_FORMATS)
+
+
+def _delivery_artifact_names(formats) -> set:
+    names = set(formats)
+    if "docx" in names:
+        names.update({"preview_pdf", "page_images"})
+    return names
+
+
+def _delivery_artifacts(work: dict, *, valid_only=False) -> dict:
+    """只汇总本版交付要求中的实际文件，不把旧 Word 混入当前交付。"""
+    allowed = _delivery_artifact_names(_delivery_formats(work))
+    return {
+        name: value for name, value in _existing_artifacts(work, valid_only=valid_only).items()
+        if name in allowed
+    }
+
+
+def _review_artifact_digests(work: dict) -> dict:
+    """核对摘要只依赖本版交付要求中的实际产物。"""
+    allowed = _delivery_artifact_names(_delivery_formats(work))
+    artifacts = {name: value for name, value in work.get("artifacts", {}).items() if name in allowed}
+    return _artifact_digests(artifacts)
+
+
 def _snapshot(work: dict) -> dict:
     inputs = work["inputs"]
     directory = Path(work["directory"])
@@ -183,14 +219,27 @@ def _snapshot(work: dict) -> dict:
         "stage_files": stage_files,
         "decisions": json_digest(work["confirmations"]),
         "conditions": json_digest(work["conditions"]),
+        **({"delivery_formats": list(work["delivery_formats"])} if work.get("delivery_formats") else {}),
     }
 
 
 def _dependencies(work: dict) -> dict:
     snapshot = _snapshot(work)
-    return {name: snapshot[name] for name in (
-        "inputs", "materials", "template", "mapping", "body", "references", "decisions", "conditions",
-    )}
+    names = ["inputs", "materials", "template", "mapping", "body", "references", "decisions", "conditions"]
+    # 仅 Markdown 交付时不把 Word 模板算作 Markdown 的依赖。
+    if "docx" not in _delivery_formats(work):
+        names.remove("template")
+    return {name: snapshot[name] for name in names}
+
+
+def _delivery_stages(work: dict) -> tuple:
+    """本版交付实际要求的导出与核对步骤；延期 Word 不参与 Markdown 的失效判断。"""
+    formats = _delivery_formats(work)
+    return ("docx", "md", "review") if "docx" in formats else ("md", "review")
+
+
+def _with_delivery(work: dict, *stages) -> tuple:
+    return tuple(dict.fromkeys((*stages, *_delivery_stages(work))))
 
 
 def _pending(stage: dict, reason: dict) -> None:
@@ -202,7 +251,9 @@ def _invalidate(work: dict, stages, reason: dict) -> None:
     for name in stages:
         _pending(work["steps"][name], reason)
     if any(name in stages for name in ("docx", "md", "review")):
-        work["checks"] = {"content_consistent": False, "pages_ok": False, "notes": reason["message"]}
+        work["checks"] = {
+            "content_consistent": False, "checked_formats": [], "notes": reason["message"],
+        }
 
 
 def _unconfirm(work: dict, names) -> None:
@@ -224,39 +275,39 @@ def _sync_work(work: dict, inputs: dict | None = None) -> bool:
     changed_question = work["inputs"].get("question_id") != old_inputs.get("question_id")
     if changed_question:
         reason = issue("question_changed", "研究问题选择发生变化，需要处理对应确认并更新方案。", "inputs.question_id")
-        _invalidate(work, ("question", "scheme", "body", "docx", "md", "review"), reason)
+        _invalidate(work, _with_delivery(work, "question", "scheme", "body"), reason)
         _unconfirm(work, ("question", "scheme"))
         work["conditions"] = {"resolved": False, "notes": "研究问题改变后须核对对应条件。"}
     if current["materials"] != previous.get("materials"):
         reason = issue("materials_changed", "材料内容或路径变化，须核对受影响的摘录、引用和正文。", "inputs.material_paths")
-        _invalidate(work, ("materials", "body", "docx", "md", "review"), reason)
+        _invalidate(work, _with_delivery(work, "materials", "body"), reason)
     old_other = {key: value for key, value in old_inputs.items() if key not in {"template_path", "material_paths", "question_id"}}
     new_other = {key: value for key, value in work["inputs"].items() if key not in {"template_path", "material_paths", "question_id"}}
     if old_other != new_other:
-        _invalidate(work, ("body", "docx", "md", "review"), issue(
+        _invalidate(work, _with_delivery(work, "body"), issue(
             "requirements_changed", "采用的输入或要求变化，须更新受影响正文。", "inputs",
         ))
     if current["template"] != previous.get("template") or current["mapping"] != previous.get("mapping"):
-        _invalidate(work, ("docx", "md", "review"), issue(
-            "template_changed", "模板或栏目映射变化，须重新导出并核对。", "inputs.template_path",
-        ))
+        # 仅 Markdown 交付时不因 Word 模板或栏目映射变化而使 Markdown 失效。
+        _invalidate(work, ("docx", "md", "review") if "docx" in _delivery_formats(work) else ("docx",),
+                    issue("template_changed", "模板或栏目映射变化，须重新导出并核对。", "inputs.template_path"))
     for stage in ("materials", "question", "scheme"):
         if work["steps"][stage]["status"] != "complete":
             continue
         if current["stage_files"][stage] != previous.get("stage_files", {}).get(stage):
             reason = issue("saved_content_changed", "已保存步骤文件变化，请通过保存入口明确采用内容。", stage)
-            affected = {
-                "materials": ("materials", "body", "docx", "md", "review"),
-                "question": ("question", "scheme", "body", "docx", "md", "review"),
-                "scheme": ("scheme", "body", "docx", "md", "review"),
-            }[stage]
+            affected = _with_delivery(work, *{
+                "materials": ("materials", "body"),
+                "question": ("question", "scheme", "body"),
+                "scheme": ("scheme", "body"),
+            }[stage])
             _invalidate(work, affected, reason)
             if stage in {"question", "scheme"}:
                 _unconfirm(work, ("question", "scheme") if stage == "question" else ("scheme",))
     if work["steps"]["body"]["status"] == "complete" and any(
         current[name] != previous.get(name) for name in ("body", "references")
     ):
-        _invalidate(work, ("body", "docx", "md", "review"), issue(
+        _invalidate(work, _with_delivery(work, "body"), issue(
             "body_changed", "工作正文或引用发生变化，请明确采用后重新导出。", str(Path(work["directory"]) / BODY_NAME),
         ))
     dependencies = _dependencies(work)
@@ -272,7 +323,7 @@ def _sync_work(work: dict, inputs: dict | None = None) -> bool:
     review = work["steps"]["review"]
     if review["status"] == "complete" and (
         review.get("dependencies") != dependencies
-        or review.get("fingerprints") != _artifact_digests(work.get("artifacts", {}))
+        or review.get("fingerprints") != _review_artifact_digests(work)
     ):
         _invalidate(work, ("review",), issue("review_changed", "核对所依据的内容已变化。", "review"))
     work["fingerprints"] = _snapshot(work)
@@ -343,7 +394,11 @@ def _support_files(work: dict) -> None:
             notes.append("研究问题尚待用户决定。" if name == "question" else "中文研究方案尚待用户决定。")
     if not work["conditions"].get("resolved"):
         notes.append("关键条件尚未解决：" + str(work["conditions"].get("notes", "请核对取得途径和备用办法。")))
+    deferred = set(DEFERRED_FORMATS) - set(_delivery_formats(work))
     for name in STAGES:
+        if name in deferred:
+            # 延期的 Word 状态不作为当前交付的待确认事项。
+            continue
         notes.extend(item["message"] for item in work["steps"][name].get("issues", []))
     notes.extend(str(item) for item in work.get("pending_items", []))
     unique = list(dict.fromkeys(notes))
@@ -367,7 +422,8 @@ def _new_work(directory: Path, inputs: dict, base_revision=None) -> dict:
         "confirmations": {"question": deepcopy(confirmation), "scheme": deepcopy(confirmation)},
         "confirmation_bindings": {},
         "conditions": {"resolved": False, "notes": "尚未核对关键条件。"},
-        "checks": {"content_consistent": False, "pages_ok": False},
+        "delivery_formats": list(DELIVERY_FORMATS),
+        "checks": {"content_consistent": False, "checked_formats": []},
         "pending_commit": None, "committed": False, "artifacts": {},
         "template_path": inputs.get("template_path"), "mapping": None,
         "stored_path_base": STORED_PATH_BASE,
@@ -415,7 +471,12 @@ def _body_prerequisites(work: dict) -> list:
 
 
 def _next_steps(work: dict) -> list:
-    return [name for name in STAGES if work["steps"][name]["status"] != "complete"]
+    """当前下一步不把延期的 Word 列为未完成。"""
+    deferred = set(DEFERRED_FORMATS) - set(_delivery_formats(work))
+    return [
+        name for name in STAGES
+        if name not in deferred and work["steps"][name]["status"] != "complete"
+    ]
 
 
 def begin_revision(request: dict) -> dict:
@@ -442,7 +503,9 @@ def begin_revision(request: dict) -> dict:
             shutil.copytree(old_directory, work_directory)
             work = _relocate(baseline, old_directory, work_directory)
             work.update(base_revision=current, committed=False, pending_commit=None)
-            # 新版的正文可复用，格式导出和逐页核对必须另做。
+            # 从旧版建立的新工作版同样采用 Markdown；历史双格式只读记录不在此迁移。
+            work["delivery_formats"] = list(DELIVERY_FORMATS)
+            # 新版的正文可复用，格式导出和核对必须另做。
             for path in _file_paths(work.get("artifacts", {})):
                 candidate = Path(path)
                 if candidate.is_relative_to(work_directory) and candidate.is_file():
@@ -450,7 +513,7 @@ def begin_revision(request: dict) -> dict:
             work["artifacts"] = {}
             for stage in ("docx", "md", "review"):
                 work["steps"][stage] = {"status": "pending", "artifacts": {}, "issues": []}
-            work["checks"] = {"content_consistent": False, "pages_ok": False}
+            work["checks"] = {"content_consistent": False, "checked_formats": []}
             _sync_work(work, _remap(inputs, old_directory, work_directory))
         else:
             work_directory.mkdir(parents=True)
@@ -550,10 +613,12 @@ def save_revision(request: dict) -> dict:
 
 
 def _accept_export_result(work: dict, formats: list, exported: dict) -> None:
+    # 仅 Markdown 时不接受模板字段，也不改写输入的模板引用。
+    word_export = "docx" in formats
     for name in ("mapping", "template_path", "template_mode"):
-        if name in exported:
+        if name in exported and (word_export or name == "template_mode"):
             work[name] = deepcopy(exported[name])
-    if "template_path" in exported:
+    if "template_path" in exported and word_export:
         work["inputs"]["template_path"] = exported["template_path"]
     actual = {}
     for name, value in exported.get("artifacts", {}).items():
@@ -577,11 +642,12 @@ def _accept_export_result(work: dict, formats: list, exported: dict) -> None:
             "issues": [] if status == "complete" else deepcopy(exported.get("issues", [])),
             "dependencies": dependencies, "fingerprints": _artifact_digests(artifacts),
         }
-    _invalidate(work, ("review",), issue("export_updated", "导出已更新，需核对内容并查看本轮页图。", "review"))
+    _invalidate(work, ("review",), issue("export_updated", "导出已更新，需重新读回核对内容。", "review"))
 
 
 def export_revision(request: dict) -> dict:
-    formats = request["formats"]
+    # 当前使用 formats:["md"]；省略时同样采用 Markdown。
+    formats = request.get("formats", list(DELIVERY_FORMATS))
     if not isinstance(formats, list) or not formats or any(name not in {"docx", "md"} for name in formats):
         raise ValueError("formats 必须是 docx、md 的非空子集")
     formats = list(dict.fromkeys(formats))
@@ -593,12 +659,14 @@ def export_revision(request: dict) -> dict:
         if rejected:
             return rejected
         inputs = deepcopy(work["inputs"])
-        if "template_path" in request:
-            inputs["template_path"] = _absolute(request["template_path"]) if request["template_path"] else None
-            if inputs["template_path"] != work.get("template_path") and "mapping" not in request:
-                work["mapping"] = None
-        if "mapping" in request:
-            work["mapping"] = deepcopy(request["mapping"])
+        # 仅 Markdown 时不接受也不采用 Word 模板参数；旧分支作为延期实现保留。
+        if "docx" in formats:
+            if "template_path" in request:
+                inputs["template_path"] = _absolute(request["template_path"]) if request["template_path"] else None
+                if inputs["template_path"] != work.get("template_path") and "mapping" not in request:
+                    work["mapping"] = None
+            if "mapping" in request:
+                work["mapping"] = deepcopy(request["mapping"])
         changed = _sync_work(work, inputs)
         problems = _body_prerequisites(work)
         if work["steps"]["body"]["status"] != "complete":
@@ -606,11 +674,13 @@ def export_revision(request: dict) -> dict:
         if problems:
             if changed:
                 _persist_work(directory, state, work)
-            return _response(state, "needs_input", problems, artifacts=_existing_artifacts(work, valid_only=True))
+            return _response(state, "needs_input", problems, artifacts=_delivery_artifacts(work, valid_only=True))
         from ._documents import export_documents
         try:
             exported = export_documents(
-                work, formats, template_path=work.get("template_path"), mapping=work.get("mapping"),
+                work, formats,
+                template_path=work.get("template_path") if "docx" in formats else None,
+                mapping=work.get("mapping") if "docx" in formats else None,
             )
         except Exception as error:
             # 不把异常改成成功；先保留已写出的文件及失败进度。
@@ -630,13 +700,12 @@ def export_revision(request: dict) -> dict:
         status = exported["status"]
         if any(work["steps"][name]["status"] != "complete" for name in formats) and status == "ready":
             status = "blocked"
-        return _response(state, status, exported.get("issues", []), artifacts=_existing_artifacts(work))
+        return _response(state, status, exported.get("issues", []),
+                         artifacts=_delivery_artifacts(work, valid_only=True))
 
 
 def review_revision(request: dict) -> dict:
-    page_review = request["page_review"]
-    if not isinstance(page_review, dict) or type(page_review.get("passed")) is not bool or "notes" not in page_review:
-        raise ValueError("page_review 必须包含 passed 布尔值及实际逐页核对的 notes")
+    """当前不需要 page_review：实际读回 Markdown 与正式正文核对。"""
     with _locked(request["proposal_dir"]) as directory:
         state, rejected = _load(directory, request)
         if rejected:
@@ -646,25 +715,23 @@ def review_revision(request: dict) -> dict:
             return rejected
         _sync_work(work)
         from ._documents import review_documents
-        reviewed = review_documents(work, page_review)
+        reviewed = review_documents(work)
         checks = deepcopy(reviewed.get("checks", {}))
         issues = deepcopy(reviewed.get("issues", []))
-        exported = all(work["steps"][name]["status"] == "complete" for name in ("docx", "md"))
-        artifacts = _existing_artifacts(work)
-        preview_exists = bool(artifacts.get("preview_pdf")) and bool(artifacts.get("page_images"))
+        formats = _delivery_formats(work)
+        exported = all(work["steps"][name]["status"] == "complete" for name in formats)
+        artifacts = _delivery_artifacts(work)
         checks["content_consistent"] = bool(checks.get("content_consistent")) and exported
-        checks["pages_ok"] = bool(checks.get("pages_ok")) and page_review["passed"] and preview_exists and exported
-        checks["notes"] = deepcopy(page_review["notes"])
+        checks["checked_formats"] = list(formats)
         if not exported:
-            issues.append(issue("exports_incomplete", "两种格式尚未完成或其内容已变化，不能沿用先前核对。", "exports"))
-        if not preview_exists:
-            issues.append(issue("preview_required", "缺少本轮预览或页图，不能确认页面通过。", "page_review"))
+            issues.append(issue(
+                "exports_incomplete", "当前交付格式尚未完成或其内容已变化，不能沿用先前核对。", "exports",
+            ))
         work["checks"] = checks
-        complete = checks["content_consistent"] and checks["pages_ok"]
+        complete = bool(checks["content_consistent"])
         work["steps"]["review"] = {
             "status": "complete" if complete else "failed", "artifacts": {}, "issues": issues,
-            "dependencies": _dependencies(work), "fingerprints": _artifact_digests(work.get("artifacts", {})),
-            "page_review": deepcopy(page_review),
+            "dependencies": _dependencies(work), "fingerprints": _review_artifact_digests(work),
         }
         _persist_work(directory, state, work)
         return _response(state, "ready" if complete else "blocked", issues, checks=checks, artifacts=artifacts)
@@ -672,21 +739,48 @@ def review_revision(request: dict) -> dict:
 
 def _commit_problems(work: dict) -> list:
     issues = _body_prerequisites(work)
-    for name in ("body", "docx", "md", "review"):
+    # 延期 Word 的状态不影响 Markdown 提交。
+    for name in ("body", "md", "review"):
         if work["steps"][name]["status"] != "complete":
             issues.append(issue("incomplete_step", "此步骤尚未完成，当前有效稿保持不变。", name))
-    if not work["checks"].get("content_consistent") or not work["checks"].get("pages_ok"):
-        issues.append(issue("checks_required", "必须同时完成内容一致性和页面核对，才能提交双格式稿件。", "checks"))
+    checks = work["checks"]
+    if not checks.get("content_consistent") or list(checks.get("checked_formats") or []) != _delivery_formats(work):
+        issues.append(issue("checks_required", "必须完成 Markdown 与正式正文的内容核对，才能提交当前交付。", "checks"))
     for filename in (BODY_NAME, REFERENCE_NAME, "研究计划输入.json", "研究计划待确认事项.md"):
         path = Path(work["directory"]) / filename
         if not path.is_file():
             issues.append(issue("missing_artifact", "本轮必要文件缺失。", str(path)))
-    artifacts = _existing_artifacts(work, valid_only=True)
-    if any(name not in artifacts for name in ("docx", "md", "preview_pdf", "page_images")):
-        issues.append(issue("missing_export", "本轮双格式文稿、预览或页图缺失。", work["directory"]))
-    if work.get("template_path") and _digest_file(work["template_path"]) is None:
+    artifacts = _delivery_artifacts(work, valid_only=True)
+    if any(name not in artifacts for name in _delivery_artifact_names(_delivery_formats(work))):
+        issues.append(issue("missing_export", "本轮 Markdown 交付文件缺失。", work["directory"]))
+    if "docx" in _delivery_formats(work) and work.get("template_path") \
+            and _digest_file(work["template_path"]) is None:
         issues.append(issue("template_unavailable", "本轮采用的学校模板无法读取。", work["template_path"]))
     return issues
+
+
+def _migrate_delivery(work: dict) -> bool:
+    """旧未提交工作版在公开恢复中明确转为 Markdown 交付。
+
+    只补充交付要求并让旧交付核对待重做；材料、问题、方案、正文及仍有效的
+    用户决定保留。已有的 Markdown 产物本身不丢弃，由随后的核对确认。
+    """
+    if isinstance(work.get("delivery_formats"), list) and work["delivery_formats"]:
+        return False
+    reason = issue(
+        "delivery_formats_updated",
+        "本版改为只交付 Markdown；请重新读回 Markdown 核对后再提交。",
+        work.get("directory"),
+    )
+    work["delivery_formats"] = list(DELIVERY_FORMATS)
+    dependencies = _dependencies(work)
+    if work["steps"]["md"].get("status") == "complete":
+        # 正文未变时已有 Markdown 仍可用；按当前依赖重新登记，只重做核对。
+        work["steps"]["md"]["dependencies"] = dependencies
+    _pending(work["steps"]["review"], reason)
+    work["checks"] = {"content_consistent": False, "checked_formats": [], "notes": reason["message"]}
+    work["fingerprints"] = _snapshot(work)
+    return True
 
 
 def _committed_response(state: dict, revision: str) -> dict:
@@ -698,8 +792,9 @@ def _committed_response(state: dict, revision: str) -> dict:
     if changed:
         return _response(state, "needs_input", [issue(
             "committed_content_changed", "已提交稿或采用的材料发生变化；请保留修改原件并建立新修订，不原地覆盖。", work["directory"],
-        )], revision_id=revision, artifacts=_existing_artifacts(work))
-    return _response(state, "committed", revision_id=revision, artifacts=_existing_artifacts(work, valid_only=True), next_steps=[])
+        )], revision_id=revision, artifacts=_delivery_artifacts(work))
+    return _response(state, "committed", revision_id=revision,
+                     artifacts=_delivery_artifacts(work, valid_only=True), next_steps=[])
 
 
 def _finish_commit(directory: Path, state: dict, revision: str, work: dict) -> dict:
@@ -741,7 +836,7 @@ def commit_revision(request: dict) -> dict:
         if problems:
             if changed:
                 _persist_work(directory, state, work)
-            return _response(state, "blocked", problems, artifacts=_existing_artifacts(work, valid_only=True))
+            return _response(state, "blocked", problems, artifacts=_delivery_artifacts(work, valid_only=True))
         existing_pending = work.get("pending_commit")
         target = Path(existing_pending["target_directory"]) if existing_pending else directory / "版本" / revision
         if target.exists() and not existing_pending:
@@ -784,12 +879,16 @@ def resume_revision(request: dict) -> dict:
             if inputs is not None and inputs != work["inputs"]:
                 return _response(state, "needs_input", [issue(
                     "new_revision_required", "采用的输入已变化，请建立新工作版本；已提交稿保持原样。", work["directory"],
-                )], next_steps=["begin_revision"], artifacts=_existing_artifacts(work))
+                )], next_steps=["begin_revision"], artifacts=_delivery_artifacts(work))
             return _committed_response(state, revision)
+        # 旧未提交工作版没有 delivery_formats 时，在锁内明确转为 Markdown 交付。
+        migrated = _migrate_delivery(work)
         if work["base_revision"] != _current_id(state):
+            if migrated:
+                _persist_work(directory, state, work)
             return _response(state, "conflict", [issue(
                 "base_changed", "另一轮已更新当前稿。本轮结果仍保留，请明确要采用的基准。", work["directory"],
-            )], next_steps=["choose_revision"], artifacts=_existing_artifacts(work, valid_only=True))
+            )], next_steps=["choose_revision"], artifacts=_delivery_artifacts(work, valid_only=True))
         pending = deepcopy(work.get("pending_commit"))
         relocated = False
         if pending:
@@ -809,7 +908,7 @@ def resume_revision(request: dict) -> dict:
             return _response(state, "blocked", [issue(
                 "missing_work_directory", "状态指明的工作目录不存在，不能从其他目录猜测恢复。", work["directory"],
             )], next_steps=["restore_work_directory"], artifacts={})
-        changed = _sync_work(work, inputs)
+        changed = _sync_work(work, inputs) or migrated
         if pending:
             problems = _commit_problems(work)
             if not changed and not problems and not pending.get("needs_repair"):
@@ -820,8 +919,9 @@ def resume_revision(request: dict) -> dict:
             return _response(state, "needs_input", problems or [issue(
                 "pending_changed", "待提交内容有变化；保留原当前稿，完成受影响步骤后再次提交。", work["directory"],
             )], revision_id=revision, next_steps=_next_steps(work) or ["commit_revision"],
-                artifacts=_existing_artifacts(work, valid_only=True))
+                artifacts=_delivery_artifacts(work, valid_only=True))
         if changed:
             _persist_work(directory, state, work)
         return _response(state, revision_id=revision, directory=work["directory"],
-            next_steps=_next_steps(work) or ["commit_revision"], artifacts=_existing_artifacts(work, valid_only=True))
+            next_steps=_next_steps(work) or ["commit_revision"],
+            artifacts=_delivery_artifacts(work, valid_only=True))

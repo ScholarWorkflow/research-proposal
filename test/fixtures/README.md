@@ -2,6 +2,8 @@
 
 这些文件只为有效 RP-01 至 RP-13 提供输入，不是产品实现或测试通过记录。完整执行步骤只放在 `plan/test-plan.md`。组件测试采用执行计划 r3 的公开接口；不以跳过或固定通过断言替代正式执行。
 
+当前 r5/r14 只验收 Markdown 交付。Word 模板、修订样本和旧有效结果作为历史材料保留，本轮不执行 Word 导出、模板或 LibreOffice 检查；材料读取已有结果按当前计划复用。Markdown 修改稿仍使用现成 `baseline.json` 作为结构化短基准，不重新转换 Word。
+
 ## 合成上游输入
 
 `upstream/` 的六份 Markdown 是 r4 范围下人工准备的外部输入。`story.md` 为合成作品《门灯》P1—P6；`professor-study.md` 为合成教授林安的解释 A1—A4，`outside-study.md` 为教授之外的合成研究者周岚的解释 B1—B4。两者对人物评价、叙述立场和未完成动作的推断不同，可以回到作品原句比较，不预设哪一方已经成立。`admissions.md` 是合成招生背景，`access-initial.md` 保留私人手稿位置及取得条件不明，`access-supplement.md` 给定申请条件与公开文本备用路线，不声称许可已取得。

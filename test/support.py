@@ -121,32 +121,25 @@ class SavedDraftCase(ComponentCase):
     def work(self, revision):
         return self.state()["works"][revision]
 
-    def export(self, revision, formats=None, **fields):
+    def export(self, revision):
         return self.call("export_revision", self.request(
-            revision, formats=formats or ["docx", "md"], **fields,
+            revision, formats=["md"],
         ))
 
-    def controlled_review(self, revision, passed=True):
-        # RP-11 明确允许控制返回结果。这里不是实际页面合格声明，
-        # 不能被引用为 RP-08 或 RP-09 的页面检查结果。
-        return self.call("review_revision", self.request(
-            revision, page_review={
-                "passed": passed,
-                "notes": "RP-11 状态与提交失败分支的受控页面返回；不作真实页面验收",
-            },
-        ))
+    def review(self, revision):
+        return self.call("review_revision", self.request(revision))
 
     def ready_work(self):
         revision = self.begin()
         self.assertEqual(self.export(revision)["status"], "ready")
-        review = self.controlled_review(revision)
+        review = self.review(revision)
         self.assertTrue(review["checks"]["content_consistent"])
-        self.assertTrue(review["checks"]["pages_ok"])
+        self.assertEqual(review["checks"]["checked_formats"], ["md"])
         return revision
 
     def assert_current_unchanged(self):
         self.assertEqual(self.state()["current"], self.initial["current"])
         old = Path(self.initial["current"]["directory"])
         relative = old.relative_to(self.proposal)
-        for name in ("正文.json", "研究计划草稿.docx", "研究计划草稿.md"):
+        for name in ("正文.json", "研究计划草稿.md"):
             self.assertEqual(digest(old / name), digest(self.before / relative / name))

@@ -1,4 +1,8 @@
-"""Export and read back the two formats of a single adopted manuscript."""
+"""Export and read back the delivered formats of a single adopted manuscript.
+
+当前只交付 Markdown；Word 导出、模板填写与页图核对属延期实现，代码保留但
+不参与当前交付要求，也不由 Markdown 导出或核对调用。
+"""
 
 from __future__ import annotations
 
@@ -14,7 +18,7 @@ import unicodedata
 import pymupdf
 
 from ._common import hash_file, issue, json_digest, read_json, result, run_tool, write_json
-from ._export_docx import TemplateFallback, extract_region, fill_template, inspect_template
+from ._export_docx import TemplateFallback, fill_template, inspect_template
 
 
 FILENAMES = {"docx": "研究计划草稿.docx", "md": "研究计划草稿.md"}
@@ -313,11 +317,14 @@ def _preview_valid(directory, preview, docx_digest):
         return False
 
 
-def _artifacts(directory, record, dependencies):
+def _artifacts(directory, record, dependencies, kinds=None):
+    """只汇总本版交付要求中的实际产物；旧 Word 预览不混入当前交付。"""
     artifacts = {}
     for kind, entry in record["formats"].items():
+        if kinds is not None and kind not in kinds:
+            continue
         path = directory / entry.get("path", "")
-        if kind in FILENAMES and entry.get("dependency") == dependencies[kind] and path.is_file():
+        if kind in FILENAMES and entry.get("dependency") == dependencies.get(kind) and path.is_file():
             if hash_file(path) == entry.get("digest"):
                 artifacts[kind] = str(path.resolve())
     if "docx" in artifacts and _preview_valid(directory, record.get("preview"), hash_file(artifacts["docx"])):
@@ -333,16 +340,20 @@ def export_documents(work, formats, *, template_path=None, mapping=None):
     if not isinstance(formats, list) or not formats or any(kind not in FILENAMES for kind in formats):
         return result("blocked", [issue("formats", "导出格式须为 docx、md 的非空子集", "formats")], artifacts={}, format_status={})
     formats = list(dict.fromkeys(formats))
+    # 仅 Markdown 时不读取、不复制 Word 模板，模板参数作为延期实现保留。
+    word_export = "docx" in formats
     template_path = template_path or work.get("template_path") or work.get("inputs", {}).get("template_path")
+    if not word_export:
+        template_path = None
     if mapping is None:
-        mapping = work.get("mapping")
+        mapping = work.get("mapping") if word_export else None
     try:
         body_path = directory / "正文.json"
         body = read_json(body_path)
         if not isinstance(body, dict) or not isinstance(body.get("blocks"), list) or not body["blocks"]:
             raise ValueError("本轮没有可导出的结构化正文")
         _semantic(body)  # Unsupported content is never silently dropped by a writer.
-        mapping = _mapping(body, mapping)
+        mapping = _mapping(body, mapping) if word_export else None
         template = Path(template_path).resolve(strict=True) if template_path else None
         if template and (template in [directory / value for value in FILENAMES.values()] or template == body_path):
             raise ValueError("模板原件不能同时作为本轮正文或导出目标")
@@ -365,7 +376,7 @@ def export_documents(work, formats, *, template_path=None, mapping=None):
         _semantic(ordered)
         body_digest = hash_file(body_path)
         template_digest = hash_file(template) if template else None
-        dependencies = {kind: _dependency(kind, body_digest, mapping, mode, template_digest) for kind in FILENAMES}
+        dependencies = {kind: _dependency(kind, body_digest, mapping, mode, template_digest) for kind in formats}
         record.update({"body_digest": body_digest, "mapping": mapping, "template_mode": mode,
                        "template_digest": template_digest,
                        "template_notice": next((entry["message"] for entry in issues if entry["kind"] == "template_transfer"), None)})
@@ -427,84 +438,50 @@ def export_documents(work, formats, *, template_path=None, mapping=None):
                   mapping=mapping, template_path=str(template) if template else None, template_mode=mode)
 
 
-def review_documents(work, page_review):
+def review_documents(work):
+    """当前交付只核对 Markdown 与正式正文；不读 Word、不查页面。"""
     directory = Path(work["directory"]).resolve()
     record = _read_record(directory)
     issues, content_details = [], []
-    if record.get("template_notice"):
-        issues.append(issue("template_transfer", record["template_notice"], "template"))
     content_consistent = True
-    dependencies = {}
+    dependencies, digests = {}, {}
     try:
-        body = read_json(directory / "正文.json")
-        body_digest = hash_file(directory / "正文.json")
-        mapping = _mapping(body, record.get("mapping"))
+        body_path = directory / "正文.json"
+        body = read_json(body_path)
+        body_digest = hash_file(body_path)
+        references_path = directory / "引用定位.json"
+        digests["body"] = body_digest
+        digests["references"] = hash_file(references_path) if references_path.is_file() else None
+        mapping = record.get("mapping")
         mode = record.get("template_mode", "plain")
         ordered = _ordered_body(body, mapping, mode)
         expected = _semantic(ordered)
-        template_path = work.get("template_path") or work.get("inputs", {}).get("template_path")
-        if template_path:
-            template_digest = hash_file(Path(template_path))
-        else:
-            template_digest = record.get("template_digest")
-        if template_digest != record.get("template_digest"):
-            raise ValueError("学校模板已改变，本轮导出需要重做")
-        dependencies = {kind: _dependency(kind, body_digest, mapping, mode, template_digest) for kind in FILENAMES}
-        for kind in FILENAMES:
-            entry = record["formats"].get(kind, {})
-            path = directory / FILENAMES[kind]
-            if not path.is_file():
-                raise ValueError(f"缺少本轮实际 {kind} 文件")
-            if entry.get("dependency") != dependencies[kind] or not entry.get("complete"):
-                raise ValueError(f"本轮 {kind} 尚未完成或对应的正文、模板已改变")
-            if hash_file(path) != entry.get("digest"):
-                content_consistent = False
-                content_details.append(f"{kind} 文件在导出后被修改，请先按修改稿流程采用正文")
-        markdown_body = _pandoc_read(directory / FILENAMES["md"], "markdown", directory)
+        dependencies = {"md": _dependency("md", body_digest, mapping, mode, record.get("template_digest"))}
+        entry = record["formats"].get("md", {})
+        path = directory / FILENAMES["md"]
+        if not path.is_file():
+            raise ValueError("缺少本轮实际 md 文件")
+        if entry.get("dependency") != dependencies["md"] or not entry.get("complete"):
+            raise ValueError("本轮 md 尚未完成或对应的正文已改变")
+        digests["md"] = hash_file(path)
+        if digests["md"] != entry.get("digest"):
+            content_consistent = False
+            content_details.append("Markdown 文件在导出后被修改，请先按修改稿流程采用正文")
+        markdown_body = _pandoc_read(path, "markdown", directory)
         markdown_content = _semantic(markdown_body)
         if markdown_content != expected:
             content_consistent = False
             content_details.append("Markdown 的段落、列表、表格、引用或链接与采用正文不一致")
-        if mode == "editable":
-            regions = record.get("regions")
-            if not isinstance(regions, list) or len(regions) != len(mapping):
-                raise ValueError("缺少学校模板实际填写区域的记录")
-            actual_blocks = []
-            with tempfile.TemporaryDirectory(prefix=".readback-", dir=directory) as temporary:
-                for index, (region, entry) in enumerate(zip(regions, mapping)):
-                    if region.get("body_blocks") != entry["body_blocks"]:
-                        raise ValueError("学校栏目与导出记录的正文范围不一致")
-                    extracted = Path(temporary) / f"field-{index}.docx"
-                    extract_region(directory / FILENAMES["docx"], region["marker"], extracted, region["container_depth"])
-                    actual = _pandoc_read(extracted, "docx", directory)
-                    actual_content = _semantic(actual)
-                    field_expected = _semantic({**body, "meta": {}, "blocks": [body["blocks"][position] for position in entry["body_blocks"]]})
-                    if actual_content != field_expected:
-                        content_consistent = False
-                        content_details.append(f"Word 栏目“{entry['field']}”与对应正文不一致")
-                    actual_blocks.extend(actual_content["blocks"])
-            word_content = {"meta": {}, "blocks": actual_blocks}
-        else:
-            word_content = _semantic(_pandoc_read(directory / FILENAMES["docx"], "docx", directory))
-        if word_content != expected or word_content != markdown_content:
-            content_consistent = False
-            content_details.append("Word 与 Markdown 的实际正文内容不一致")
     except (OSError, ValueError, TypeError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
         content_consistent = False
         content_details.append(_error(error))
     if not content_consistent:
         issues.append(issue("content_inconsistent", "；".join(content_details), str(directory)))
-    docx = directory / FILENAMES["docx"]
-    try:
-        previews_valid = docx.is_file() and _preview_valid(directory, record.get("preview"), hash_file(docx))
-    except (OSError, ValueError, TypeError):
-        previews_valid = False
-    pages_ok = previews_valid and isinstance(page_review, dict) and page_review.get("passed") is True
-    if not previews_valid:
-        issues.append(issue("preview_invalid", "缺少与当前 Word 对应的完整预览 PDF 或全部页图", str(directory)))
-    elif not pages_ok:
-        issues.append(issue("pages_unapproved", "本轮实际页面尚未通过逐页核对", str(docx)))
-    checks = {"content_consistent": content_consistent, "pages_ok": bool(pages_ok),
-              "content_details": content_details, "page_review": deepcopy(page_review)}
-    artifacts = _artifacts(directory, record, dependencies) if set(dependencies) == set(FILENAMES) else {}
-    return result("ready" if content_consistent and pages_ok else "blocked", issues, checks=checks, artifacts=artifacts)
+    checks = {
+        "content_consistent": content_consistent,
+        "checked_formats": ["md"],
+        "content_details": content_details,
+        "digests": digests,
+    }
+    artifacts = _artifacts(directory, record, dependencies, kinds={"md"}) if dependencies else {}
+    return result("ready" if content_consistent else "blocked", issues, checks=checks, artifacts=artifacts)
