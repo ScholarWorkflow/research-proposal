@@ -6,9 +6,24 @@
 
 ## r15：Markdown 单格式产品与正式执行
 
-产品提交为 `03f75f58ea1c88d598b6d7c0449afcfa49de8074`（`feat/research-proposal`，父提交 `085a601` 与 `0a1c12f`）。该提交按已批准的 `rp-plan-r4-markdown-2026-11-04` 第 4、5 项把产品从双格式改为 Markdown 单格式；计划正文校验值保持 `4776b1d7…b5f9a`，测试计划保持 `bc8cd431…ec259`，均未修改。
+当前适用产品提交为 `3240c25584b9f6aee758528113aff9c651517003`（`feat/research-proposal`）。该线按已批准的 `rp-plan-r4-markdown-2026-11-04` 第 4、5 项把产品从双格式改为 Markdown 单格式；计划正文校验值保持 `4776b1d7…b5f9a`，测试计划保持 `bc8cd431…ec259`，均未修改。
 
-结果根为 `RP_RUN=/private/tmp/research-proposal-r16-run.jKCQmg`；消费者仍为 `RP_CONSUMER=/private/tmp/research-proposal-run.Ts9A0m/consumers/nix`，换版前完整归档在 `RP_RUN/archive/consumer-before-r15-result`。四个 Nix 输出均从上述固定远端提交构建，退出 0，实际 store 路径为 `d76mfyvq…runtime`、`1kq745vw…package`、`vxcm3j8g…environment`、`digiwlrl…activate`；日志为 `logs/build-*.log` 与 `.exit`。激活器 `logs/activate.log` 退出 0。原样恢复的 `input` 与 `.test-runtime` 与换版前快照 `diff -r` 无差异，两份真实稿件恢复为 `state_version` 10（非论文）与 9（论文）、`current` 均为 `null`。
+提交沿革：
+
+| 提交 | 作用 |
+|---|---|
+| `085a601` | 实现 Markdown 单格式交付、核对、提交与旧稿迁移 |
+| `0a1c12f` | 记录已通过的 r4 执行计划与 r5/r14 测试计划 |
+| `03f75f5` | 修正材料原文摘要未纳入失效判断 |
+| `aade030`、`3c8d327` | 记录本轮执行结果；旧结果表加历史标注 |
+| `9791023` | 按实现审核意见修正 IR-03、IR-04、IR-05、IR-06、IR-10、IR-11 |
+| `3240c25` | 待确认事项先列本版交付格式；修正 RP-10 口径与字数测量方法（本次安装版本） |
+
+当前结果根为 `RP_RUN=/private/tmp/research-proposal-r18-run.sSVUTo`；消费者仍为 `RP_CONSUMER=/private/tmp/research-proposal-run.Ts9A0m/consumers/nix`，换版前完整归档在 `RP_RUN/archive/consumer-before-r17-result`。四个 Nix 输出均从 `3240c25` 的固定远端提交构建，退出 0，实际 store 路径为 `anibky9y…runtime`、`yzrbb6xq…package`、`vi6h4ah1…environment`、`44391j5r…activate`；日志为 `logs/build-*.log` 与 `.exit`。激活器 `logs/activate.log` 退出 0。原样恢复的 `input` 与 `.test-runtime` 与换版前快照 `diff -r` 无差异，两份真实稿件恢复为 `state_version` 10（非论文）与 9（论文）、`current` 均为 `null`。
+
+**早前结果根说明**：更换产品提交后，r16 结果根（`/private/tmp/research-proposal-r16-run.jKCQmg`）与 r17 结果根（`/private/tmp/research-proposal-r17-run.b802l1`）的构建、请求与日志均保留不动。下表的当前结论来自 r18 结果根；r16、r17 的同期结果只作过程记录，不重复计入通过。
+
+审核修正项的复验记录：IR-03（已提交稿只比对交付格式内步骤）在 r18 构建上对两份真实已提交稿调用 `resume_revision` 均返回 `committed` 且无问题；IR-04（迁移不改写迁移前摘要）用「迁移前修改正文再迁移」的构造验证，`body` 与 `md` 均变为 `pending` 且 `content_consistent` 为 false；IR-05 提交返回只含 `md`；IR-06 用 `read_material` 实际写出的扁平 `材料.json` 验证，替换原件后返回 `committed_content_changed`；IR-10 省略 `template_path` 可正常建立工作版；IR-11 交付目录的 `研究计划待确认事项.md` 首列本版交付格式与已延期格式，并对先前记录条目注明格式承诺以本版为准。IR-09 已在 `logs/rp01-install-inspection.txt` 补齐配置条目检查。RP-10 的口径修正见下表。
 
 ### 结果表（四状态）
 
@@ -45,11 +60,11 @@ RP-08 通过安装后的公共包装器 `$RP_CONSUMER/.agents/skills/research-pr
 
 ### 正式尝试与失败保留
 
-1. 首次换版把提交 `0a1c12f` 的四个输出构建到 `r15` 结果根，退出 0。随后发现该提交的产品实现不足以通过 RP-11 的“恢复前原文改变”分支：状态摘要只覆盖材料读取记录本身，记录指向的原件被替换时不会使既有正文与 Markdown 失效。该次结果不再作为最终依据，日志保留在 `RP_RUN`（r15）内。
-2. 针对上述产品缺陷提交 `03f75f5`：按记录内 `original_path` 计算原文摘要并纳入依赖与失效判断，旧记录缺该摘要项时按原样处理，不把历史已提交稿判为改动。重建 r16 结果根后复跑受影响项。
-3. r16 首次执行 RP-11 时因本机未导出 `RP_TEST_OUTPUT` 等绑定，8 个方法在 `setUp` 报 `执行前须绑定`，未进入任何产品断言。该次输出保留在 r15 根 `logs/rp11-components-attempt1-envbind.log`，属执行绑定错误而非产品结果；修正绑定后重跑取得上表结果。
+1. 首次换版把提交 `0a1c12f` 的四个输出构建到 `r15` 结果根，退出 0。随后发现该提交的产品实现不足以通过 RP-11 的“恢复前原文改变”分支：状态摘要只覆盖材料读取记录本身，记录指向的原件被替换时不会使既有正文与 Markdown 失效。该次结果不再作为最终依据，日志保留在 r15 结果根 `/private/tmp/research-proposal-r15-run.QznIep`。
+2. 针对上述产品缺陷提交 `03f75f5`：按记录内 `original_path` 计算原文摘要并纳入依赖与失效判断，旧记录缺该摘要项时按原样处理，不把历史已提交稿判为改动。重建 r16 结果根后复跑受影响项；后续两轮审核修正再重建 r17、r18 结果根。
+3. r16 首次执行 RP-11 时因本机未导出 `RP_TEST_OUTPUT` 等绑定，8 个方法在 `setUp` 报 `执行前须绑定`，未进入任何产品断言。该次输出保留在 r15 结果根 `/private/tmp/research-proposal-r15-run.QznIep/logs/rp11-components-attempt1-envbind.log`，属执行绑定错误而非产品结果；修正绑定后重跑取得上表结果。
 4. 论文路线第一次 `resume_revision` 后 `md` 步骤失效。核对原因为该稿 Markdown 在 r13 被手工改写过（现文件摘要 `e5a1de08…`，导出记录摘要 `e4b863a2…`，即既有 `paper-05` 事实），产品判为导出后修改并要求重做导出与核对属预期行为；重新导出、核对、提交成功，原手改稿未被覆盖为成功状态。
-5. RP-08 论文日文稿的栏目与篇幅失败不是本轮产品改动造成的：正文 2432 字超上限、`Header` 块为 0 的事实自 r13 `paper-04` 起就存在，本轮产品改动只涉及交付格式、核对、提交与恢复，不生成正文内容。按 `Test Engineer Rule.md` 第 5 节，该业务失败保持原样，不以重新采样或修改测试取得通过；修正稿件内容属写作与用户决定的后续工作，不属本轮产品实现职责。
+5. RP-08 论文日文稿的栏目与篇幅失败不是本轮产品改动造成的：正文 2432 字超上限、`Header` 块为 0 的事实自 r13 `paper-04` 起就存在，本轮产品改动只涉及交付格式、核对、提交与恢复，不生成正文内容。按 `Test Engineer Rule.md` 第 5 节，该业务失败保持原样，不以重新采样或修改测试取得通过；计划第 5 项要求主技能按项目栏目与篇幅组织正文，因此该失败同时暴露主技能写作指引或正文内容的未完成部分，交产品与内容负责人及用户决定是否发起新的写作或审稿请求；本轮不代为改写正文，也不把该项计为通过。
 
 ## 本次范围调整
 
