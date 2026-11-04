@@ -136,7 +136,7 @@ curl -sS -X POST http://127.0.0.1:17902/eval -H 'Content-Type: application/json'
 
 ### r20 实现符合性审核
 
-审核者：专用 `implementation_reviewer` 代理（`~/.codex/agents/implementation-reviewer.toml`，只读）。所审 HEAD `738766d`，产品 `e6ebaa4224e8d12f3ba7d9e6c60e2c31b4d4254c` 未改动，计划校验值 `4776b1d7…` 与 `bc8cd431…` 实测一致。
+审核者：专用 `implementation_reviewer` 代理（`~/.codex/agents/implementation-reviewer.toml`，只读）。首审 HEAD `738766d`，定向复核 HEAD `ad95324`；产品 `e6ebaa4224e8d12f3ba7d9e6c60e2c31b4d4254c` 未改动（`git diff e6ebaa4..HEAD -- skills test flake.nix` 为 0 行），计划校验值 `4776b1d7…` 与 `bc8cd431…` 实测一致。
 
 结论：**部分完成**。RP-08 与 RP-12 已核对齐全、判为通过；RP-10 场景 1、2、4、4b 的确认与版本选择可核对，场景 3 业务失败并不成立为通过。审核提出四项：
 
