@@ -99,7 +99,7 @@ curl -sS -X POST http://127.0.0.1:17902/eval -H 'Content-Type: application/json'
   --data-binary @<run_dir>/eval-request.json
 ```
 
-发送脚本与提示词原文在仓库外 `/private/tmp/research-proposal-r20-exec-scripts/`，未写入工作树。
+发送脚本与提示词原文在仓库外 `/private/tmp/research-proposal-r20-exec-scripts/`，未写入工作树。各请求的总索引另存在 `RP_RUN/requests/INDEX.md`。
 
 **逐请求结果**（全部 HTTP 200、`curl.exit=0`、`passed=true`、`backend=app-server`、`termination_reason=completed`）：
 
