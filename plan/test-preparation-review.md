@@ -1,6 +1,109 @@
 # 测试准备符合性审核记录
 
-日期：2026 年 11 月 3 日。职责：本地测试工程师的准备交付；不执行正式用例，不批准第二关。
+## r14 Markdown 范围的准备与复核
+
+日期：2026 年 11 月 4 日。职责：本地测试工程师的准备交付；不执行正式用例，不批准第二关。
+
+### 本轮对象与版本
+
+| 项 | 值 |
+|---|---|
+| 业务测试计划 | `rp-tests-r5-markdown-2026-11-04` |
+| 执行说明 | `rp-recipe-r14-markdown-2026-11-04` |
+| 执行计划 | `rp-plan-r4-markdown-2026-11-04`，SHA256 `4776b1d75a6763608a788166e0aa74719ac9c88c0bf2ae5459c66a17b35b5f9a`，`plan_reviewer` 已 APPROVED |
+| 需求版本 | `rp-requirements-r2-markdown-2026-11-04` |
+| 目标仓库工作树 | `worktrees/research-proposal-plan`，`feat/research-proposal`，HEAD `1b6c462b23e5bc736d80ba15fa7a2106643ebfbd` |
+| 已安装产品基线 | `b983497308157dedec6b4d97f16c95dc0b0f60f9`（运行包 `/nix/store/c7n9c5khxrvss6klwb9hclsqxzqpvncm-research-proposal-runtime`） |
+| 待发布产品 | `RP_NEW_REVISION`，准备时**尚不存在** |
+| 共享夹具 | `5a31ae0095952cc359f7fa826730f14e7ee4f5b2` |
+| 首次送审测试计划 SHA256 | `23111388ee1a1dfc2849a5111d70f7095ae7aa01f8631347940975d2a0b892d9` |
+| 首轮修正后测试计划 SHA256 | `50bfc4d34ad02379b146995cd491b83177e519070d3ede05c632f0f9fec37e17` |
+| 定向复核后测试计划 SHA256 | `0e485982f14ae9eb22cd201109a7f194c895d5fafa6638c28de1b21aca06e584` |
+| 配置表达式 SHA256 | `739c01097ff5a69e83626dd96fbef68f006bed9cef78307fdaa0cda245724b07` |
+
+### 核实到的环境与前置状态
+
+`continuation.env` 及 `$RP_PREP/config/runtime-locations.env` 全部变量解析为非空且路径存在；两个 Zotero 隔离端点非空。运行包 `bin/python3` 为 Python 3.14.7，可导入九个公开操作，`bin/pandoc` 为 3.7.0.2。`uv run --no-project --python "$RP_RUNTIME/bin/python3"` 实际使用 3.14.7。两份真实稿件状态与交接一致：论文稿 `state_version=9`、`current=null`；非论文稿 `state_version=10`、`current=null`、正文步骤 `complete`、`md` 步骤 `pending`。两者均位于 `$RP_CONSUMER/input` 下，工作目录存在。
+
+### 已落实的准备资产
+
+`plan/test-plan.md` 的执行说明已整段替换为 r14：换版构建与安装、原位置消费者归档与回退、变量来源表、配置合成与断言、请求准备与 eval 调用、两份 Markdown 的真实续接、RP-10 改稿、RP-11 恢复、RP-12 跨校、复用项与失败处理。命令、变量来源、路径、隔离方式、输出位置和失败处理都写在同文件内，不另造手册。
+
+RP-11 的**基准前置**已按实际状态处理，没有放宽断言或伪造提交：执行顺序固定为先完成 RP-08 的非论文 Markdown 提交并取得 `state.current`，再绑定 `RP_TEST_PROPOSAL` 运行 `RecoveryTests`；`support.py` 第 89 行的守卫保持原样。绑定段以 `jq -er '.current.revision_id'` 起始，在 `current` 为 `null` 时退出非 0，RP-11 保持“未执行”，不会被记成产品业务失败。四条 `save_revision` data 绑定改为先取修订编号再用 `--arg` 索引，避免 `Cannot index object with null`。
+
+`plan/test-plan.md` 中与本范围矛盾的残留已清除：RP-09 的 Word 模板映射段、`test_export.TemplateTests` 命令（工作区该文件已删除）、RP-08 的“直接阅读 Word…与所有产品页图”、RP-11 的受控 `page_review` 分支，以及 RP-06 定位结论中的 Word 单元格绑定。判断依据是本轮已获批准的 r14 范围与 `Test Engineer Rule.md` 第 6 节“超范围要求必须从计划中删除”，属于**范围内可直接修正的步骤错误**，不是目标缺失，因此不退回测试计划工程师。
+
+`test/support.py` 与 `test/test_recovery.py` 的现状与 r14 一致：`export()` 只传 `formats=["md"]`，`review()` 不再传 `page_review`，`ready_work()` 断言 `checked_formats == ["md"]`。这些断言对 b983 会失败，属于计划第 274 至 317 行要求新产品提供的行为，交产品实现负责人，不由测试侧修改。
+
+### 有限预检（实际执行）
+
+预检只做只读和临时目录检查，没有运行 unittest、产品入口、评估请求或任何必测业务命令。
+
+| 检查 | 结果 |
+|---|---|
+| 三份规则与三份交接文件存在 | 全部存在 |
+| 执行计划 SHA256 与已批准值一致 | 一致 |
+| `skills/` 相对 b983 的差异 | 0 行；两基线产品代码相同 |
+| 四个测试源文件 `ast.parse` | 4 份全部通过 |
+| 计划 Bash 段的 `bash -n` | 当时为 7 段，全部通过；第二关修订后计划已含 8 个代码块，详见下文“第二关修订后的当前口径” |
+| 配置表达式合成（独占临时目录） | `yq` 退出 0；`jq` 断言退出 0 |
+| 固定准备器生成未发送请求 | 退出 0，`loading_method=config-args`，命令含 `--cd <consumer> --model gpt-6-luna --sandbox workspace-write`，超时 600 |
+| 消费者 `config.toml` 未被预检改写 | 大小 1287、时间戳保持 11-03 23:41 |
+| `direnv exec` 取 `EVAL_PORT` | 首次执行退出 0、值非空，但未留存 stdout 与退出码（审核 PR-14-02 指出）。已补录：`exit_code: 0`、`stdout_non_empty: yes`、`stdout_length: 5`、`stdout_is_numeric: yes`，见 `logs/preflight-19-eval-port.log`；只读取值，未发送任何 eval 请求 |
+| RP-11 data 组合与断言 | 形状断言退出 0；`current=null` 时首行按设计退出非 0 |
+| 材料读取记录与原文绑定 | `rashomon-read.json` 状态 `ready`，`original_path` 存在（21933 字节，非 UTF-8 编码），且确在消费者 `input` 内；未被 `material_paths` 直接列出 |
+| `support` 模块在运行包解释器下导入 | 通过（未收集或执行任何用例） |
+
+预检日志保存在仓库外独占临时目录 `/private/tmp/research-proposal-r14-testprep.2BAlKY/logs/`，不写入仓库、不提交。
+
+### 准备符合性审核发现与修正（PR-14-01 至 PR-14-05）
+
+审核由专用 `implementation_reviewer` 执行，首次结论为**部分完成**：提出 1 项具体准备缺陷、1 项待补记录、1 项低风险文本不一致，另有两项非阻断观察。审核同时确认：残留步骤清除属准备侧可直接修正，不退回测试计划工程师；产品未实现 Markdown 契约不属准备缺陷；`support.py` 第 89 行守卫未放宽，绑定段不写状态，不构成伪造提交状态。
+
+| 编号 | 问题 | 修正 | 复核证据 |
+|---|---|---|---|
+| PR-14-01 | 执行说明未声明各段在同一会话顺序执行；第 4、7 段缺自身失败中止。审核用同形空输入复现：无 `set -e` 时 `jq -er` 失败后脚本继续，`export X="$(…)"` 掩盖退出码，RP-11 仍会落到 `RecoveryTests`；`yq` 失败时 `cp`+`mv` 仍会写入消费者配置 | 在“运行目录、变量来源与换版安装”开头声明各段在同一命令行会话顺序执行、每段各自以 `set -e` 开头；7 段 Bash 全部改为 `set -e` 起头；配置段与 RP-11 段分别补写失败行为说明 | `logs/preflight-18-repro-14-01.log` 证实原缺陷可复现；`logs/preflight-22-set-e-behavior.log` 显示加 `set -e` 后 `current=null` 时整段退出 1、不进入用例；`logs/preflight-23-config-safety.log` 显示 `yq` 失败时段退出 1、消费者配置哈希不变、`.new` 未产生；7 段 `bash -n` 全部通过（`logs/preflight-21-final-syntax.log`） |
+| PR-14-02 | `EVAL_PORT` 取值缺少可查记录 | 补录该命令的退出码与 stdout 特征，只读、不发请求 | `logs/preflight-19-eval-port.log` |
+| PR-14-03 | 保留的 `test_inputs.MaterialTests` 仍含 `reading-room.docx` 载体与表格单元格断言，而 r5 的 RP-06 场景清单只列 PDF、扫描页或图片、TXT、Markdown、EPUB、HTML | 在“其余组件与改稿安排”注明该 docx 断言属历史资产，本轮不列入 RP-06 场景、不重跑、不作为通过条件；是否重新纳入属业务目标判定，交测试计划工程师，本地测试工程师不临场增删 | `plan/test-plan.md` 同段 |
+
+两项非阻断观察一并落实说明：RP-01 换版后须按 RP-01 自身检查方式重建检查并另存到 `$RP_RUN/logs/rp01-install-inspection.txt`（旧记录只有文件名、无命令）；`.approvals_reviewer != "auto_review"` 只表示本表达式不引入该候选，实际审批行为在运行期核对。
+
+上述三项关闭后，定向复核又发现修正连带引入两项，均为准备侧可一句话修正的范围。
+
+| 编号 | 问题 | 修正 | 复核证据 |
+|---|---|---|---|
+| PR-14-04 | 新增“每段失败即停”后，第 3 段（条件性输入恢复入口）在健康环境会因 `test ! -e` 退出 1，从而中止第 4、6、7 段 | 在段序声明处明确：第 3 段为条件性恢复入口，`input/r13-manual-inputs` 已存在时整体跳过、不记为失败、不影响后续段；“任一段失败即停止”的约定限定适用于第 1、2、4、5、6、7 段。第 3 段命令首行加同样注释 | `logs/preflight-25-repro-14-04-05.log` 先复现原冲突（健康环境退出 1）；`logs/preflight-26-syntax-after-1404-05.log` 显示 7 段 `bash -n` 全部通过 |
+| PR-14-05 | 第 7 段 `echo "exit=$?"` 在 `set -e` 下不可达，退出码写不进日志 | 改为 `RP11_EXIT=0; uv run … \|\| RP11_EXIT=$?; echo "exit=$RP11_EXIT" >> …; test "$RP11_EXIT" -eq 0` | 语义验证：失败时日志写入 `exit=1` 且段退出 1；成功时 `exit=0` 且段退出 0 |
+
+执行记录另需注意（不作缺陷）：第 6 段加 `set -e` 后，RP-03 组用例失败会连带使 RP-04、RP-05 两组不运行，结果应按“未执行”登记，不能写成“失败”。
+
+### 定向复核最终结论
+
+同一专用 `implementation_reviewer` 完成两次定向复核，最终结论为**完整**：本角色应交付的准备资产已落实有效计划，全部已发现的具体准备问题关闭，未发现范围缩项、扩测、伪造结果或新引入的缺陷。逐项状态：
+
+| 编号 | 最终状态 |
+|---|---|
+| PR-14-01 分段失败中止 | 关闭（含“配置段失败不覆盖消费者配置”的实测） |
+| PR-14-02 `EVAL_PORT` 记录 | 关闭 |
+| PR-14-03 docx 历史资产标注 | 关闭；Word 载体是否回到 RP-06 已路由至测试计划工程师 |
+| PR-14-04 第 3 段条件性入口冲突 | 关闭 |
+| PR-14-05 第 7 段退出码不可达 | 关闭 |
+| 两项非阻断观察 | 已落实，不重开 |
+
+审核同时确认：残留步骤清除属准备侧可直接修正，不退回测试计划工程师；产品未实现 Markdown 交付契约不属准备缺陷；`support.py` 第 89 行守卫未放宽，绑定段不写状态，不构成伪造提交状态；跳过第 3 段不会造成后续段缺变量（`RP_INPUT_CASES` 由第 2 段导出）。
+
+审核建议（非阻断）：“第 6 段 RP-03 组失败连带 RP-04、RP-05 不运行应记未执行”的口径是否写入计划正文，由主代理在第二关记录时决定；本文件已写明该口径，不构成本轮缺口。
+
+本审核未运行正式用例、产品入口或任何评估请求；不批准第一关或第二关；准备与审核完成不代表任何必测项通过，RP-11、RP-12 仍为“未执行”。
+
+### 未解决项与路由
+
+1. **产品未实现本轮交付契约**：b983 的 `review_revision` 仍直接要求 `page_review`（`_state.py` 第 637 行），`_commit_problems` 仍要求 `docx`、`pages_ok` 与 `preview_pdf`、`page_images`（第 675、678、685 行），`STAGES` 仍含 `docx`，且不存在计划声明的 `delivery_formats` 与 `checked_formats`。`support.py` 的 Markdown 断言因此必然失败。这一项交产品实现负责人，不属测试准备缺陷。
+2. **`RP_NEW_REVISION` 尚不存在**：换版安装、配置快照和全部正式执行以主代理发布该提交为前置，无法在准备阶段预先验证。
+3. RP-09 及 Word、LibreOffice、页图相关项保持延期，本轮不准备其资产。
+4. RP-11、RP-12 在 RP-08 产出真实提交稿之前保持“未执行”，不是准备缺陷。
+
+下一负责人：产品实现负责人发布 `RP_NEW_REVISION` 并提供本轮 Markdown 交付行为，再由主代理完成第二关，之后由本地执行工程师按本计划执行剩余项。准备与预检完成不表示任何必测项通过。
 
 ## r13 当前准备与复核
 
@@ -100,3 +203,19 @@ r11 最终审核测试计划 SHA256 为 `741ccc0bd099ce3cf7c3dfbca720905fd18c607
 早期版本以 D1–D4 记录产品、运行目录、端口及前序成果绑定。r13 撤回上游业务验收依赖，现行执行以完整 Recipe 为准：RP-03 至 RP-05 及论文写作的外部输入由准备脚本提供；RP-09/11 等仍采用 RP-08 真实成稿。旧依赖记录不要求本轮继续执行上游。
 
 本轮及审核均未执行 RP-01 至 RP-13、产品构建/安装、产品入口或正式业务请求。准备与符合性审核完成不表示测试通过。主代理继续负责第二关记录与决定。
+
+## 第二关修订后的当前口径
+
+以下取代本文件前面各节中已被第二关修订改变的执行口径。历史审核记录里的问题编号与关闭状态保持原样，不改写；本节只说明计划当前的实际约定，供执行者按现行版本执行。
+
+**明确作废的口径**：第 78 行与第 95 行“第 6 段加 `set -e` 后，RP-03 组失败会连带使 RP-04、RP-05 两组不运行，结果按‘未执行’登记”的说法作废。现行计划第 6 段以 `set +e` 起头，三组都会运行并各自留下退出码文件；某组实际运行返回非零时按业务失败登记，只有未能运行或没有对应日志时才登记为“未执行”，以计划正文第 376 行的规则为准。第 65、75、116 行的“7 段”是当时的历史记录，当前为 8 个代码块，以本表为准。
+
+| 项 | 当前口径 |
+|---|---|
+| 计划 Bash 代码块数 | 8 个，不是早前的 7 个；RP-12 的 `program-b.md` 复制块是新增的第 8 块 |
+| 第 6 段 errexit | 以 `set +e` 起头，三组用例各自写独立 `.exit` 文件后继续，不因其中一组失败中止；第 7 段以 `set -e` 恢复 |
+| 第 3 段条件性入口 | 整段包在 `if [ ! -e "$RP_INPUT_ROOT" ]` 内，健康环境为空操作，不会因守卫失败中止会话 |
+| RP-12 复制块 | 自身以 `set -e` 起头，复制失败或 `test -r` 为假即停止；该块可能在独立会话执行，不依赖继承的 errexit |
+| RP-06 的 docx 载体 | 已由验收决定人（用户）于 2026-11-04 决定“保持现状”：资产保留、本轮不列入场景、不重跑、不作为通过条件。不再路由给测试计划工程师；依据见 `test-plan-review.md` 的“r5 第一关范围内 RP-06 载体确认” |
+
+`plan/test-plan.md` 中 8 个 bash 代码块已全部通过 `bash -n`；第 6 段的 `set +e`、第 3 段的 `if` 包裹均已在同一会话前序 `set -e` 的状态下实际复现验证。

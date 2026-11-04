@@ -1,12 +1,49 @@
 # 研究计划草稿技能计划审核记录
 
+## 当前状态：r4 Markdown 交付修订已通过
+
+2026 年 11 月 4 日，用户明确撤掉 LibreOffice 测试，Word 交付和调试延后，先完成 Markdown。完整候选已合入 [implementation-plan.md](implementation-plan.md)，版本 `rp-plan-r4-markdown-2026-11-04`，需求 `rp-requirements-r2-markdown-2026-11-04`，SHA256 `4776b1d75a6763608a788166e0aa74719ac9c88c0bf2ae5459c66a17b35b5f9a`。独立审核者为专用 `plan_reviewer` 代理，只读审核完整候选 344 行及本轮变化与直接影响，未修改文件、未运行产品或测试。主对话已核对其依据、覆盖范围和最终校验值，审核前后计划 SHA256 不变。
+
+本次变化来自用户主动精简，无需证明旧 Word 方案错误。当前不执行 Word、页面或 LibreOffice 调试；旧核对要求不覆盖用户的新决定。下文 r3 批准记录保留为历史及未受影响方案的依据。
+
+```text
+Plan revision: rp-plan-r4-markdown-2026-11-04
+Requirement revision: rp-requirements-r2-markdown-2026-11-04
+Target repository revision: feat/research-proposal，文档基线 1b6c462b23e5bc736d80ba15fa7a2106643ebfbd（产品基线 b983497308157dedec6b4d97f16c95dc0b0f60f9）
+Candidate SHA256: 4776b1d75a6763608a788166e0aa74719ac9c88c0bf2ae5459c66a17b35b5f9a
+P1 Requirement & Reality Grounding: PASS
+P2 Solution Validity & Ownership: PASS
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE（完整候选 344 行及本轮 Markdown 交付变化、直接影响）
+Critical assumptions: N/A
+Unresolved impacts: N/A
+Approved behavior changes: 当前只交付 Markdown；Word 导出、学校表格填入、LibreOffice 预览与页面核对延后，不作为本轮完成条件（来源：用户 2026-11-04 指令，计划第 7、342 行）
+Reused prior Plan Gate PASS: P1/P2 中未受本次变化影响的既有事实（上游前置顺序、依赖固定值、材料读写、两处用户决定）沿用 r3 已核结论；P3/P4 按完整候选重新核对
+Required modifications: N/A
+Missing evidence: N/A（只读检查边界见下文，不影响结论）
+Plan conclusion: APPROVED
+```
+
+### 审核核对的关键现状事实
+
+审核者独立复算了本计划依赖的 b983 事实，结论与计划一致：`_state.py` 第 637–639 行直接取 `request["page_review"]` 并校验 `passed` 与 `notes`；`_documents.py` 第 502–508 行计算 `pages_ok`；`_commit_problems` 第 675、678、685 行分别要求 `docx` 步骤、`pages_ok` 及 `docx`/`preview_pdf`/`page_images`；`STAGES`（第 26 行）含 `docx`，`_next_steps`（第 417–418 行）遍历它，故“下一步”会把 Word 列为未完成。`export_revision`（第 585–586 行）与 `export_documents`（第 333–334 行）确实只校验非空子集，`["md"]` 可通过；但第 346–368 行在 `template_path`／`mapping` 存在时仍走模板分支，所以“仅 md 独立于模板”确需改代码。审核者另用 `git diff b983 1b6c462 -- skills/ nix/ flake.nix flake.lock` 确认两基线之间产品代码未变，计划并列两个基线不矛盾；依赖固定值与 `flake.lock` 各节点 `locked.rev` 一致。
+
+### 非阻断观察
+
+审核者列出若干证据位置偏差，均不影响设计判断，不要求修改、不作为通过条件：计划第 338 行 `_documents.py#L387` 指的是导出循环行，允许 md 子集的校验实际在第 333–334 行；`_state.py#L652` 支撑“核对要求 docx+md”，而提交／下一步／指纹分别在第 675、685 行与第 26、417 行。第 310、312 行 `artifacts.md` 是点记法，易被读成文件名，但实现不歧义。第 257 行“篇幅”若以页数表达，Markdown 阶段无法逐页核实，属已批准延期范围，实现时把页数类限制记为待确认。第 230、239 行运行包仍保留 `libreoffice-bin`，用户要求是撤掉用它做测试，不是移除依赖。
+
+### 只读检查边界
+
+Q6–Q16 原始决定清单不在仓库内，本轮变化的权威是用户 2026-11-04 原话（计划第 7 行逐字引用），未改部分复用 r3 已批准记录。既有未提交稿“已保存问题、方案与正文”的判断取自 [test-results.md](test-results.md) 中的 `paper-04`、`nonpaper-03` 记录（状态 9／10、`current=null`），按已认可方法产生，直接采用。本轮未执行构建、安装、测试或任何产品调用，未审核测试计划、实现符合性与合并条件。
+
 ## 实施前的发布信息整理
 
 2026 年 11 月 3 日，首次提交前移除本机用户名、私人参考文件路径和具体临时目录名；既有上游链接改为同一固定版本的公开链接或工作区相对引用，并去除文件末尾多余空行。需求、接口、数据字段、实现顺序、失败处理与必测范围均未改变，`Plan revision` 仍为 r3。依据计划规则第 6.3 节，复用下文 P1–P4 的批准结论，不为路径和校验值变化重做方案审核或测试。
 
 当前计划 SHA256 为 `edf6692023be0e717ff454482c10763cc74c42885cc41ea8458fd1915fb69bcf`；整理前已审 SHA256 为 `963e3c8a83d6bc2196ecff3382861eb6b139481c00f22483ebbe598bf060864e`。具体本地准备路径继续由仓库外受控交接提供。
 
-## 当前结论：r3 接口约定补充
+## 历史结论：r3 接口约定补充
 
 2026 年 11 月 3 日，用户明确：产品尚未实现也可以先准备测试 Recipe，入口与用法应与执行计划规定要实现的一致。计划作者补齐安装用法、主技能与组件的公开调用，以及材料和稿件状态的必要字段；原独立审核者 `/root/plan_plugin_review` 使用 `personal-code-review:review-execution-plan` 对这些补充及直接影响完成只读复核。
 
