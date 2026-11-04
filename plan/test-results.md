@@ -1,8 +1,55 @@
 # 本地实现与正式测试结果
 
-角色：本地执行工程师。当前执行尚未完成；正式第三关结论见 [test-plan-review.md](test-plan-review.md)，本记录不代作关口决定。
+角色：本地执行工程师。当前执行进度见下表；正式第三关结论见 [test-plan-review.md](test-plan-review.md)，本记录不代作关口决定。
 
-用户最新明确要求当前只把 Markdown 做对，停止 Word/LibreOffice 测试与排版调试。执行者已停止新增请求、转换和诊断，当前无活动请求；原负责人只读分析 Markdown 独立保存、核对与提交的必要影响，等待主对话同步有效计划。下文 r13 的双格式观察与未完成项是本次变更前的实际记录，不再据此继续 Word 测试，也不改写已有失败为成功。
+用户最新明确要求当前只把 Markdown 做对，停止 Word/LibreOffice 测试与排版调试。执行者已停止新增请求、转换和诊断，当前无活动请求。下文 r13 的双格式观察与未完成项是本次变更前的实际记录，不再据此继续 Word 测试，也不改写已有失败为成功。
+
+## r15：Markdown 单格式产品与正式执行
+
+产品提交为 `03f75f58ea1c88d598b6d7c0449afcfa49de8074`（`feat/research-proposal`，父提交 `085a601` 与 `0a1c12f`）。该提交按已批准的 `rp-plan-r4-markdown-2026-11-04` 第 4、5 项把产品从双格式改为 Markdown 单格式；计划正文校验值保持 `4776b1d7…b5f9a`，测试计划保持 `bc8cd431…ec259`，均未修改。
+
+结果根为 `RP_RUN=/private/tmp/research-proposal-r16-run.jKCQmg`；消费者仍为 `RP_CONSUMER=/private/tmp/research-proposal-run.Ts9A0m/consumers/nix`，换版前完整归档在 `RP_RUN/archive/consumer-before-r15-result`。四个 Nix 输出均从上述固定远端提交构建，退出 0，实际 store 路径为 `d76mfyvq…runtime`、`1kq745vw…package`、`vxcm3j8g…environment`、`digiwlrl…activate`；日志为 `logs/build-*.log` 与 `.exit`。激活器 `logs/activate.log` 退出 0。原样恢复的 `input` 与 `.test-runtime` 与换版前快照 `diff -r` 无差异，两份真实稿件恢复为 `state_version` 10（非论文）与 9（论文）、`current` 均为 `null`。
+
+### 结果表（四状态）
+
+| 编号 | 结果 | 说明与日志 |
+|---|---|---|
+| RP-01 | 通过 | 四输出构建与共享激活均退出 0。新产品提交的主技能、四份参考文件、模板、两个脚本、六项直接依赖、17 份原代理、无关示例技能 `unrelated-note` 及配置条目逐项存在，见 `logs/rp01-install-inspection.txt`、`logs/activate.log`、`logs/build-*.log`。 |
+| RP-02 | 通过（沿用） | 本次提交未改技能资源布局，安装入口与文件集合同前。按 r14 只复核改写后的文档观察：README 明确 Nix 提供依赖与运行程序、npx skills 只装技能与资源且不提供上游代理和工具服务，实际文件见消费者内技能包与仓库 README。npx 安装命令未重跑。 |
+| RP-03 | 通过 | `test_inputs.DiscoveryTests` 3 个方法退出 0，覆盖四种入口、缺候选及多对象/方向选择。见 `logs/rp03-components.log`、`.exit`。 |
+| RP-04 | 通过 | `test_inputs.UpstreamRoutingTests` 退出 0，覆盖 collect、preview、stage0–stage2；stage3 采用 RP-03 同一次结果。安装后三份文件的逐分支文字核对符合，见 `logs/rp04-components.log`、`.exit`、`logs/rp04-handoff-review.md`。未调用上游代理。 |
+| RP-05 | 通过 | `test_inputs.AnalysisRoutingTests` 退出 0，三个副本分别返回 stage0、stage1、stage2。见 `logs/rp05-components.log`、`.exit`。 |
+| RP-06 | 通过（沿用） | 本次未改材料读取。载体与定位按 r14 复用既有结果；本轮 `test_inputs.MaterialTests` 退出 0（2 个方法），其中 `reading-room.docx` 断言按用户 2026-11-04 “保持现状”决定只作历史资产，不作本项通过条件。见 `logs/rp06-components.log`、`.exit`。 |
+| RP-07 | 通过（沿用） | 两条路线的问题、条件与中文方案确认均保存在真实稿件状态中，本次未改研究设计、确认或条件判断；论文路线 `state_version` 9、非论文 10 的确认与条件在换版后原样保留。 |
+| RP-08 | 业务失败 | 两条路线经生产入口 `resume_revision`→`export_revision`→`review_revision`→`commit_revision` 实际提交，`artifacts` 只含 `md`，`current` 指向已提交版本目录；Markdown 与 `正文.json` 经组件读回一致（`checks.checked_formats:["md"]`）。见 `requests/rp08-paper/`、`requests/rp08-nonpaper/` 的 `*.out.json`。**非论文中文稿通过**：七栏目齐全，正文去空白 1445 字，在要求的 1200–1600 字内。**论文日文稿业务失败**：`program-a.md` 要求正文 1800–2400 日文字符并含七个栏目，实际正文（不含题目与参考文献）为 2432 字，超过上限 32 字；正文 AST 只有 11 个 `Para` 和 1 个 `BulletList`，`Header` 块为 0，导出的 Markdown 没有任何栏目标题。这是 r13 `paper-04` 已确认并列明的同一失败（当时记录为 2456 字、排除题目 24 字后 2432 字），本轮未改动，也未通过改测试或手改 Markdown 掩盖。论文路线另验证旧未提交双格式工作版迁移：`delivery_formats` 补为 `["md"]`、`docx` 保持 `failed` 未改写、`next_steps` 不含 `docx`。 |
+| RP-09 | 未执行 | 用户已延期；本轮不运行 Word 模板、转填或页面检查。 |
+| RP-10 | 通过（部分沿用） | 导入组件 `test_inputs.RevisionImportTests` 退出 0，覆盖 Markdown 修改稿读入、原件保留与内容差异。Word 修订/批注断言已按 r14 从工作区移除，恢复 Word 需另行批准。真实成稿的改稿会话未在本轮新增。见 `logs/rp10-components.log`、`.exit`。 |
+| RP-11 | 通过 | `test_recovery.RecoveryTests` 8 个方法全部退出 0，覆盖首次导出失败无当前稿、Markdown 导出失败后恢复、内容不一致不提交、步骤中断续接、目录改名与指针替换两种提交中断、材料/正文/选择变化失效、另一轮先更新基准。见 `logs/rp11-components.log`。 |
+| RP-12 | 未执行 | 需第二项目的实际改稿会话；本轮未发送评估请求，不推定通过。 |
+| RP-13 | 通过（沿用） | 缺资料与缺视觉配置分支原结果保存在旧结果根，本次未改发现、材料或缺项路径。 |
+
+### 本轮实际命令
+
+组件检查均从 `$RP_WORKTREE/test` 用固定运行包解释器执行，实际命令形如：
+
+```bash
+uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_inputs.DiscoveryTests
+uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_inputs.UpstreamRoutingTests
+uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_inputs.AnalysisRoutingTests
+uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_inputs.MaterialTests
+uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_inputs.RevisionImportTests
+uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_recovery.RecoveryTests
+```
+
+RP-08 通过安装后的公共包装器 `$RP_CONSUMER/.agents/skills/research-proposal/scripts/proposal-runtime <操作> --request <JSON>` 执行，请求与结果按操作分别保存在 `requests/rp08-paper/` 与 `requests/rp08-nonpaper/`。
+
+### 正式尝试与失败保留
+
+1. 首次换版把提交 `0a1c12f` 的四个输出构建到 `r15` 结果根，退出 0。随后发现该提交的产品实现不足以通过 RP-11 的“恢复前原文改变”分支：状态摘要只覆盖材料读取记录本身，记录指向的原件被替换时不会使既有正文与 Markdown 失效。该次结果不再作为最终依据，日志保留在 `RP_RUN`（r15）内。
+2. 针对上述产品缺陷提交 `03f75f5`：按记录内 `original_path` 计算原文摘要并纳入依赖与失效判断，旧记录缺该摘要项时按原样处理，不把历史已提交稿判为改动。重建 r16 结果根后复跑受影响项。
+3. r16 首次执行 RP-11 时因本机未导出 `RP_TEST_OUTPUT` 等绑定，8 个方法在 `setUp` 报 `执行前须绑定`，未进入任何产品断言。该次输出保留在 r15 根 `logs/rp11-components-attempt1-envbind.log`，属执行绑定错误而非产品结果；修正绑定后重跑取得上表结果。
+4. 论文路线第一次 `resume_revision` 后 `md` 步骤失效。核对原因为该稿 Markdown 在 r13 被手工改写过（现文件摘要 `e5a1de08…`，导出记录摘要 `e4b863a2…`，即既有 `paper-05` 事实），产品判为导出后修改并要求重做导出与核对属预期行为；重新导出、核对、提交成功，原手改稿未被覆盖为成功状态。
+5. RP-08 论文日文稿的栏目与篇幅失败不是本轮产品改动造成的：正文 2432 字超上限、`Header` 块为 0 的事实自 r13 `paper-04` 起就存在，本轮产品改动只涉及交付格式、核对、提交与恢复，不生成正文内容。按 `Test Engineer Rule.md` 第 5 节，该业务失败保持原样，不以重新采样或修改测试取得通过；修正稿件内容属写作与用户决定的后续工作，不属本轮产品实现职责。
 
 ## 本次范围调整
 
