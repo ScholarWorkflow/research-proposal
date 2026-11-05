@@ -152,7 +152,7 @@ curl -sS -X POST http://127.0.0.1:17902/eval -H 'Content-Type: application/json'
 
 审核者定向复核结论（文字残留修正于 `6211a9e`、`6c8b4bc`、`3bb7455`）：IR-15、IR-16 已闭合；IR-17、IR-18 在 `test-results.md` 内已闭合，但结果根的 `INDEX.md`、`requests/rp10-s1-wording/business-observation.md` 与两行表标题仍有文字残留，已按同一编号修正（本表所列处理即修正后状态）。复核仍判**部分完成**，原因由「记录未反映回退」变为「文字层残留」，不构成重跑任何请求的理由。
 
-审核者同时确认：三份当前稿件的 `delivery_formats=["md"]`、`committed=true`、`checks.content_consistent=true`、`artifacts` 只含 `md`；10 个请求 `thread_id` 互不相同、`prompt.txt` 均点名主技能且不含内部工具名；`base_revision` 链与 `works`/`版本` 目录集合逐项相等，`current` 始终非空，无重置；各版本 `研究计划草稿.md`、`正文.json`、`引用定位.json` 的 SHA-256 全部等于状态内 `checks.digests`。该结论不代表计划关口、测试第三关或合并批准。上述「10 个请求」指该次审核覆盖的请求范围；本轮随后为场景 3 补做另发 2 次请求（`rp10-s3-retry`、`rp10-s3-retry-confirm`，`thread_id` 分别为 `01a1a76a-9fd5-7e73-a960-67d411c7a21f` 与 `01a1a779-8acd-7b71-8e3f-ce45c0a7ce88`，互不相同），请求总数变为 12 次，新增事实见 RP-10 行与「场景 3 补做」小节。
+审核者同时确认：三份当前稿件的 `delivery_formats=["md"]`、`committed=true`、`checks.content_consistent=true`、`artifacts` 只含 `md`；10 个请求 `thread_id` 互不相同、`prompt.txt` 均点名主技能且不含内部工具名；`base_revision` 链与 `works`/`版本` 目录集合逐项相等，`current` 始终非空，无重置；各版本 `研究计划草稿.md`、`正文.json`、`引用定位.json` 的 SHA-256 全部等于状态内 `checks.digests`。该结论不代表计划关口、测试第三关或合并批准。上述「10 个请求」指该次审核覆盖的请求范围；本轮随后为场景 3 补做另发 2 次请求（`rp10-s3-retry`、`rp10-s3-retry-confirm`，`thread_id` 分别为 `01a1a76a-9fd5-7e73-a960-67d411c7a21f` 与 `01a1a779-8acd-7b71-8e3f-ce45c0a7ce88`，互不相同），请求总数变为 12 次，其后又发出 1 次压缩请求（`requests/rp08-length-compress/`，`thread_id` `01a1aa30-9485-7012-aa9a-311d05f6395e`，与前 12 次互不相同），本轮业务请求合计 13 次；新增事实见 RP-10 行、「场景 3 补做」小节与「压缩请求」小节。
 
 ### 场景 3 补做（以当前有效提交版为正确基线）
 
