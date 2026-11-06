@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# 非 Nix 安装使用用户明确配置在 PATH 中的 Pandoc。
+set -eu
+if ! pandoc_command=$(command -v pandoc); then
+  printf '%s\n' '缺少 Pandoc：请先在 PATH 中配置 Pandoc，或使用 Nix 组合安装。' >&2
+  exit 127
+fi
+if [ "$pandoc_command" -ef "$0" ]; then
+  printf '%s\n' 'PATH 中的 pandoc 指向本包装脚本；请让实际 Pandoc 程序排在它之前。' >&2
+  exit 127
+fi
+exec "$pandoc_command" "$@"

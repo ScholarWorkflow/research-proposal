@@ -1,0 +1,7 @@
+.agents.max_concurrent_threads_per_session = 1 |
+.sandbox_workspace_write.network_access = true |
+.shell_environment_policy.set.ZOTERO_HTTP_URL = strenv(ZOTERO_HTTP_URL) |
+.shell_environment_policy.set.ZOTERO_MCP_URL = strenv(ZOTERO_MCP_URL) |
+.shell_environment_policy.set.VISION_ENV_FILE = strenv(RP_VISION_FILE) |
+.mcp_servers."chrome-devtools".enabled = false |
+.mcp_servers."personal-knowledge".enabled = false
