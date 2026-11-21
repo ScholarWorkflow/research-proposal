@@ -1,0 +1,660 @@
+{
+  "nodes": {
+    "agent-env-nix": {
+      "inputs": {
+        "agent-skills": "agent-skills",
+        "mcp-servers": "mcp-servers",
+        "nixpkgs": [
+          "contact",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792677659,
+        "narHash": "sha256-OldjLoRpCc3IFGaYfP7c6a5ynOMYAzKbgHn6/H0WW/A=",
+        "owner": "RekiDunois",
+        "repo": "agent-env-nix",
+        "rev": "c368871942435bdc178a1063ce9c677acaf8cabc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "RekiDunois",
+        "ref": "main",
+        "repo": "agent-env-nix",
+        "type": "github"
+      }
+    },
+    "agent-env-nix_2": {
+      "inputs": {
+        "agent-skills": "agent-skills_2",
+        "mcp-servers": "mcp-servers_2",
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "browser-pdf-tools",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792067794,
+        "narHash": "sha256-x1of5F3pJ5pc6V3ybv1mVfkLZ6h5rXrla3Ynlq7x2Mw=",
+        "owner": "RekiDunois",
+        "repo": "agent-env-nix",
+        "rev": "760c1bf60e8ec19d1985660ec5e3276a8ef80b5a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "RekiDunois",
+        "repo": "agent-env-nix",
+        "rev": "760c1bf60e8ec19d1985660ec5e3276a8ef80b5a",
+        "type": "github"
+      }
+    },
+    "agent-env-nix_3": {
+      "inputs": {
+        "agent-skills": "agent-skills_3",
+        "mcp-servers": "mcp-servers_3",
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "zotero-tools",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792094223,
+        "narHash": "sha256-MCgK0JLtmyOksFs0YhJIC2fmK+QKl/lgdU9353B3bJg=",
+        "owner": "RekiDunois",
+        "repo": "agent-env-nix",
+        "rev": "ba2d0fe4ef4d1dc1d80ec628c3ecc6607829a76e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "RekiDunois",
+        "repo": "agent-env-nix",
+        "rev": "ba2d0fe4ef4d1dc1d80ec628c3ecc6607829a76e",
+        "type": "github"
+      }
+    },
+    "agent-env-nix_4": {
+      "inputs": {
+        "agent-skills": "agent-skills_4",
+        "mcp-servers": "mcp-servers_4",
+        "nixpkgs": [
+          "contact",
+          "zotero-tools",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792094223,
+        "narHash": "sha256-MCgK0JLtmyOksFs0YhJIC2fmK+QKl/lgdU9353B3bJg=",
+        "owner": "RekiDunois",
+        "repo": "agent-env-nix",
+        "rev": "ba2d0fe4ef4d1dc1d80ec628c3ecc6607829a76e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "RekiDunois",
+        "repo": "agent-env-nix",
+        "rev": "ba2d0fe4ef4d1dc1d80ec628c3ecc6607829a76e",
+        "type": "github"
+      }
+    },
+    "agent-skills": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791801176,
+        "narHash": "sha256-7yMjYQUjpCy0IhItfGt2EJbOobNu1pkIrBX2GA3yOcU=",
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      }
+    },
+    "agent-skills_2": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "browser-pdf-tools",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791801176,
+        "narHash": "sha256-7yMjYQUjpCy0IhItfGt2EJbOobNu1pkIrBX2GA3yOcU=",
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      }
+    },
+    "agent-skills_3": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "zotero-tools",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791801176,
+        "narHash": "sha256-7yMjYQUjpCy0IhItfGt2EJbOobNu1pkIrBX2GA3yOcU=",
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      }
+    },
+    "agent-skills_4": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "zotero-tools",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791801176,
+        "narHash": "sha256-7yMjYQUjpCy0IhItfGt2EJbOobNu1pkIrBX2GA3yOcU=",
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "2948865044b2af55c8c4e4eb2abda7de79d60f0e",
+        "type": "github"
+      }
+    },
+    "base-skills": {
+      "inputs": {
+        "agent-env-nix": [
+          "contact",
+          "agent-env-nix"
+        ],
+        "nixpkgs": [
+          "contact",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792150863,
+        "narHash": "sha256-b6L1UbQURU4dma+JATwRHksPFCPoeHIGKsyDBiNSEKo=",
+        "owner": "ScholarWorkflow",
+        "repo": "base-skills",
+        "rev": "3ab2ac188e625b8a8ae37b5fa318c579787c3d1e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "ref": "main",
+        "repo": "base-skills",
+        "type": "github"
+      }
+    },
+    "base-skills_2": {
+      "inputs": {
+        "agent-env-nix": [
+          "contact",
+          "professor-research",
+          "browser-pdf-tools",
+          "agent-env-nix"
+        ],
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "browser-pdf-tools",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792150863,
+        "narHash": "sha256-b6L1UbQURU4dma+JATwRHksPFCPoeHIGKsyDBiNSEKo=",
+        "owner": "ScholarWorkflow",
+        "repo": "base-skills",
+        "rev": "3ab2ac188e625b8a8ae37b5fa318c579787c3d1e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "repo": "base-skills",
+        "rev": "3ab2ac188e625b8a8ae37b5fa318c579787c3d1e",
+        "type": "github"
+      }
+    },
+    "browser-pdf-tools": {
+      "inputs": {
+        "agent-env-nix": "agent-env-nix_2",
+        "base-skills": "base-skills_2",
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "nixpkgs"
+        ],
+        "source-access-skills": "source-access-skills"
+      },
+      "locked": {
+        "lastModified": 1792314250,
+        "narHash": "sha256-wXqv6I98eyzbV2/E9SgJn59y4ViA9mZ92YHl1gPuDmo=",
+        "owner": "ScholarWorkflow",
+        "repo": "browser-pdf-tools",
+        "rev": "0a1ad04a3118bc9ac6e8dfe82f9fa53534fe5635",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "repo": "browser-pdf-tools",
+        "rev": "0a1ad04a3118bc9ac6e8dfe82f9fa53534fe5635",
+        "type": "github"
+      }
+    },
+    "contact": {
+      "inputs": {
+        "agent-env-nix": "agent-env-nix",
+        "base-skills": "base-skills",
+        "knowledge-tools": "knowledge-tools",
+        "nixpkgs": "nixpkgs",
+        "paper-analysis": "paper-analysis",
+        "pdf-processing-core": "pdf-processing-core_2",
+        "professor-research": "professor-research",
+        "zotero-tools": "zotero-tools_2"
+      },
+      "locked": {
+        "lastModified": 1793174808,
+        "narHash": "sha256-x/JvyU7Qexm+l8nCxofQXWEtfYzaiQLemboqxvIKPbk=",
+        "owner": "ScholarWorkflow",
+        "repo": "professor-contact",
+        "rev": "ad096fe31a4b5694cbe47a40f37b621435e1eeec",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "repo": "professor-contact",
+        "rev": "ad096fe31a4b5694cbe47a40f37b621435e1eeec",
+        "type": "github"
+      }
+    },
+    "knowledge-tools": {
+      "inputs": {
+        "agent-env-nix": [
+          "contact",
+          "agent-env-nix"
+        ],
+        "nixpkgs": [
+          "contact",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792249745,
+        "narHash": "sha256-W7ZXIEoRYMwf/oqzc3t7U5W+I9qkjkTZsYPEpFh+5nY=",
+        "owner": "ScholarWorkflow",
+        "repo": "knowledge-tools",
+        "rev": "bdb0db128b7cfccc6a3b20a8d0acee8695d0e211",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "ref": "main",
+        "repo": "knowledge-tools",
+        "type": "github"
+      }
+    },
+    "mcp-servers": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791930060,
+        "narHash": "sha256-c4os2Fd8PkN0CSE6AHM0vsITZgqJM1fAUivE5mQAV6A=",
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      }
+    },
+    "mcp-servers_2": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "browser-pdf-tools",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791930060,
+        "narHash": "sha256-c4os2Fd8PkN0CSE6AHM0vsITZgqJM1fAUivE5mQAV6A=",
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      }
+    },
+    "mcp-servers_3": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "zotero-tools",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791930060,
+        "narHash": "sha256-c4os2Fd8PkN0CSE6AHM0vsITZgqJM1fAUivE5mQAV6A=",
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      }
+    },
+    "mcp-servers_4": {
+      "inputs": {
+        "nixpkgs": [
+          "contact",
+          "zotero-tools",
+          "agent-env-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791930060,
+        "narHash": "sha256-c4os2Fd8PkN0CSE6AHM0vsITZgqJM1fAUivE5mQAV6A=",
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "31848978eefbca17f1658a55066b1d2aaa43cafc",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1791594108,
+        "narHash": "sha256-XK4KceonkwD8LuMAt/vNrz982mXJM5jeHAxMwsUXXAQ=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "6510408d147d8c5e6d76043e899e9251756f6a75",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "6510408d147d8c5e6d76043e899e9251756f6a75",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1791956154,
+        "narHash": "sha256-jBYGPi4udQ9uo4KQp9m2J0546nJVQitG15gvZSaVVAs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "55bfb4d7437bd4e09ab7cba58a43bd68eb310044",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1791956154,
+        "narHash": "sha256-jBYGPi4udQ9uo4KQp9m2J0546nJVQitG15gvZSaVVAs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "55bfb4d7437bd4e09ab7cba58a43bd68eb310044",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "paper-analysis": {
+      "inputs": {
+        "agent-env-nix": [
+          "contact",
+          "agent-env-nix"
+        ],
+        "base-skills": [
+          "contact",
+          "base-skills"
+        ],
+        "nixpkgs": [
+          "contact",
+          "nixpkgs"
+        ],
+        "pdf-processing-core": "pdf-processing-core"
+      },
+      "locked": {
+        "lastModified": 1792752935,
+        "narHash": "sha256-qhimfORQo8QH/7tqYUN3c+Ph5EWrzpeZuMIKMhm9mdA=",
+        "owner": "ScholarWorkflow",
+        "repo": "paper-analysis",
+        "rev": "c140658cc60f9d9c3d17008cbab0b599f40c8e46",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "ref": "master",
+        "repo": "paper-analysis",
+        "type": "github"
+      }
+    },
+    "pdf-processing-core": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792092950,
+        "narHash": "sha256-zs3xGkWGYCiCvewX6EY8OPeACeoRycWIek3TD2YnIyk=",
+        "owner": "ScholarWorkflow",
+        "repo": "pdf-processing-core",
+        "rev": "3444dca0e0b84f46d1839ab5c707afa78e23d3a7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "repo": "pdf-processing-core",
+        "rev": "3444dca0e0b84f46d1839ab5c707afa78e23d3a7",
+        "type": "github"
+      }
+    },
+    "pdf-processing-core_2": {
+      "inputs": {
+        "agent-env-nix": [
+          "contact",
+          "agent-env-nix"
+        ],
+        "nixpkgs": [
+          "contact",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792688556,
+        "narHash": "sha256-bxMX8BkOTevBQQtmZ9KbjgDOHpDIn3rtGZV+wxkG8es=",
+        "owner": "ScholarWorkflow",
+        "repo": "pdf-processing-core",
+        "rev": "2be1bf850f29b7ccf7bd1b066ae7292aac33fc87",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "ref": "main",
+        "repo": "pdf-processing-core",
+        "type": "github"
+      }
+    },
+    "professor-research": {
+      "inputs": {
+        "agent-env-nix": [
+          "contact",
+          "agent-env-nix"
+        ],
+        "browser-pdf-tools": "browser-pdf-tools",
+        "nixpkgs": [
+          "contact",
+          "nixpkgs"
+        ],
+        "zotero-tools": "zotero-tools"
+      },
+      "locked": {
+        "lastModified": 1792315906,
+        "narHash": "sha256-N7LaGG3PmK3QuluoQVnSuH8Mg1N4qmXvX8+eGPr9I0Y=",
+        "owner": "ScholarWorkflow",
+        "repo": "professor-research",
+        "rev": "bb27533540715c44039c108302f11d3e00d6b62e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "ref": "main",
+        "repo": "professor-research",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "contact": "contact"
+      }
+    },
+    "source-access-skills": {
+      "inputs": {
+        "agent-env": [
+          "contact",
+          "professor-research",
+          "browser-pdf-tools",
+          "agent-env-nix"
+        ],
+        "nixpkgs": [
+          "contact",
+          "professor-research",
+          "browser-pdf-tools",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792136375,
+        "narHash": "sha256-RJybx6yD6cV7VxXcppaphw01lbX3WGU8Pr88Zwunm08=",
+        "owner": "StudyCoachWorkflow",
+        "repo": "source-access-skills",
+        "rev": "2fb5c2f1d7a5f5eb53d389bdb1853cdb525700d8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "StudyCoachWorkflow",
+        "repo": "source-access-skills",
+        "rev": "2fb5c2f1d7a5f5eb53d389bdb1853cdb525700d8",
+        "type": "github"
+      }
+    },
+    "zotero-tools": {
+      "inputs": {
+        "agent-env-nix": "agent-env-nix_3",
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1792152889,
+        "narHash": "sha256-YvPM5E9EjooIJkrmKW1Zjfj2AEV91xZattfTn2O2odU=",
+        "owner": "ScholarWorkflow",
+        "repo": "zotero-tools",
+        "rev": "24eb6cf596c082ac005ccdd800b962fbb6a8e2c8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "repo": "zotero-tools",
+        "rev": "24eb6cf596c082ac005ccdd800b962fbb6a8e2c8",
+        "type": "github"
+      }
+    },
+    "zotero-tools_2": {
+      "inputs": {
+        "agent-env-nix": "agent-env-nix_4",
+        "nixpkgs": "nixpkgs_3"
+      },
+      "locked": {
+        "lastModified": 1792152889,
+        "narHash": "sha256-YvPM5E9EjooIJkrmKW1Zjfj2AEV91xZattfTn2O2odU=",
+        "owner": "ScholarWorkflow",
+        "repo": "zotero-tools",
+        "rev": "24eb6cf596c082ac005ccdd800b962fbb6a8e2c8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "ref": "master",
+        "repo": "zotero-tools",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
