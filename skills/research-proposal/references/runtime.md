@@ -89,7 +89,7 @@
 | `scheme` | `{scheme, conditions:{resolved,notes}, confirmation, pending_items}`。`scheme` 保存实际中文方案、方法、验证、期限、备用和来源；未解决的条件用 `resolved:false`。 |
 | `body` | `{body: Pandoc文档对象, references:[引用关联], pending_items}`。正文必须基于当前有效的问题与方案确认、已解决关键条件。 |
 
-材料步骤保存的每项材料都成为本稿依赖：组件按各项 `original_path` 计算原文摘要，原文后来改变时，未提交工作版只使材料和正文步骤失效，已提交稿报告材料变化并要求另建修订。材料原文不必再重复列入 `inputs.material_paths`；从项目要求材料整理出的栏目、语言和篇幅等结构化要求写入 `input_requirements` 后，组件在保存该步骤时同步为本稿输入的项目要求。项目要求或材料清单确有变化时，也可在 `resume_revision` 的 `inputs` 中明确传入，未受影响步骤继续使用。
+材料步骤保存的每项材料都成为本稿依赖：组件把各项 `original_path` 的当前内容与读取记录中的 `digest` 核对，原文后来改变时，未提交工作版只使材料和正文步骤失效，已提交稿报告材料变化并要求另建修订。材料原文不必再重复列入 `inputs.material_paths`；从项目要求材料整理出的栏目、语言和篇幅等结构化要求写入 `input_requirements` 后，组件在保存该步骤时同步为本稿输入的项目要求。项目要求或材料清单确有变化时，也可在 `resume_revision` 的 `inputs` 中明确传入，未受影响步骤继续使用。
 
 `confirmation` 的结构为 `{revision,status,decision}`。`revision` 标识这次实际展示的问题或方案；`status` 为 `needs_input` 或 `confirmed`。尚未获得决定时用 `needs_input`，`decision` 留空或记录当前未定原因。确认后保存用户原意、对应轮次/消息来源以及适用范围；不得使用“默认同意”“模型认为合理”作为决定。
 

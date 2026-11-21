@@ -234,8 +234,8 @@ def _material_source_paths(paths) -> dict:
     return sources
 
 
-def _material_record_sources(work: dict) -> dict:
-    """材料步骤保存的已采用材料指向的原文；原文变化也要让依赖它的工作失效。
+def _material_records(work: dict) -> list:
+    """材料步骤保存的已采用材料：原文路径、记录声明的摘要及当前摘要。
 
     材料步骤记录按该步骤 JSON 文件所在目录解释相对引用，其余保留绝对路径。
     已采用材料不必再重复列入 inputs.material_paths，组件按实际记录登记依赖。
@@ -243,18 +243,18 @@ def _material_record_sources(work: dict) -> dict:
     step = (work.get("steps") or {}).get("materials") or {}
     data_path = (step.get("artifacts") or {}).get("data")
     if not isinstance(data_path, str) or not data_path:
-        return {}
+        return []
     record_path = Path(data_path)
     if not record_path.is_file():
-        return {}
+        return []
     try:
         value = read_json(record_path)
     except (OSError, ValueError, TypeError):
-        return {}
+        return []
     materials = value.get("materials") if isinstance(value, dict) else None
     if not isinstance(materials, list):
-        return {}
-    sources = {}
+        return []
+    records = []
     for material in materials:
         original = material.get("original_path") if isinstance(material, dict) else None
         if not isinstance(original, str) or not original:
@@ -262,8 +262,23 @@ def _material_record_sources(work: dict) -> dict:
         target = Path(original)
         if not target.is_absolute():
             target = record_path.parent / target
-        sources[str(target)] = _digest_file(target)
-    return sources
+        records.append((str(target), material.get("digest"), _digest_file(target)))
+    return records
+
+
+def _material_record_sources(work: dict) -> dict:
+    return {path: actual for path, _, actual in _material_records(work)}
+
+
+def _material_record_drift(work: dict) -> dict:
+    """读取记录声明的摘要与原件当前内容不符的材料。
+
+    旧记录没有后加的摘要项时，也能据此发现已采用材料的原文变化。
+    """
+    return {
+        path: actual for path, recorded, actual in _material_records(work)
+        if isinstance(recorded, str) and recorded and recorded != actual
+    }
 
 
 def _snapshot(work: dict) -> dict:
@@ -383,16 +398,17 @@ def _sync_work(work: dict, inputs: dict | None = None) -> bool:
         _invalidate(work, _with_delivery(work, "question", "scheme", "body"), reason)
         _unconfirm(work, ("question", "scheme"))
         work["conditions"] = {"resolved": False, "notes": "研究问题改变后须核对对应条件。"}
+    drift = _material_record_drift(work)
     if current["materials"] != previous.get("materials") or (
         "material_sources" in previous
         and current["material_sources"] != previous["material_sources"]
     ) or (
         "adopted_materials" in previous
         and current["adopted_materials"] != previous["adopted_materials"]
-    ):
+    ) or drift:
         reason = issue(
             "materials_changed", "材料内容或路径变化，须核对受影响的摘录、引用和正文。",
-            _changed_material_location(current, previous),
+            next(iter(drift), None) or _changed_material_location(current, previous),
         )
         _invalidate(work, _with_delivery(work, "materials", "body"), reason)
     old_other = {key: value for key, value in old_inputs.items() if key not in {"template_path", "material_paths", "question_id"}}
@@ -930,6 +946,8 @@ def _committed_response(state: dict, revision: str) -> dict:
     # stage_files 覆盖已保存步骤文件，属交付依据，必须一并比较。
     keys = set(_dependencies(work)) | {"stage_files"}
     changed = _fingerprints_changed(work["fingerprints"], _snapshot(work), keys=keys)
+    # 已采用材料的读取记录声明了原文摘要；旧记录没有后加摘要项时也按该摘要核对。
+    changed = changed or bool(_material_record_drift(work))
     # 只核对本版交付要求内的步骤；延期 Word 未导出时的空指纹不算改动。
     for name in _delivery_formats(work):
         step = work["steps"][name]
