@@ -234,6 +234,38 @@ def _material_source_paths(paths) -> dict:
     return sources
 
 
+def _material_record_sources(work: dict) -> dict:
+    """材料步骤保存的已采用材料指向的原文；原文变化也要让依赖它的工作失效。
+
+    材料步骤记录按该步骤 JSON 文件所在目录解释相对引用，其余保留绝对路径。
+    已采用材料不必再重复列入 inputs.material_paths，组件按实际记录登记依赖。
+    """
+    step = (work.get("steps") or {}).get("materials") or {}
+    data_path = (step.get("artifacts") or {}).get("data")
+    if not isinstance(data_path, str) or not data_path:
+        return {}
+    record_path = Path(data_path)
+    if not record_path.is_file():
+        return {}
+    try:
+        value = read_json(record_path)
+    except (OSError, ValueError, TypeError):
+        return {}
+    materials = value.get("materials") if isinstance(value, dict) else None
+    if not isinstance(materials, list):
+        return {}
+    sources = {}
+    for material in materials:
+        original = material.get("original_path") if isinstance(material, dict) else None
+        if not isinstance(original, str) or not original:
+            continue
+        target = Path(original)
+        if not target.is_absolute():
+            target = record_path.parent / target
+        sources[str(target)] = _digest_file(target)
+    return sources
+
+
 def _snapshot(work: dict) -> dict:
     inputs = work["inputs"]
     directory = Path(work["directory"])
@@ -246,6 +278,7 @@ def _snapshot(work: dict) -> dict:
         "inputs": json_digest(inputs),
         "materials": {path: _digest_file(path) for path in inputs["material_paths"]},
         "material_sources": _material_source_paths(inputs["material_paths"]),
+        "adopted_materials": _material_record_sources(work),
         "template": {"path": template, "digest": _digest_file(template)},
         "mapping": json_digest(work.get("mapping")),
         "body": _digest_file(directory / BODY_NAME),
@@ -258,7 +291,7 @@ def _snapshot(work: dict) -> dict:
 
 
 # 后加的摘要项：旧记录没有该键时不作为变化，避免把历史已提交稿判为改动。
-LATE_FINGERPRINTS = ("material_sources",)
+LATE_FINGERPRINTS = ("material_sources", "adopted_materials")
 
 
 def _fingerprints_changed(previous: dict, current: dict, keys=None) -> bool:
@@ -276,8 +309,8 @@ def _fingerprints_changed(previous: dict, current: dict, keys=None) -> bool:
 def _dependencies(work: dict) -> dict:
     snapshot = _snapshot(work)
     names = [
-        "inputs", "materials", "material_sources", "template", "mapping", "body",
-        "references", "decisions", "conditions",
+        "inputs", "materials", "material_sources", "adopted_materials", "template",
+        "mapping", "body", "references", "decisions", "conditions",
     ]
     # 仅 Markdown 交付时不把 Word 模板算作 Markdown 的依赖。
     if "docx" not in _delivery_formats(work):
@@ -317,6 +350,24 @@ def _unconfirm(work: dict, names) -> None:
         work["confirmations"][name] = confirmation
 
 
+def _changed_material_location(current: dict, previous: dict):
+    """指出实际变化的材料；没有可指明的具体路径时退回材料输入。"""
+    for key in ("materials", "material_sources", "adopted_materials"):
+        before = previous.get(key)
+        after = current.get(key)
+        if not isinstance(after, dict):
+            continue
+        if not isinstance(before, dict):
+            return "steps.materials"
+        for path, digest in after.items():
+            if before.get(path) != digest:
+                return path
+        for path in before:
+            if path not in after:
+                return path
+    return "inputs.material_paths"
+
+
 def _sync_work(work: dict, inputs: dict | None = None) -> bool:
     """只核对实际摘要及已保存状态，不把孤立文件提升为已完成步骤。"""
     before = deepcopy(work)
@@ -335,8 +386,14 @@ def _sync_work(work: dict, inputs: dict | None = None) -> bool:
     if current["materials"] != previous.get("materials") or (
         "material_sources" in previous
         and current["material_sources"] != previous["material_sources"]
+    ) or (
+        "adopted_materials" in previous
+        and current["adopted_materials"] != previous["adopted_materials"]
     ):
-        reason = issue("materials_changed", "材料内容或路径变化，须核对受影响的摘录、引用和正文。", "inputs.material_paths")
+        reason = issue(
+            "materials_changed", "材料内容或路径变化，须核对受影响的摘录、引用和正文。",
+            _changed_material_location(current, previous),
+        )
         _invalidate(work, _with_delivery(work, "materials", "body"), reason)
     old_other = {key: value for key, value in old_inputs.items() if key not in {"template_path", "material_paths", "question_id"}}
     new_other = {key: value for key, value in work["inputs"].items() if key not in {"template_path", "material_paths", "question_id"}}
@@ -600,6 +657,20 @@ def _stage_content(stage: str, data):
     return {key: value for key, value in data.items() if key != "path_base"} if isinstance(data, dict) else data
 
 
+def _adopt_input_requirements(inputs: dict, data) -> dict:
+    """材料步骤整理出的项目要求随该步骤一并采用，写回本稿输入。
+
+    学校要求与申请者资料通常由材料步骤读取；要求摘要留在这个步骤里时，
+    输入记录也要同步，不能继续保留「目标语言待确认」之类的旧值。
+    """
+    requirements = data.get("input_requirements") if isinstance(data, dict) else None
+    if not isinstance(requirements, dict) or not requirements:
+        return inputs
+    adopted = deepcopy(inputs)
+    adopted["requirements"] = deepcopy(requirements)
+    return adopted
+
+
 def save_revision(request: dict) -> dict:
     stage = request["stage"]
     if stage not in {"materials", "question", "scheme", "body"}:
@@ -664,6 +735,8 @@ def save_revision(request: dict) -> dict:
             work["inputs"]["question_id"] = data["question_id"]
         if stage == "scheme":
             work["conditions"] = deepcopy(data["conditions"])
+        if stage == "materials":
+            work["inputs"] = _adopt_input_requirements(work["inputs"], saved_data)
         if stage == "body":
             write_record(work_directory / BODY_NAME, saved_data["body"], movable_root=work_directory)
             write_record(work_directory / REFERENCE_NAME, saved_data["references"], movable_root=work_directory)
