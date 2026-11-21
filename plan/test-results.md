@@ -4,6 +4,8 @@
 
 用户最新明确要求当前只把 Markdown 做对，停止 Word/LibreOffice 测试与排版调试。执行者已停止新增请求、转换和诊断，当前无活动请求。下文 r13 的双格式观察与未完成项是本次变更前的实际记录，不再据此继续 Word 测试，也不改写已有失败为成功。
 
+**r21（2026-11-21）最新逐项结果见文末「r21：环境重建后的真实会话执行」一节。** 本文中 r15、r20 各节及其结果表是历史记录，不再作为本轮通过依据；r21 一节另列输入偏离、执行偏离与显示层瑕疵。
+
 ## r15：Markdown 单格式产品与正式执行
 
 当前适用产品提交为 `e6ebaa4224e8d12f3ba7d9e6c60e2c31b4d4254c`（`feat/research-proposal`）。该线按已批准的 `rp-plan-r4-markdown-2026-11-04` 第 4、5 项把产品从双格式改为 Markdown 单格式；计划正文校验值保持 `4776b1d7…b5f9a`，测试计划保持 `bc8cd431…ec259`，均未修改。
@@ -380,3 +382,61 @@ RP-13 的原稿状态含绝对工作目录，普通副本续接会指回原稿�
 原负责人只读核对固定安装后确认：worker 的附件查询入口明确是 `run-tool curl` 调用本机 Zotero HTTP 的条目附件路径；已安装的 `zotero-save/SKILL.md` 规定通过同一 curl 传输初始化 MCP 会话、调用 `write_item` 的 `import` 操作，不要求会话暴露独立 Zotero 写入工具。本次 worker 已能执行该包装器，却没有读取这份说明、查询附件或尝试初始化与导入。未发现必需入口未安装或实际调用证明的写入能力故障；连通检查成功也不代替写入验证。
 
 原 worker 的加载语句仍使用 `skill(name:...)` 写法，只能作为上游角色用法可读性的改进假设；文件实际存在且未出现读取失败，不能据此认定本次原因，也不在新技能中复制上游入口或增设能力认证。本轮零产品修改。同一实现审核者已定向核对新增结果及直接说明，确认记录准确、没有新增修正要求，整体仍部分完成；原路径修正通过及其他有效结果保持，正式第三关由主对话决定。
+
+## r21：环境重建后的真实会话执行（2026-11-21）
+
+本轮产品固定为 `e6ebaa4224e8d12f3ba7d9e6c60e2c31b4d4254c`，四个 Nix 输出从 `/nix/store` 复用、未重建；消费者为重建后的 `$RP_CONSUMER=/private/tmp/research-proposal-r21-run.dpYLsb/consumers/nix`，结果根 `RP_RUN=/private/tmp/research-proposal-r21-run.dpYLsb`。上一轮 r20 结果根随机器重启丢失；本轮只重建离线可验证部分（输入夹具、RP-01 安装检查、RP-03 至 RP-06、RP-10 导入组件），其日志在 `$RP_RUN/logs/`（RP-01 的无关项在业务请求后补检，见偏离 7）。下表的 RP-07 至 RP-13 为本轮新执行结果；RP-01 至 RP-06 采用本轮准备记录。
+
+### 结果表（四状态）
+
+| 编号 | 结果 | 说明与证据 |
+|---|---|---|
+| RP-01 | 通过（补检） | 主技能、六项直接依赖、17 个原代理按检查项核对。**重建时漏预置** `test/fixtures/install` 的无关技能与无关配置；用同一激活器在临时目录探针确认激活会保留预置项（`$RP_RUN/logs/activation-probe.log`），故为准备遗漏而非激活覆盖。RP-07/08/10/11/12/13 主请求结束后从夹具恢复 `unrelated-note` 与 `model_reasoning_effort`（其后仅一次审核后材料补充请求使用该配置），补检结果在 `$RP_RUN/logs/rp01-install-inspection.txt`（主技能、6 个依赖、17 个代理、无关技能、配置条目逐项 OK）。该恢复发生在业务请求之后，业务结果未使用这些项。 |
+| RP-02 | 通过（沿用） | 本轮未改技能资源布局；安装入口与文件集合同前，按 r14 只复核改写后的文档观察。npx 未重跑。 |
+| RP-03 | 通过 | `test_inputs.DiscoveryTests` 3 个方法 `ok`、退出 0；见 `$RP_RUN/logs/rp03.log`。 |
+| RP-04 | 通过（本轮准备） | `test_inputs.UpstreamRoutingTests` 1 个方法 `ok`、退出 0；见 `$RP_RUN/logs/rp04.log`、`rp04.exit`。 |
+| RP-05 | 通过 | `test_inputs.AnalysisRoutingTests` 1 个方法 `ok`、退出 0；见 `$RP_RUN/logs/rp05.log`、`rp05.exit`。 |
+| RP-06（文字载体） | 通过 | `test_inputs.MaterialTests` 2 个方法 `ok`、退出 0，覆盖文字 PDF、TXT、Markdown、EPUB、HTML 和 `.docx` 载体（`$RP_RUN/logs/rp06.log`、`rp06.exit`）；`.docx` 断言按 2026-11-04 决定只作历史资产、不作通过条件。 |
+| RP-06（扫描页/图片） | 无法判断 | `damaged-scan.png` 未被使用，`logs/`、`component-output/` 无视觉输出，r20 结果根已丢失；扫描识别、疑难字保留及「识别与解释分开」没有本轮结果。恢复视觉配置后按 RP-06 原场景补做。 |
+| RP-07 | 通过 | 两条路线均由安装后的主技能完成真实会话。**论文路线**（`requests/rp07-paper-01/` 至 `-03/`）：展示候选 → 选择「叙述评价的归属」问题 → 形成中文方案 → 补入 `access-supplement.md` 后按实际条件更新方案。三次返回时磁盘状态依次为 `state_version=2/4/5`、`current=null`、`body=pending`，未提前生成正文。**非论文路线**（`requests/rp07-nonpaper-01/`、`-02b/`）：独立材料路线 `discover=read_materials`，保存 q1 与中文方案；`state_version=2` 时 `current=null`、`conditions.resolved=false`、无正文；`state_version=4` 时 question 已确认、scheme 待确认、仍无正文。问题与方案两处决定分别保存；条件未写成已取得。**输入偏离见下文**。 |
+| RP-08 | 通过 | 两条路线各完成一稿并提交。**论文日文**：第 1 版 `requests/rp08-paper-01/`，`state_version=19`、`current=r-20261121T091245-c515602fb832`、7 栏、固定口径 2105 字符；按用户反馈修正第五栏标题与参考文献后，`requests/rp08-paper-02/` 提交 `state_version=25`、`current=r-20261121T092543-03235eb2409d`、7 栏、2103 字符（1800–2400 内），`delivery_formats=["md"]`、`checked_formats=["md"]`、`content_consistent=true`、`artifacts` 只含 `md`。**非论文中文**：`requests/rp08-nonpaper-01/`，`state_version=10`、`current=r-20261121T092812-388c7bcf344f`、7 栏、1540 字（1200–1600 内），同样只交付 `md`。两稿的 `研究计划草稿.md`、`正文.json` 的 SHA-256 均与状态内 `checks.digests` 相等。**显示层保留**：Markdown 中参考文献的 em dash 显示为 `P1---P6`、非论文引用编号显示为 `\[1\]`；正文 AST 为 `—`/`[1]`，`review_revision` 读回一致，作为显示瑕疵记录，不另立通过条件。 |
+| RP-09 | 未执行 | 用户已延期；不运行 Word 模板、转填或页面检查。 |
+| RP-10 | 通过 | **导入组件**：本轮准备环境中的 `test_inputs.RevisionImportTests` 1 个方法 `ok`、退出 0（`$RP_RUN/logs/rp10.log`、`rp10.exit`），供本项「Markdown 内容差异读入」复用。**四个实际改稿场景**均从**当时 `current` 指向的已提交版本**复制修改稿（`scripts/make_revision.py` / `replace_section.py` 记录 base/output SHA-256 与 diff），每次独立请求；会话实际加载并使用主技能（RP-10 的六个提示词没有逐一写技能名称，见偏离 10）。**场景 1 纯措辞**（`rp10-s1-wording/`）：3 处替换，修改稿 `498e629e…` 与新提交 `r-20261121T093955-2eeac87bb58e` 逐字节相同；与基线 diff 仅 3 处、2 段；`question`/`scheme` 仍 `q1-public-final-v1`/`q1-scheme-public-final-v1` 且 confirmed，原确认复用。**场景 2 明确授权改核心方法并改英文**（`rp10-s2-method-english/`）：`question`/`scheme` 改为 `q1-reader-survey-v1` 并重新确认，decision 记录用户要求；新提交 `r-20261121T094302-e131e06b00f4`、7 个英文栏目，招募/伦理/同意为待办，未写成获批。**场景 3 文件自行写成已取得**（`rp10-s3-unverified/` + `rp10-s3-confirm/`）：首次请求识别「已取得许可/已完成比对/伦理已批」与条件记录冲突，保留导入原件与差异记录，**未写正文、状态与 `current` 不变**（24 / `r-20261121T094302…`），并向用户提出处理方式；第二次按决定只改「Schedule and Feasibility」栏，新提交 `r-20261121T095054-0243a4581b29`、`state_version=30`，与上一版 diff 仅该栏 6 行，确认与其余栏目未动。**场景 4 两份冲突稿**（`rp10-s4-conflict/` + `rp10-s4b-select-b/`）：A=细读＋第二编码者、B=五人思维出声访谈，两份都导入保留并列出影响，**状态版本/`current` 前后不变、`works` 未增加**，未按修改时间合并；用户选 B 后新提交 `r-20261121T095506-f83d0d9ad1e2`、`state_version=38`，`question`/`scheme` 改为 `q1-think-aloud-five-v1` 并确认，问卷/二十人招募改为访谈设计，伦理、同意、招募、转录、编码均为待办。 |
+| RP-11 | 通过（基准偏离见偏离 9） | 实际基准为同一非论文稿在 RP-10 场景 4 后的当前提交版 `r-20261121T095506-f83d0d9ad1e2`（RP-08 交付版为 `r-20261121T092812-388c7bcf344f`）；`RP_TEST_PROPOSAL` 绑定 `input/nonpaper/研究计划/甲项目-联系教授`。`RP_SAVE_REQUESTS` 由当前版四份步骤数据用 `jq` 生成（`config/save-requests.json`）；`RP_RELATED_MATERIAL_RECORD=material-1.json`（`status=ready`，原文 `研究资料/材料/门灯.md` 在消费者 input 内）。命令 `uv run --no-project --python "$RP_RUNTIME/bin/python3" python -m unittest -v test_recovery.RecoveryTests` 从 `$RP_WORKTREE/test` 执行，8 个方法全部 `ok`、`Ran 8 tests in 6.318s`、退出 0，见 `$RP_RUN/logs/rp11-components.log`。运行前快照 `snapshots/rp11-proposal-before/`；运行后状态 SHA-256 不变、`current` 仍 `r-20261121T095506…`、`门灯.md` 恢复为原字节（`8b2721a3…`）。 |
+| RP-12 | 通过 | 按计划先 `cp -p` 复制 `test/fixtures/applications/program-b.md` 到 `$RP_CONSUMER/input/nonpaper/` 并 `test -r` 成功，再从甲项目已提交稿发请求（`requests/rp12-program-b/`），明确复用文献与通用方案。新建独立稿件 `input/nonpaper/研究计划/乙项目-面试准备`：`proposal_id=proposal-199bf18b1676437f81aa9e694c868af6`、`binding={乙项目-面试准备, 面试准备, q1}`、`state_version=9`、`current=r-20261121T095953-0b6dfcc09910`；五个栏目（拟研究的问题／选题依据／实施步骤／条件与替代办法／参考文献）与固定口径 977 字（800–1000 内），未沿用甲稿七栏目。`inputs.material_paths` 记录复用来源，确认 revision 为 `q1-think-aloud-five-v1-b-interview` 独立确认；`delivery_formats=["md"]`、`checked_formats=["md"]`、`artifacts` 只含 `md`。请求前后甲项目状态 SHA-256 相同、5 个版本目录相同，未被改动。 |
+| RP-13（缺资料分支） | 通过 | **空目录**（`requests/rp13-empty/`）：`discover` 返回 `needs_input`，说明缺可读材料、招生项目、教授与研究依据；未联网、未建项目。**仅学校名称**（`requests/rp13-school/`）：只给 `松川大学.txt`，`discover` 返回 `read_materials`，保存学校名称材料与缺项清单到 `input/nonpaper/研究计划/松川大学-联系教授`，状态 `state_version=2`、`current=null`、materials=complete、question/scheme/body=pending，未从任意网页建完整项目。 |
+| RP-13（外部能力缺失分支） | 未执行 | 没有 `RP_VISION_CONFIG`，也不使用用户实际视觉配置发起付费识别；该分支本轮未执行，补做待测试计划负责人确认配置来源与费用授权。 |
+
+### 三份稿件终态
+
+| 稿件 | `state_version` | `current` | 栏目 | 固定口径篇幅 | `delivery_formats` / `checked_formats` | `committed` |
+|---|---|---|---|---|---|---|
+| 论文（林安，日文） | 29（其中 1 个未提交工作版本，见偏离 2、4） | `r-20261121T092543-03235eb2409d` | 7 | 2103 字符 | `["md"]` / `["md"]` | true |
+| 非论文甲项目（RP-08 交付版，中文） | 10 | `r-20261121T092812-388c7bcf344f` | 7 | 1540 字 | `["md"]` / `["md"]` | true |
+| 非论文甲项目（RP-10 后当前版，英文访谈） | 38 | `r-20261121T095506-f83d0d9ad1e2` | 7 | 7088 字符 | `["md"]` / `["md"]` | true |
+| 乙项目（中文，面试准备） | 9 | `r-20261121T095953-0b6dfcc09910` | 5 | 977 字 | `["md"]` / `["md"]` | true |
+
+字数口径固定为：拼接全部 `Str`、排除题目块的题目正文、文献列表内容不计入、栏目标题计入。脚本 `$RP_RUN/scripts/count_body.py` 对每版 `正文.json` 计算，结果分别保存在对应请求目录的 `body-count.json`。**1200–1600 字**是甲项目非论文路线中文正文的要求；RP-10 场景 2 按用户明确要求把正文改为英文，篇幅按同一固定口径记 6753 字符（`requests/rp10-s2-method-english/body-count.json`），不再套用中文 1200–1600 作为该场景通过条件；场景 4 选 B 后当前版为 7088 字符（`requests/rp10-s4b-select-b/body-count.json`），同样只记录实际篇幅。乙项目 800–1000 字与论文 1800–2400 字符按各自要求核对。上一版记录曾把场景 2 的 6753 误写到当前版行，本次按实际计算改正为 7088。
+
+### 实际命令与请求索引
+
+- 评估请求：`POST http://127.0.0.1:17902/eval`，body 为 `{"command": "--cd <consumer> --model gpt-6-luna --sandbox workspace-write -- '<prompt>'", "timeout": 600}`。发送脚本 `$RP_RUN/scripts/send_request.py`；每个请求目录保存 `prompt.txt`、`eval-request.json`、`response.json`、`http-status.txt`、`curl.exit`、`times.txt`、`summary.json`（各请求另存 `state-at-return.json` 快照；`requests/rp13-empty/` 没有稿件状态，未另存）。19 次请求（18 次主业务请求 + 1 次审核后材料补充请求）全部 HTTP 200、`passed=true`、`termination_reason=completed`，`thread_id` 互不相同；请求索引见 `$RP_RUN/requests/` 与 `observations/`。
+- 实际生效：`approvalPolicy=on-request`、`approvalsReviewer=user`、`sandbox=workspaceWrite`、`networkAccess=false`。
+- 组件测试：RP-11 命令见上；RP-03 至 RP-06 的日志与退出码在 `$RP_RUN/logs/`。
+- 篇幅与摘要核对：`$RP_RUNTIME/bin/python3 $RP_RUN/scripts/count_body.py <正文.json>`；`shasum -a 256` 对每版 Markdown/正文与状态内 `checks.digests` 独立比较。
+
+### 执行偏离与未闭合项
+
+1. **非论文基线缺失（输入偏离）**：旧消费者中的《罗生门》材料、相关研究、甲项目原稿与 `rashomon-read.json` 随 `/private/tmp` 清空丢失，仓库、夹具、Git 历史均无备份。本轮按现有合成写作包重建同结构的非论文输入（`input/nonpaper/研究资料/`、`研究条件/`），因此无法复现计划所写的「复用既有《罗生门》材料、版本 6、`rp07-03` 作者误写历史」。RP-07 非论文的逐步条件暴露也因补充条件与初始条件同目录而在第 1 次请求即被读到。上述偏离记在 `observations/rp07-nonpaper.md`；RP-07/08/10/11/12 的其余业务观察点按重建后的真实材料执行。
+2. **执行偏离：请求未重申稿件路径**（`requests/rp07-nonpaper-02/`）：该次提示词未写非论文稿件目录，主技能定位到论文稿并另建未提交工作版本 `r-20261121T093049-daa4c4230eb0`。非论文稿未变（`state_version=2`、`current=null`）；论文稿 `current` 未变，仍为已提交版 `r-20261121T092543…`，新增的未提交工作版本按产品规则保留，未手改或删除。该次不计为非论文业务结果；以显式路径重发一次（`-02b/`）。
+3. **运行配置未按 r14 表达式重建（IR-42）**：本轮交接只提供安装后的消费者配置与安全请求格式，未提供 `ZOTERO_*` 隔离值、`RP_VISION_CONFIG` 与 `RP_INSTALLED_CONFIG`；请求按交接的 `--cd/--model/--sandbox` 形式发出，实际 `networkAccess=false`，未额外禁用两个 MCP 服务。本轮全部业务只读本地材料，未依赖联网；该差异不影响材料与稿件状态，但属于准备层偏离，是否重建配置或补跑由测试计划负责人决定。
+4. **论文稿材料步骤缺申请者与项目要求记录（IR-40，部分处理）**：论文稿交付版 `步骤-materials` 只保存作品与两篇研究（3 项），申请者资料与甲项目要求通过会话读取，未成为材料记录；非论文稿已保存 7 项（含申请者与项目要求）。审核后补发一次请求（`requests/rp08-paper-materials/`），主技能用 `read_material` 读取并保存了 `applicant.md`、`program-a.md`，但主技能声称的“栏目/语言/篇幅/期限写入输入要求”与实际文件不符：`r-093049…/研究计划输入.json` 的 `requirements`/`material_paths` 未变，新 `步骤-materials` 也没有 `requirements` 键；实际只新增了两份材料读取记录。记录把这些记录写进了由偏离请求产生的未提交工作版本 `r-20261121T093049-daa4c4230eb0`，该版本的问题/方案确认属于非论文 q1，与论文当前稿的确认链不同。为避免用错误确认链覆盖当前稿，**没有把该工作版本提交为当前版**；当前提交版 `r-20261121T092543-03235eb2409d` 的正文、栏目和摘要未变，材料记录缺口仍存在于当前提交版。后续应由主技能以当前提交版为基准补一次，且必须先核对确认链；不由执行者手改状态。
+5. **显示层瑕疵**：两稿参考文献的 em dash 在 Markdown 显示为 `P1---P6`，非论文引用编号显示为 `\[1\]`；正文 AST 与被引原文未变，`review_revision` 读回 `content_consistent=true`。不另立测试，也不改称正文已被手改。
+6. **RP-09 未执行**：按用户已确认的延期范围，Word、模板、LibreOffice、页图均未执行。
+7. **RP-01 重建时漏预置无关项（IR-36，已补检）**：重建消费者没有 `test/fixtures/install` 的 `unrelated-note` 与 `model_reasoning_effort`。用同一激活器在临时目录（`scratch/activation-probe/`）预置后激活，两项均保留（`logs/activation-probe.log`），故属准备遗漏、不是安装覆盖。主请求结束后从夹具恢复并补检（其后仅 `requests/rp08-paper-materials/` 使用该配置），`logs/rp01-install-inspection.txt` 记录主技能、6 个依赖、17 个代理、无关技能和配置条目均 OK；恢复发生在业务请求之后，未用于业务结果。若负责人要求“安装检查必须在请求前完成”，本项应改判为准备顺序偏离。
+8. **RP-06 扫描页与 RP-13 外部能力分支没有本轮结果（IR-37）**：`damaged-scan.png` 未使用，`logs/`、`component-output/` 无视觉输出；本轮没有 `RP_VISION_CONFIG`，也不使用用户实际视觉配置发起付费识别。RP-06 只判文字载体通过，扫描识别部分记**无法判断**；RP-13 的外部能力缺失分支记**未执行**。补做需测试计划负责人确认视觉配置来源与费用授权。
+9. **RP-11 基准与计划文字不一致（IR-39）**：计划第 410 行要求基准为 RP-08 产生的真实提交稿，实际运行使用 RP-10 场景 4 后的当前版 `r-20261121T095506-f83d0d9ad1e2`（同一非论文稿的已提交后代版，RP-08 交付版 `r-20261121T092812-388c7bcf344f` 保留在 `works`）。`test/support.py` 只断言 `current` 非空，没有绑定具体修订号，测试本身无法发现基准变化。8 个方法仍是在真实已提交稿上执行、未观察到代码路径差异，但“RP-08 基准”与固定顺序未按计划文字满足；是否接受替代基准由测试计划负责人决定，若不接受需在获批顺序下重跑。
+10. **提示词未逐一写技能名称（IR-41，记录已改）**：RP-10 六个提示词、RP-08 两个写作提示词、RP-12 及 RP-07 的部分提示词只写业务要求，没有出现 `research-proposal` 名称；实际会话均读取并执行了安装后的主技能（`SKILL.md`、`runtime.md`、`proposal-runtime` 与保存/导出/提交）。这不是“只调组件 API”，但不符合计划第 116、158 行“每次明确点名”的文字；后续重发时应把技能名称写入提示词，旧请求保留为偏离记录。
+11. **证据命名与测试范围的文字差异（IR-43）**：`logs/` 无 `rp03.exit`，RP-03 只有 `rp03.log`（3 个 `OK`）；实际文件名 `rp03.log` 等与计划示例的 `rp03-components.log` 不同；本轮重建后重新执行了 `RevisionImportTests`（计划第 406 行写“不因 r14 重跑”），属环境替代执行，已在 RP-10 行标明来源；`MaterialTests` 内部仍执行 `reading-room.docx` 子测试，`.docx` 只作历史资产、不作 RP-06 当前通过条件。
+
+本轮未手改任何 `正文.json`、Markdown 或状态文件，未重置 `current`；所有稿件的保存、导出、核对与提交均由安装后的主技能完成。以上结果只说明实现符合性与测试执行情况，不构成计划关口、第三关或合并批准。
