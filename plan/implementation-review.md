@@ -233,7 +233,96 @@ RP-13 的实际结果符合原观察点：缺视觉配置返回明确错误，�
 | IR-42 | 记录闭合，配置偏离待测试计划负责人决定 | r14 唯一配置表达式未重建：实际 `thread_start_effective` 为 `approvalPolicy=on-request`、`approvalsReviewer=user`、`sandbox=workspaceWrite`、`networkAccess=false`；MCP 服务未按表达式关闭，`ZOTERO_*`/`VISION_ENV_FILE` 未按表达式注入。业务只读本地材料，未依赖联网、Zotero 或视觉服务（RP-13 缺配置分支为受控缺失），对 12 项结果无影响；接受或补跑由测试计划负责人决定。 |
 | IR-43 | 记录闭合 | `logs/` 无 `rp03.exit`（只有 `rp03.log`，3 个方法 `ok`）；实际文件名与计划示例不同；重建后重新执行 `RevisionImportTests`（计划第 406 行写“不因 r14 重跑”）；`MaterialTests` 内含 `reading-room.docx` 子测试（按 2026-11-04 决定只作历史资产）。均属记录/执行方式差异，未改业务结果；接受由测试计划负责人确认。 |
 | IR-44 | 数字闭合，证据清单表述待修 | `requests/` 下 22 个请求目录（18 主业务 + `rp08-paper-materials` 材料补充 + `rp08-paper-materials-2` 论文材料补做 + `rp08-paper-confirm` 方案确认 + `rp13-vision-missing` 缺配置复核）全部 HTTP 200、`passed=true`、`exit_code=0`、`turn.completed`，22 个 `thread_id` 互不相同。`test-results.md` 已把 19 改为 22，但同行“每个请求目录保存 prompt.txt、curl.exit、times.txt、summary.json、state-at-return.json”对 `rp08-paper-materials-2`、`rp08-paper-confirm`、`rp13-vision-missing` 不成立：三者只有 `eval-request.json`、`response.json`、`http-status.txt`、`curl.stderr`、`start.txt`（`rp13-vision-missing` 另有 `end.txt`），提示词在 `eval-request.json.command` 内可复原；前两者没有 `state-at-return.json`。需修记录，不改业务结果。 |
-| IR-45 | 未闭合（轻微实现缺口） | 论文稿当前提交版的 `works[r-093049].inputs` 与 `版本/r-20261121T093049-daa4c4230eb0/研究计划输入.json` 仍只有 3 条 `material_paths`，`requirements` 仍是“中文方案先审阅，正式正文目标语言待项目要求确认”；`applicant.md`、`program-a.md` 只存在于 `步骤-materials` 记录，`fingerprints.material_sources` 为空。按 `_state.py` 的 `_snapshot`/`_sync_work`，修改这两份文件不会触发 `materials_changed`，已提交正文与核对不会失效。依据为执行计划第 291、293 行；非论文甲项目同一位置已列出 `申请者.md`、`甲项目要求.md`，说明该约定可实现。不影响已交付正文、栏目、篇幅和 12 项必测结果。最小修正：主技能在追加材料/要求时通过 `resume_revision` 同时更新 `inputs.material_paths`/`inputs.requirements`（或由 `save_revision(stage="materials")` 把材料原文/读取记录纳入依赖），再按现有状态摘要核对失效；不手改状态。负责人：主技能/产品实现负责人；若决定作为已知限制接受，需由计划负责人明确修订第 293 行的适用范围。 |
+| IR-45 | 已闭合（r22 定向复核） | **r21 发现（原文保留）**：论文稿当前提交版的 `works[r-093049].inputs` 与 `版本/r-20261121T093049-daa4c4230eb0/研究计划输入.json` 仍只有 3 条 `material_paths`，`requirements` 仍是“中文方案先审阅，正式正文目标语言待项目要求确认”；`applicant.md`、`program-a.md` 只存在于 `步骤-materials` 记录，`fingerprints.material_sources` 为空。按 `_state.py` 的 `_snapshot`/`_sync_work`，修改这两份文件不会触发 `materials_changed`，已提交正文与核对不会失效。依据为执行计划第 291、293 行；非论文甲项目同一位置已列出 `申请者.md`、`甲项目要求.md`，说明该约定可实现。不影响已交付正文、栏目、篇幅和 12 项必测结果。**r22 处置**：产品提交 `457d8cfa5ad86881aaf06311766d227431291be6` 把材料步骤的已采用材料纳入依赖摘要（`adopted_materials`），并以读取记录的 `digest` 核对原件当前内容；保存材料步骤时把 `input_requirements` 同步为 `inputs.requirements`；论文稿另建补正版 `r-20261121T135022-23ab987a4971`（`state_version=44`），输入登记 5 条材料与结构化要求，正文/Markdown 与旧版逐字节相同。复核结论与证据见下文 r22 节与 `test-results.md` 的 r22 节。 |
 
-未闭合事项的负责人：IR-39、IR-41、IR-42、IR-43 的计划/执行偏离交测试计划负责人确认；IR-45 的输入记录缺口交主技能/产品实现负责人（修正或按已知限制接受并修订计划文字）；`test-results.md` 的论文终态行、偏离 8、请求文件清单、IR-36 句子和 `test-plan-review.md` 第 129 行的表述由记录负责人/主对话同步；RP-09 继续延期。上述结论只说明实现与执行记录的符合性，不代表计划关口、第三关或合并批准。
+未闭合事项的负责人：IR-39、IR-41、IR-42、IR-43 的计划/执行偏离交测试计划负责人确认；IR-45 已在 r22 闭合（见下文 r22 节）；`test-results.md` 的论文终态行、偏离 8、请求文件清单、IR-36 句子和 `test-plan-review.md` 第 129 行的表述由记录负责人/主对话同步；`test-plan-review.md` 的第三关记录仍指向 r21 与 `e6ebaa4`，需按 r22 结果更新；RP-09 继续延期。上述结论只说明实现与执行记录的符合性，不代表计划关口、第三关或合并批准。
 
+
+## r22 IR-45 定向实现符合性复核
+
+审核者：专用 `implementation_reviewer` 代理（只读，未加载本地执行工程师流程）。审核版本：产品 `457d8cfa5ad86881aaf06311766d227431291be6`，前一产品提交 `e6ebaa4224e8d12f3ba7d9e6c60e2c31b4d4254c`；工作树 `/Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan`，审核时干净。审核依据：`PROJECT_CONSENSUS.md`、`Test Engineer Rule.md`、`Plan Reviewer Rule.md`、`Merge Reviewer Rule.md`；有效计划 `rp-plan-r4-markdown-2026-11-04` 与测试计划 `rp-tests-r5-markdown-2026-11-04` 均未修改。审核为只读：未修改仓库、产品、稿件状态或测试文件，未运行正式业务请求或测试用例，未安装、提交、推送或启动代理。
+
+**结论：本轮 IR-45 定向实现符合性为完整。** IR-45 已闭合；所查受影响产物和结果齐备，未发现与本项修改相关的剩余实现偏差或回归。该结论不表示整体项目、测试第三关或合并完成。以下为审核报告完整转述（仅调整标题层级与首段编号，未改内容）。
+
+### 一、审核对象与方式
+
+| 项目 | 实际值 |
+|---|---|
+| 产品提交 | `457d8cfa5ad86881aaf06311766d227431291be6` |
+| 前一产品提交 | `e6ebaa4224e8d12f3ba7d9e6c60e2c31b4d4254c` |
+| 工作树 | `/Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan`，分支 `feat/research-proposal`，审核时干净 |
+| 有效执行计划 | `rp-plan-r4-markdown-2026-11-04`，SHA256 `4776b1d7…b35b5f9a`，未修改 |
+| 有效测试计划 | `rp-tests-r5-markdown-2026-11-04`，SHA256 `bc8cd431…ec739ec259`，未修改 |
+| 论文当前提交版 | `r-20261121T135022-23ab987a4971`，`state_version=44` |
+| 消费者 | `/private/tmp/research-proposal-r21-run.dpYLsb/consumers/nix` |
+| 结果根 | `/private/tmp/research-proposal-r22-run.t3ZjVR` |
+
+审核为只读：未修改仓库、产品、稿件状态或测试文件，未运行正式业务请求或测试用例，未安装、提交、推送或启动代理。
+
+已确认 r21 完整审核对产品 `e6ebaa4`、执行计划 r4、测试计划 r5 的覆盖继续适用于本次未修改部分；本轮只检查修复、论文稿补正、实际状态及直接影响。产品修复提交只改 `_state.py` 和四份说明文件，`test/`、`flake.nix`、`nix/` 均无差异。消费者安装的 `_state.py` SHA256 为 `32d7973a…c943762626`，与 `457d8cf` 一致；旧运行包的同一文件为 `c64f6be5…b26c4a2ad`，与 `e6ebaa4` 一致，因此 C/D 对照中的旧、新产品差异可核对。
+
+### 二、计划对应与逐条回应
+
+#### 1. IR-45 已真正闭合
+
+- 论文当前版 `works[r-135022].inputs.material_paths` 已为 5 条，包含 `story.md`、`professor-study.md`、`outside-study.md`、`applicant.md`、`program-a.md`；`inputs.requirements` 已写入结构化项目要求，并与 `步骤-materials` 的 `input_requirements` 一致；`研究计划输入.json` 同步包含 5 条路径和要求。见[研究计划状态.json](</private/tmp/research-proposal-r21-run.dpYLsb/consumers/nix/input/r13-manual-inputs/writing/研究计划/甲项目-联系教授/研究计划状态.json>)。
+- `fingerprints.adopted_materials` 登记了 5 项材料原文摘要；`_snapshot`、`_dependencies`、`_sync_work`、`_committed_response` 都已接入，对应执行计划第 [291](</Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan/plan/implementation-plan.md#L291>)、[293](</Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan/plan/implementation-plan.md#L293>)、[313](</Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan/plan/implementation-plan.md#L313>)、[317](</Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan/plan/implementation-plan.md#L317>) 行。
+- 修改 `applicant.md` 或 `program-a.md` 后，论文当前提交版均返回 `needs_input`，问题为 `committed_content_changed`；恢复原字节后重新返回 `committed`。旧提交版 `r-093049` 在未改动时仍为 `committed`，在材料被修改时新产品返回 `needs_input`，旧产品仍为 `committed`，复现了 IR-45 的漏检并证明修复有效。见[ir45-verification.json](</private/tmp/research-proposal-r22-run.t3ZjVR/verification/ir45-verification.json>)。
+- 论文当前版正文 7 栏、固定口径 2093 字符，要求为日文 1800–2400 字符；`delivery_formats=["md"]`、`checked_formats=["md"]`、`artifacts` 只含 `md`、`content_consistent=true`。正文 `d2f1eee6…`、Markdown `581f4dfb…` 与旧提交版逐字节相同，补正没有改变已交付正文。
+- 旧提交版 `r-093049` 仍保留 3 条材料路径和旧 `requirements`，但旧版目录及 `works[r-093049]` 记录与补正前快照逐项相同；按计划第 319 行，历史已提交版只读保留，不要求原地迁移。
+- 第 291、293 行要求的“已采用材料、学校要求变化时只使相关工作失效”已有直接结果：未提交工作版修改材料后，`materials`、`body` 为 `pending`，`question`、`scheme` 保持 `complete`，`content_consistent=false`，材料步骤的 `materials_changed` 定位到 `applicant.md` 实际路径；恢复后连续两次恢复状态版本为 `12`、`12`，不再反复递增。
+
+#### 2. 直接影响的正确性
+
+- 未发生误报：A1 论文当前版、A2 论文旧提交版、A3 非论文当前版均为 `committed`，`issues=[]`；实际检查的四个稿件状态中，所有材料步骤记录的 `digest` 与当前原文一致，没有发现摘要项导致的额外失效。旧记录缺少 `adopted_materials` 键时沿用 `LATE_FINGERPRINTS` 约定跳过整体比较，再由 `_material_record_drift` 用记录中已有的 `digest` 发现原文变化；实际旧记录均带 `digest`，没有发现无摘要键记录被误报。
+- 未提交工作版的失效范围符合预期：材料变化只使材料、正文及依赖它们的交付核对失效，问题与方案确认继续有效；`_invalidate` 同时把 `md`、`review` 标为待重做，这是正文失效后的下游交付步骤，不是把问题或方案重新打开。
+- 重复恢复稳定；恢复后不会自动把材料/正文重新标为完成，需要用户重新保存受影响步骤，符合计划第 291 行。
+- 旧提交版、非论文稿和乙项目当前版均未出现材料变化误报；`松川大学` 的未提交稿只有材料步骤，也没有出现额外失效。
+
+#### 3. 既有行为保留
+
+- 论文当前版、非论文甲项目当前版、乙项目当前版均保持 `delivery_formats=["md"]`、`checked_formats=["md"]`、`artifacts` 只含 `md`、`content_consistent=true`。
+- `fcntl.flock` 文件锁、`_work_for_write` 的过期版本与基准检查、`commit_revision` 的待提交记录—目录改名—最后替换状态顺序均未改动；论文补正的实际版本推进为 `37→38→39→40→41→42→44`，与待提交状态和最终切换一致。
+- 旧稿保护通过：旧版目录与补正前快照 `diff -r` 为空，旧 `works` 记录逐项相同，旧输入文件未改。
+- `test/` 未修改；RP-11 重跑覆盖首次导出失败、Markdown 导出失败后恢复、内容不一致不提交、步骤中断续接、目录改名与指针替换两类提交中断、材料/正文/选择变化失效、另一轮先更新基准。8 个方法全部 `ok`，运行时间 `5.653s`，退出 0，见[rp11-components.log](</private/tmp/research-proposal-r22-run.t3ZjVR/logs/rp11-components.log>)。运行前后非论文稿状态 SHA256 均为 `4c54f358…`，`current` 仍为 `r-20261121T095506-f83d0d9ad1e2`。
+- RP-01 换版安装检查见[rp01-install-inspection.txt](</private/tmp/research-proposal-r22-run.t3ZjVR/logs/rp01-install-inspection.txt>)：主技能及四份参考、模板、包装脚本、六项直接依赖、17 份原代理、无关技能和配置条目均存在，运行包指向新 store 路径；`input` 还原后无差异。
+
+#### 4. 受影响必测项的重跑与复用
+
+- RP-01 已按新提交重新构建、安装并检查，结果通过。
+- RP-11 已用新运行包重跑 `test_recovery.RecoveryTests`，8 个方法通过；首次准备因未导出 `RP_TEST_OUTPUT` 的 8 个 setup 错误保留在 `logs/rp11-components-prepfail.log`，不是业务失败。
+- RP-08 论文当前版已换为 `r-135022`，7 栏、2093 字符，正文和 Markdown 与 r21 真实产出相同，交付字段和输入记录一致；不需要新增写作请求。
+- RP-02 至 RP-07、RP-08 非论文、RP-10、RP-12、RP-13 的复用依据成立：产品差异只涉及状态材料摘要、恢复失效和材料步骤要求同步；这些项目的材料步骤没有发生原文变化，检查到的所有状态也没有摘要漂移。RP-09 按用户决定延期，未执行。
+
+需要保留的既有偏离：RP-11 实际使用的基准是 RP-10 场景 4 后的当前版 `r-095506`，不是测试计划第 [410](</Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan/plan/test-plan.md#L410>) 行要求的 RP-08 交付版 `r-092812`；`RP_RELATED_MATERIAL_RECORD` 实际绑定 `material-1.json`，计划文字示例为 `材料/rashomon-read.json`。这两点属于 r21 已记录的 IR-39/IR-43 偏离，r22 重跑没有改变，仍应由测试计划负责人决定是否接受；本轮不据此判实现失败。
+
+### 三、问题清单与待核实项
+
+**未发现新的实现缺陷。IR-45 已闭合，未发现回归。**
+
+以下为记录、测试依据或既有计划事项，不是本轮实现缺陷：
+
+| 事项 | 依据与位置 | 影响与最小处理 | 负责人 |
+|---|---|---|---|
+| r22 记录尚未写入 | [implementation-review.md](</Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan/plan/implementation-review.md#L236>)、[test-results.md](</Users/rekidunois/code/skill-repos-dev/worktrees/research-proposal-plan/plan/test-results.md#L386>) 及 `test-plan-review.md` 仍为 r21 状态 | 需补 IR-45 闭合行、论文终态 `44/r-135022`、RP-01/RP-11/RP-08 论文结果及复用说明；不影响已核对的产品结果 | 本地执行工程师/记录负责人 |
+| 交接引用的 `logs/activate.log` 不存在 | [交接说明第 30 行](</private/tmp/research-proposal-r22-run.t3ZjVR/reviewer-brief-ir45.md#L30>)；实际只有 `logs/install.log`、`.agent-env-applied`、`.agent-env-nix/state.json` | 激活结果仍可由安装日志和 RP-01 检查核对，但交接证据路径需改为现有文件或补交激活输出 | 本地执行工程师 |
+| RP-11 日志未记录完整命令及环境绑定 | [rp11-components.log](</private/tmp/research-proposal-r22-run.t3ZjVR/logs/rp11-components.log>) | 本次已由 component-output 中新出现的 `adopted_materials` 指纹和安装运行包哈希确认使用了新产品；正式记录应补命令及 `RP_TEST_PROPOSAL`/`RP_RELATED_MATERIAL_RECORD` 绑定 | 本地执行工程师 |
+| RP-11 基准与材料记录名偏离 | 测试计划第 410、452 行；r21 IR-39/IR-43 | r22 结果在真实已提交稿上通过，但没有按计划固定的 RP-08 基准执行；接受替代基准或按获批顺序重跑由测试计划负责人决定 | 测试计划负责人 |
+| IR-41、IR-42、IR-43 | r21 记录 | 提示词点名、实际配置、证据文件名差异仍待测试计划负责人确认；本轮没有改变这些前提，不在本轮重新判定 | 测试计划负责人/主对话 |
+| RP-09 | 用户延期决定 | 未执行；不作为本轮实现缺陷 | 主对话 |
+| 辅助摘要字段名 | [paper-correction-summary.json](</private/tmp/research-proposal-r22-run.t3ZjVR/verification/paper-correction-summary.json>) 的 `product_revision` 填的是运行包 store 路径 | 产品 SHA 以 `ir45-verification.json` 和 `config/run.env` 的 `457d8cf…` 为准；记录时区分字段含义即可 | 本地执行工程师 |
+
+另有一条边界需要记录但不构成当前缺陷：如果旧材料记录既没有 `adopted_materials` 摘要项、也没有 `digest`，当前实现无法发现该原文变化；实际四个稿件状态中的材料记录均带 `digest`，没有这样的实际记录，计划也没有要求处理这种外部构造输入。
+
+### 四、结论
+
+**本轮 IR-45 定向实现符合性：完整。** IR-45 已闭合；所查受影响产物和结果齐备，未发现与本项修改相关的剩余实现偏差或回归。
+
+**这不表示整体项目、测试第三关或合并完成。** r22 记录尚未写入；RP-11 的 RP-08 基准偏离仍待测试计划负责人确认；IR-41、IR-42、IR-43 仍为既有待确认事项；RP-09 按用户决定延期。下一步由本地执行工程师补写 r22 记录及 IR-45 闭合行，测试计划负责人处理 RP-11 基准及既有偏离，主对话再决定第三关与合并；本报告不作这些关口或合并批准。
+
+### 审核后处置（本地执行工程师）
+
+- 已按审核意见补写本节与 `test-results.md` 的 r22 节，写入 IR-45 闭合行、论文终态 `44`/`r-20261121T135022-23ab987a4971`、RP-01/RP-11/RP-08 论文结果与复用依据。
+- 交接说明第 30 行的激活证据路径已改为实际存在的 `logs/install.log`；RP-11 的命令与环境绑定另存 `logs/rp11-command.txt`。
+- `paper-correction-summary.json` 的 `product_revision` 字段含义已在 r22 记录中注明（值是该次运行时 store 路径，产品 SHA 以 `config/run.env` 与 `ir45-verification.json` 为准）。
+- 审核报告第三节列出的其余事项（RP-11 基准、IR-41、IR-42、IR-43、RP-09）保持原状，按报告分工交测试计划负责人/主对话决定。
