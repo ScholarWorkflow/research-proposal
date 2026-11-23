@@ -5,7 +5,6 @@
         "agent-skills": "agent-skills",
         "mcp-servers": "mcp-servers",
         "nixpkgs": [
-          "contact",
           "nixpkgs"
         ]
       },
@@ -19,8 +18,8 @@
       },
       "original": {
         "owner": "RekiDunois",
-        "ref": "main",
         "repo": "agent-env-nix",
+        "rev": "c368871942435bdc178a1063ce9c677acaf8cabc",
         "type": "github"
       }
     },
@@ -29,7 +28,7 @@
         "agent-skills": "agent-skills_2",
         "mcp-servers": "mcp-servers_2",
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "browser-pdf-tools",
           "nixpkgs"
@@ -55,7 +54,7 @@
         "agent-skills": "agent-skills_3",
         "mcp-servers": "mcp-servers_3",
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "zotero-tools",
           "nixpkgs"
@@ -81,7 +80,7 @@
         "agent-skills": "agent-skills_4",
         "mcp-servers": "mcp-servers_4",
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "zotero-tools",
           "nixpkgs"
         ]
@@ -104,7 +103,6 @@
     "agent-skills": {
       "inputs": {
         "nixpkgs": [
-          "contact",
           "agent-env-nix",
           "nixpkgs"
         ]
@@ -127,7 +125,7 @@
     "agent-skills_2": {
       "inputs": {
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "browser-pdf-tools",
           "agent-env-nix",
@@ -152,7 +150,7 @@
     "agent-skills_3": {
       "inputs": {
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "zotero-tools",
           "agent-env-nix",
@@ -177,7 +175,7 @@
     "agent-skills_4": {
       "inputs": {
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "zotero-tools",
           "agent-env-nix",
           "nixpkgs"
@@ -201,11 +199,11 @@
     "base-skills": {
       "inputs": {
         "agent-env-nix": [
-          "contact",
+          "professor-contact",
           "agent-env-nix"
         ],
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "nixpkgs"
         ]
       },
@@ -227,13 +225,13 @@
     "base-skills_2": {
       "inputs": {
         "agent-env-nix": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "browser-pdf-tools",
           "agent-env-nix"
         ],
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "browser-pdf-tools",
           "nixpkgs"
@@ -259,7 +257,7 @@
         "agent-env-nix": "agent-env-nix_2",
         "base-skills": "base-skills_2",
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "nixpkgs"
         ],
@@ -280,40 +278,14 @@
         "type": "github"
       }
     },
-    "contact": {
-      "inputs": {
-        "agent-env-nix": "agent-env-nix",
-        "base-skills": "base-skills",
-        "knowledge-tools": "knowledge-tools",
-        "nixpkgs": "nixpkgs",
-        "paper-analysis": "paper-analysis",
-        "pdf-processing-core": "pdf-processing-core_2",
-        "professor-research": "professor-research",
-        "zotero-tools": "zotero-tools_2"
-      },
-      "locked": {
-        "lastModified": 1793174808,
-        "narHash": "sha256-x/JvyU7Qexm+l8nCxofQXWEtfYzaiQLemboqxvIKPbk=",
-        "owner": "ScholarWorkflow",
-        "repo": "professor-contact",
-        "rev": "ad096fe31a4b5694cbe47a40f37b621435e1eeec",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ScholarWorkflow",
-        "repo": "professor-contact",
-        "rev": "ad096fe31a4b5694cbe47a40f37b621435e1eeec",
-        "type": "github"
-      }
-    },
     "knowledge-tools": {
       "inputs": {
         "agent-env-nix": [
-          "contact",
+          "professor-contact",
           "agent-env-nix"
         ],
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "nixpkgs"
         ]
       },
@@ -335,7 +307,6 @@
     "mcp-servers": {
       "inputs": {
         "nixpkgs": [
-          "contact",
           "agent-env-nix",
           "nixpkgs"
         ]
@@ -358,7 +329,7 @@
     "mcp-servers_2": {
       "inputs": {
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "browser-pdf-tools",
           "agent-env-nix",
@@ -383,7 +354,7 @@
     "mcp-servers_3": {
       "inputs": {
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "zotero-tools",
           "agent-env-nix",
@@ -408,7 +379,7 @@
     "mcp-servers_4": {
       "inputs": {
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "zotero-tools",
           "agent-env-nix",
           "nixpkgs"
@@ -480,15 +451,15 @@
     "paper-analysis": {
       "inputs": {
         "agent-env-nix": [
-          "contact",
+          "professor-contact",
           "agent-env-nix"
         ],
         "base-skills": [
-          "contact",
+          "professor-contact",
           "base-skills"
         ],
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "nixpkgs"
         ],
         "pdf-processing-core": "pdf-processing-core"
@@ -528,11 +499,11 @@
     "pdf-processing-core_2": {
       "inputs": {
         "agent-env-nix": [
-          "contact",
+          "professor-contact",
           "agent-env-nix"
         ],
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "nixpkgs"
         ]
       },
@@ -551,15 +522,45 @@
         "type": "github"
       }
     },
+    "professor-contact": {
+      "inputs": {
+        "agent-env-nix": [
+          "agent-env-nix"
+        ],
+        "base-skills": "base-skills",
+        "knowledge-tools": "knowledge-tools",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "paper-analysis": "paper-analysis",
+        "pdf-processing-core": "pdf-processing-core_2",
+        "professor-research": "professor-research",
+        "zotero-tools": "zotero-tools_2"
+      },
+      "locked": {
+        "lastModified": 1793174808,
+        "narHash": "sha256-x/JvyU7Qexm+l8nCxofQXWEtfYzaiQLemboqxvIKPbk=",
+        "owner": "ScholarWorkflow",
+        "repo": "professor-contact",
+        "rev": "ad096fe31a4b5694cbe47a40f37b621435e1eeec",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ScholarWorkflow",
+        "repo": "professor-contact",
+        "rev": "ad096fe31a4b5694cbe47a40f37b621435e1eeec",
+        "type": "github"
+      }
+    },
     "professor-research": {
       "inputs": {
         "agent-env-nix": [
-          "contact",
+          "professor-contact",
           "agent-env-nix"
         ],
         "browser-pdf-tools": "browser-pdf-tools",
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "nixpkgs"
         ],
         "zotero-tools": "zotero-tools"
@@ -581,19 +582,21 @@
     },
     "root": {
       "inputs": {
-        "contact": "contact"
+        "agent-env-nix": "agent-env-nix",
+        "nixpkgs": "nixpkgs",
+        "professor-contact": "professor-contact"
       }
     },
     "source-access-skills": {
       "inputs": {
         "agent-env": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "browser-pdf-tools",
           "agent-env-nix"
         ],
         "nixpkgs": [
-          "contact",
+          "professor-contact",
           "professor-research",
           "browser-pdf-tools",
           "nixpkgs"
