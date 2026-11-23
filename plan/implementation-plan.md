@@ -174,7 +174,7 @@ flowchart TD
 
 前置产物由原入口写入，研究计划保存自己的输入、选择和修改状态。新技能不能手写原阶段状态来替代正常执行，也不能把某阶段失败或缺输入记成已完成。外部服务、资料或用户决定不足时，说明受影响步骤，并保留已经完成的有效成果。
 
-**固定依赖基线与调用入口**。新仓库顶层声明三个输入：`nixpkgs@6510408d147d8c5e6d76043e899e9251756f6a75`、`agent-env-nix@c368871942435bdc178a1063ce9c677acaf8cabc`（其 `nixpkgs` follows 本仓库）与 `github:ScholarWorkflow/professor-contact/ad096fe31a4b5694cbe47a40f37b621435e1eeec`（其 `nixpkgs`、`agent-env-nix` follows 本仓库）。递归依赖仍取自 `professor-contact` 的锁定图：`research = professor-contact.inputs.professor-research`，`base = professor-contact.inputs.base-skills`，`source = research.inputs.browser-pdf-tools.inputs.source-access-skills`，系统固定为 `aarch64-darwin`。顶层声明只改变输入接口，四个构建输出与只引用单个输入时逐字节相同。
+**固定依赖基线与调用入口**。新仓库顶层声明三个输入：`nixpkgs@6510408d147d8c5e6d76043e899e9251756f6a75`、`agent-env-nix@c368871942435bdc178a1063ce9c677acaf8cabc`（其 `nixpkgs` follows 本仓库）与 `github:ScholarWorkflow/professor-contact/ad096fe31a4b5694cbe47a40f37b621435e1eeec`（其 `nixpkgs`、`agent-env-nix` follows 本仓库）。递归依赖仍取自 `professor-contact` 的锁定图：`research = professor-contact.inputs.professor-research`，`base = professor-contact.inputs.base-skills`，`source = research.inputs.browser-pdf-tools.inputs.source-access-skills`，系统固定为 `aarch64-darwin`。顶层声明只改变输入接口，四个构建输出与只引用单个输入时逐字节相同。下文表格与说明中的 `contact` 均指 `professor-contact` 这一顶层输入，`contact.inputs.*` 指该输入锁定图内的对应节点。
 
 | 固定来源 | 提交 | 用途 |
 |---|---|---|

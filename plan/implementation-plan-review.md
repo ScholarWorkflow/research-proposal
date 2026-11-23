@@ -2,6 +2,15 @@
 
 ## 当前状态：r4 Markdown 交付修订已通过
 
+## r4 第 177 行依赖基线的文字更正（不升版）
+
+2026 年 11 月 24 日，`flake.nix` 改为顶层声明 `nixpkgs`、`agent-env-nix` 与 `professor-contact` 三个输入（原先只声明 `professor-contact`，另两项经其转借），使使用方可以对这三个输入写 `follows`。计划第 177 行原文「新仓库只新增一个直接的上游 flake 输入」随之与实现不符，已改为按实际三输入表述，并补回 `contact` 简写指代 `professor-contact`。
+
+按 `Plan Reviewer Rule.md` 中「纯 rename、format、review metadata 或等价局部重构无需 amendment」的范围，本次只更正对现有实现的文字描述：需求、方案、owner、机制、接口语义、兼容要求、失败处理与必测范围均未变化；四个构建输出与更正前逐字节相同（`msvk71zx…` runtime、`3a95vpr8…` package、`cnskyah9…` environment、`7576fsl5…` activate），已由实现方与独立审核分别求值确认。因此不提高计划修订编号，`Plan revision` 仍为 `rp-plan-r4-markdown-2026-11-04`。
+
+更正后计划 SHA256 为 `d5a5777e12cf0972473b8779b499497f0ea56f78c6b9118971b747f15422f2b2`。本记录此前各节的 `4776b1d7…` 是更正前正文的校验值，作为当时审核对象保留；当前有效正文以本节记录的最新校验值 `d5a5777e…` 和仓库实际文件为准，r4 的 P1–P4 批准结论及未受影响范围的复用不变。`plan/test-plan.md` 第 9 行与 `plan/test-results.md`、`plan/implementation-review.md` 中对 `4776b1d7…` 的引用同属更正前校验值，指的都是同一份 r4 计划；本次不修改这些文件中的该引用，以免为纯文字更正产生不必要的连锁校验值变化。若后续再改需求、方案、接口语义或必测范围，仍按原规则重开受影响关口。
+
+
 2026 年 11 月 4 日，用户明确撤掉 LibreOffice 测试，Word 交付和调试延后，先完成 Markdown。完整候选已合入 [implementation-plan.md](implementation-plan.md)，版本 `rp-plan-r4-markdown-2026-11-04`，需求 `rp-requirements-r2-markdown-2026-11-04`，SHA256 `4776b1d75a6763608a788166e0aa74719ac9c88c0bf2ae5459c66a17b35b5f9a`。独立审核者为专用 `plan_reviewer` 代理，只读审核完整候选 344 行及本轮变化与直接影响，未修改文件、未运行产品或测试。主对话已核对其依据、覆盖范围和最终校验值，审核前后计划 SHA256 不变。
 
 本次变化来自用户主动精简，无需证明旧 Word 方案错误。当前不执行 Word、页面或 LibreOffice 调试；旧核对要求不覆盖用户的新决定。下文 r3 批准记录保留为历史及未受影响方案的依据。
