@@ -74,7 +74,7 @@ Nix 提供客户端和启动配置；以下条件按实际使用步骤检查：
 
 ## 固定依赖
 
-`flake.nix` 只直接引用 `professor-contact@ad096fe31a4b5694cbe47a40f37b621435e1eeec`，`flake.lock` 保留其递归锁定图。六项直接包均从同一输入图取得原包对象，不重新导入同名包：
+`flake.nix` 顶层声明 `nixpkgs@6510408d147d8c5e6d76043e899e9251756f6a75`、`agent-env-nix@c368871942435bdc178a1063ce9c677acaf8cabc` 与 `professor-contact@ad096fe31a4b5694cbe47a40f37b621435e1eeec`；`professor-contact` 的 `nixpkgs` 与 `agent-env-nix` 输入 follows 到本仓库的声明，使用方也可以把这三个输入 follows 到自己的实例。`flake.lock` 保留完整递归锁定图，六项直接包仍从 `professor-contact` 的同一输入图取得原包对象，不重新导入同名包：
 
 | 能力 | 原包 |
 |---|---|
