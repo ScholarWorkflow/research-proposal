@@ -1,4 +1,7 @@
-"""RP-14 的讲稿与想定问答检查；只调用本地组件，不调用上游代理或模型服务。"""
+"""讲稿与想定问答的组件检查；只调用本地组件，不调用上游代理或模型服务。
+
+这些用例尚未进入 plan/test-plan.md 的必测清单，属于本次交付的组件证据。
+"""
 
 from pathlib import Path
 
@@ -142,6 +145,33 @@ class InterviewDraftTests(ComponentCase):
         self.assertEqual(saved["status"], "ready")
         self.assertEqual(self.work(directory, revision)["steps"]["interview"]["status"], "complete")
 
+    def test_second_save_keeps_the_first_deliverable(self):
+        """分次保存时不重写全部内容：补齐缺的那一项即可完成。"""
+        from research_proposal._interview import step_data
+
+        directory, revision = self.begin()
+        first = self.save_interview(directory, revision, {"qa": QA})
+        self.assertEqual(first["status"], "needs_input")
+        self.assertIn("interview_missing", kinds(first["issues"]))
+        second = self.save_interview(directory, revision, {"script": SCRIPT})
+        self.assertEqual(second["status"], "ready", second.get("issues"))
+        work = self.work(directory, revision)
+        self.assertEqual(work["steps"]["interview"]["status"], "complete")
+        self.assertIsNotNone(step_data(work, "qa"), "先交的问答不能被后一次保存丢掉")
+        self.assertIsNotNone(step_data(work, "script"))
+
+    def test_later_save_overrides_the_same_deliverable(self):
+        from research_proposal._interview import step_data
+
+        directory, revision = self.begin()
+        self.save_interview(directory, revision, {"script": SCRIPT, "qa": QA})
+        changed = {**QA, "max_answer_minutes": 2}
+        self.save_interview(directory, revision, {"qa": changed})
+        work = self.work(directory, revision)
+        self.assertEqual(step_data(work, "qa")["max_answer_minutes"], 2)
+        self.assertEqual(step_data(work, "qa")["required_categories"], QA["required_categories"])
+        self.assertIsNotNone(step_data(work, "script"), "未出现在本次请求里的讲稿继续保留")
+
     def test_unselected_deliverable_is_ignored_but_not_exported(self):
         directory, revision = self.begin(deliverable_names=("md",))
         saved = self.save_interview(directory, revision, {"script": SCRIPT})
@@ -267,6 +297,140 @@ class InterviewStateTests(ComponentCase):
         self.assertNotIn("docx", steps)
         notes = (Path(work["directory"]) / "研究计划待确认事项.md").read_text(encoding="utf-8")
         self.assertIn("发表讲稿", notes)
+
+    def test_markdown_only_proposal_skips_interview_step(self):
+        from research_proposal import _state
+
+        directory, revision = self.begin(deliverable_names=("md",))
+        work = read_json(directory / "研究计划状态.json")["works"][revision]
+        self.assertEqual(
+            _state._next_steps(work),
+            ["materials", "question", "scheme", "body", "md", "review"],
+        )
+
+
+class LegacyStateTests(ComponentCase):
+    """旧状态没有 interview、script、qa 键时，公开入口仍按原行为工作。"""
+
+    NEW_STEPS = ("interview", "script", "qa")
+
+    def draft_body(self):
+        import json
+        import subprocess
+
+        markdown = self.output / "legacy-draft.md"
+        markdown.write_text(
+            "# 研究题目\n\n本文说明为什么研究、研究什么、准备怎么做。\n\n"
+            "## 研究方法\n\n采用文本比较。\n",
+            encoding="utf-8",
+        )
+        return json.loads(subprocess.run(
+            ["pandoc", str(markdown), "-f", "markdown", "-t", "json"],
+            check=True, capture_output=True,
+        ).stdout)
+
+    def request(self, directory, revision, **fields):
+        state = read_json(directory / "研究计划状态.json")
+        return {"proposal_dir": str(directory), "revision_id": revision,
+                "expected_state_version": state["state_version"], **fields}
+
+    def save(self, directory, revision, stage, data):
+        result = self.call("save_revision", self.request(directory, revision, stage=stage, data=data))
+        self.assertEqual(result["status"], "ready", result.get("issues"))
+        return result
+
+    def legacy_proposal(self, name, *, committed):
+        """建立一份完整稿件，再把它改写成上一版本会写出的状态结构。"""
+        directory = self.output / name
+        directory.mkdir()
+        started = self.call("begin_revision", {
+            "proposal_dir": str(directory), "expected_state_version": None,
+            "inputs": {"application_id": "合成项目-旧版", "purpose": "联系教授",
+                       "question_id": "q1", "material_paths": []},
+        })
+        self.assertEqual(started["status"], "ready")
+        revision = started["revision_id"]
+        ok = {"revision": "r1", "status": "confirmed",
+              "decision": {"text": "用户确认", "source": "合成测试消息"}}
+        self.save(directory, revision, "materials", {"materials": []})
+        self.save(directory, revision, "question", {
+            "question_id": "q1", "text": "合成本文要回答什么问题？", "confirmation": ok,
+        })
+        self.save(directory, revision, "scheme", {
+            "scheme": {"method": "文本比较"}, "conditions": {"resolved": True, "notes": "本地材料。"},
+            "confirmation": ok,
+        })
+        self.save(directory, revision, "body", {"body": self.draft_body(), "references": []})
+        if committed:
+            self.assertEqual(self.call("export_revision", self.request(directory, revision))["status"], "ready")
+            self.assertTrue(self.call("review_revision", self.request(directory, revision))["checks"]["content_consistent"])
+            self.assertEqual(self.call("commit_revision", self.request(directory, revision))["status"], "committed")
+        state = read_json(directory / "研究计划状态.json")
+        work = state["works"][revision]
+        for stage in self.NEW_STEPS:
+            work["steps"].pop(stage, None)
+            work["fingerprints"].get("stage_files", {}).pop(stage, None)
+        write_json(directory / "研究计划状态.json", state)
+        return directory, revision, state
+
+    def test_uncommitted_legacy_state_resumes(self):
+        directory, revision, state = self.legacy_proposal("legacy-open", committed=False)
+        result = self.call("resume_revision", {
+            "proposal_dir": str(directory), "expected_state_version": state["state_version"],
+        })
+        self.assertEqual(result["status"], "ready")
+        steps = read_json(directory / "研究计划状态.json")["works"][revision]["steps"]
+        self.assertEqual(sorted(steps), sorted(["materials", "question", "scheme", "body",
+                                                "docx", "md", "review", *self.NEW_STEPS]))
+        self.assertEqual(steps["interview"]["status"], "pending")
+        # 正文已保存，未加选讲稿时下一步只剩 Markdown 交付与核对。
+        self.assertEqual(result["next_steps"], ["md", "review"])
+
+    def test_committed_legacy_state_reports_committed(self):
+        directory, revision, state = self.legacy_proposal("legacy-committed", committed=True)
+        result = self.call("commit_revision", self.request(directory, revision))
+        self.assertEqual(result["status"], "committed")
+
+    def test_committed_legacy_state_can_start_new_revision(self):
+        directory, revision, state = self.legacy_proposal("legacy-next", committed=True)
+        work = state["works"][revision]
+        result = self.call("begin_revision", {
+            "proposal_dir": str(directory), "expected_state_version": state["state_version"],
+            "inputs": work["inputs"],
+        })
+        self.assertEqual(result["status"], "ready")
+        resumed = self.call("resume_revision", self.request(directory, result["revision_id"]))
+        self.assertNotIn("interview", resumed["next_steps"])
+
+    def test_newly_added_empty_stages_are_not_content_change(self):
+        from research_proposal import _state
+
+        directory, revision, _ = self.legacy_proposal("legacy-fingerprint", committed=True)
+        # 公开入口读盘时会补齐缺失步骤键，之后已提交稿不应被判成有内容变化。
+        result = self.call("resume_revision", self.request(directory, revision))
+        self.assertEqual(result["status"], "committed")
+        work = result["state"]["works"][revision]
+        self.assertEqual(work["steps"]["interview"]["status"], "pending")
+        keys = set(_state._dependencies(work)) | {"stage_files"}
+        self.assertFalse(_state._fingerprints_changed(
+            work["fingerprints"], _state._snapshot(work), keys=keys,
+        ))
+
+    def test_readded_stage_with_content_is_a_change(self):
+        from research_proposal import _state
+
+        directory, revision, _ = self.legacy_proposal("legacy-content", committed=True)
+        self.assertEqual(
+            self.call("resume_revision", self.request(directory, revision))["status"], "committed",
+        )
+        work = read_json(directory / "研究计划状态.json")["works"][revision]
+        record = Path(work["directory"]) / "步骤-interview-legacy.json"
+        record.write_text('{"script": {}}', encoding="utf-8")
+        work["steps"]["interview"] = {"status": "complete", "artifacts": {"data": str(record)}, "issues": []}
+        keys = set(_state._dependencies(work)) | {"stage_files"}
+        self.assertTrue(_state._fingerprints_changed(
+            work["fingerprints"], _state._snapshot(work), keys=keys,
+        ))
 
 
 class InterviewDeliveryFlowTests(ComponentCase):

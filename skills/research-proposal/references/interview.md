@@ -72,7 +72,8 @@
 
 - `items` 不能为空；每个类别的 `category` 必须出现在 `required_categories` 里。
 - `required_categories` 里每个类别至少要有一条问题，不能整类漏掉。
-- 每条答案按 `chars_per_minute` 折算的时长不能超过 `max_answer_minutes`。
+- 每条答案按 `chars_per_minute` 折算的时长不能超过 `max_answer_minutes`；省略该项时
+  按 1.5 分钟检查，建议按学校要项或自己的语速明确写出。
 - `source` 可选，写这条答案依据的正文段落或材料定位。
 
 类别不是固定清单。依据目标学校要项、作品形式和个人经历，在
@@ -84,7 +85,8 @@
 
 1. 正文步骤保存并确认后，用 `save_revision(stage="interview")` 保存这两项内容。
    一次调用可以只交 `script` 或只交 `qa`；加选却未交的那项会返回
-   `interview_missing`，已交的部分照样保存。
+   `interview_missing`，已交的部分照样保存。后一次保存会把步骤里已有的另一项
+   带上，因此补齐缺项不必重写全部内容；本次请求里显式给出的那一项覆盖旧值。
 2. 内容检查不通过时返回 `needs_input`，逐条给出问题，同时把已写好的内容
    落盘。按返回的问题补齐后再次保存，不必重写全部内容。
 3. `export_revision` 省略 `formats` 时生成本稿全部已选加的文件；只重新生成

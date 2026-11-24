@@ -146,9 +146,23 @@ def _preserve_return(directory: Path, state: dict | None, request: dict) -> str 
     return str(path)
 
 
+def _ensure_steps(work: dict) -> dict:
+    """补齐本版新增、旧状态里没有的步骤键。
+
+    只补缺失键为未开始，不改已有步骤、确认、条件和用户决定；补进来的步骤没有
+    保存件，摘要为 None，不算作内容变化。
+    """
+    steps = work.setdefault("steps", {})
+    for name in STAGES:
+        steps.setdefault(name, {"status": "pending", "artifacts": {}, "issues": []})
+    return work
+
+
 def _load(directory: Path, request: dict, *, create=False):
     path = directory / STATE_NAME
     state = read_json(path) if path.is_file() else None
+    for work in (state or {}).get("works", {}).values():
+        _ensure_steps(work)
     expected = request.get("expected_state_version")
     matches = (
         (state is None and create and "expected_state_version" in request and expected is None)
@@ -360,12 +374,21 @@ LATE_FINGERPRINTS = ("material_sources", "adopted_materials")
 
 
 def _fingerprints_changed(previous: dict, current: dict, keys=None) -> bool:
-    """比较整体摘要；keys 指定时只比这些键，延期项不参与。"""
+    """比较整体摘要；keys 指定时只比这些键，延期项不参与。
+
+    旧状态补齐新增步骤后，这些步骤的保存件摘要仍为 None；它们只是新增的步骤键，
+    不构成内容变化，否则每次读取旧稿都会被判成已改动。
+    """
     for key, value in current.items():
         if keys is not None and key not in keys:
             continue
         if key in LATE_FINGERPRINTS and key not in previous:
             continue
+        if key == "stage_files" and isinstance(value, dict):
+            before = previous.get(key)
+            before = before if isinstance(before, dict) else {}
+            value = {name: digest for name, digest in value.items()
+                     if name in before or digest is not None}
         if previous.get(key) != value:
             return True
     return False
@@ -659,14 +682,36 @@ def _body_prerequisites(work: dict) -> list:
 
 
 def _next_steps(work: dict) -> list:
-    """当前下一步不把延期的 Word 或未选加的交付文件列为未完成。"""
-    deferred = set(DEFERRED_FORMATS) - set(_delivery_formats(work))
-    optional = set(INTERVIEW_FORMATS) - set(_delivery_formats(work))
+    """当前下一步不把延期的 Word 或未加选的交付文件列为未完成。"""
+    formats = _delivery_formats(work)
+    deferred = set(DEFERRED_FORMATS) - set(formats)
+    optional = set(INTERVIEW_FORMATS) - set(formats)
+    if not set(INTERVIEW_FORMATS) & set(formats):
+        # 没有加选讲稿或想定问答时，保存这两项内容的步骤也不是必经步骤。
+        optional.add("interview")
     return [
         name for name in STAGES
         if name not in deferred and name not in optional
         and work["steps"][name]["status"] != "complete"
     ]
+
+
+def _merged_interview(work: dict, data: dict) -> dict:
+    """把本次未提交的讲稿项沿用步骤里已保存的内容。
+
+    讲稿与想定问答共用同一个保存件；只补其中一项时，另一项仍按已有内容参与
+    检查与导出。本次显式给出的字段覆盖旧值。
+    """
+    from ._interview import FILES, step_data
+
+    merged = {name: step_data(work, name) for name in FILES}
+    for name in FILES:
+        if name in data:
+            merged[name] = data[name]
+    kept = {name: value for name, value in merged.items() if value is not None}
+    if isinstance(data, dict) and "pending_items" in data:
+        kept["pending_items"] = data["pending_items"]
+    return kept
 
 
 def _interview_problems(data: dict, formats) -> list:
@@ -800,6 +845,9 @@ def save_revision(request: dict) -> dict:
                     _persist_work(directory, state, work)
                 return _response(state, "needs_input", problems)
         saved_data = encode_record_paths(data, work_directory, movable_root=work_directory)
+        if stage == "interview":
+            # 一次只交其中一项时，把步骤里已有的另一项带上，补齐缺项不必重写全部内容。
+            saved_data = _merged_interview(work, saved_data)
         content_digest = json_digest(_stage_content(stage, saved_data))
         differs = work["steps"][stage].get("content_digest") != content_digest
         if differs:
@@ -831,7 +879,7 @@ def save_revision(request: dict) -> dict:
             work["pending_items"] = deepcopy(data["pending_items"])
         if stage == "interview":
             # 内容先落盘，检查问题作为待办返回；不会因为某项未达标而丢掉已写的话。
-            problems = _interview_problems(data, _delivery_formats(work))
+            problems = _interview_problems(saved_data, _delivery_formats(work))
             work["steps"][stage] = {
                 "status": "pending" if problems else "complete",
                 "artifacts": artifacts, "issues": problems,
