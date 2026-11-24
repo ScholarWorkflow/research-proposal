@@ -518,7 +518,7 @@ RP-13 的原稿状态含绝对工作目录，普通副本续接会指回原稿�
 
 | 套件 | 基准 | 用例数 | 结果 |
 |---|---|---|---|
-| `test_interview` | 用例自建隔离目录 | 26 | 通过 |
+| `test_interview` | 用例自建隔离目录 | 27 | 通过 |
 | `test_recovery.RecoveryTests` | 只交 Markdown 的已提交稿件（`/tmp/rp-recovery`） | 8 | 通过 |
 | `test_recovery.InterviewRecoveryTests` | 加选讲稿的已提交稿件（`/tmp/rp-script-recovery`） | 4 | 通过 |
 
@@ -538,7 +538,7 @@ RP-13 的原稿状态含绝对工作目录，普通副本续接会指回原稿�
 - 用本修订前代码 `7da08f4` 生成真实旧状态稿件，`resume_revision` 返回 `committed`、`begin_revision` 返回 `ready`、`commit_revision` 返回 `committed`，未提交旧稿 `resume_revision` 返回 `ready`。
 - 改动既有步骤的保存件后仍判为 `committed_content_changed`。
 - 未加选但保存了有错的讲稿内容时返回 `interview_rate`，且该步骤保持未完成。
-- 讲稿步骤无删除入口：空对象与 `null` 都被拒绝，已保存内容保留；从已提交稿建立的新工作版会带旧讲稿内容，从进行中的工作版建立则重新开始该步骤。
+- 讲稿步骤无删除入口：首次验证只覆盖了「单独提交 `{"script": null}`」这一种输入。其后发现单独提交 `{"script": {}}` 会用空对象覆盖旧讲稿，提交 `{"qa": 合法, "script": null}` 会静默丢掉讲稿并从保存件消失；这两条已按产品缺陷修复，入口现在拒绝所有 `null` 与非空对象以外的写法，并补了用例 `test_null_or_empty_payload_never_drops_saved_content`。原描述「空对象与 null 都被拒绝」在修复前不成立，保留此处更正。新工作版总是从已提交的当前版本复制，因此会带过去已提交稿里的讲稿。
 - 加选 `deliverables` 后正文步骤失效，`next_steps` 出现 `body`，与计划「交付、核对与提交的条件」一致。
 
 **未执行**：Nix 构建（本修订未改 `flake.nix`、`flake.lock`、`nix/`）与真实评估会话。RP-14 的正式业务执行由测试计划负责人按第三关安排，本记录只说明组件测试结果。

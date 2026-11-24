@@ -696,6 +696,26 @@ def _next_steps(work: dict) -> list:
     ]
 
 
+def _check_interview_payload(data: dict) -> None:
+    """讲稿步骤的入参检查：不接受的写法直接拒绝，避免静默覆盖已保存内容。
+
+    两项内容都只能整体替换成非空对象；写成 null 或空对象一律报错，而不是当作
+    删除或过滤掉，这样误传不会把已写好的讲稿或问答悄悄抹掉。
+    """
+    from ._interview import FILES
+
+    given = [name for name in FILES if name in data]
+    if not given:
+        raise ValueError("讲稿步骤须至少保存 script 或 qa 对象")
+    for name in given:
+        value = data[name]
+        if not isinstance(value, dict) or not value:
+            raise ValueError(
+                f"讲稿步骤的 {name} 须是非空对象；本步骤不支持删除单项，"
+                "写成 null 或空对象会被拒绝。"
+            )
+
+
 def _merged_interview(work: dict, data: dict) -> dict:
     """把本次未提交的讲稿项沿用步骤里已保存的内容。
 
@@ -706,7 +726,8 @@ def _merged_interview(work: dict, data: dict) -> dict:
 
     merged = {name: step_data(work, name) for name in FILES}
     for name in FILES:
-        if name in data:
+        # 入参检查已拒绝 null 与空对象，这里只需覆盖有值的那一项。
+        if isinstance(data.get(name), dict) and data[name]:
             merged[name] = data[name]
     kept = {name: value for name, value in merged.items() if value is not None}
     if isinstance(data, dict) and "pending_items" in data:
@@ -825,8 +846,8 @@ def save_revision(request: dict) -> dict:
         or not isinstance(data.get("references"), list)
     ):
         raise ValueError("正文步骤须保存 Pandoc JSON 文档及 references 数组")
-    if stage == "interview" and (not isinstance(data.get("script"), dict) and not isinstance(data.get("qa"), dict)):
-        raise ValueError("讲稿步骤须至少保存 script 或 qa 对象")
+    if stage == "interview":
+        _check_interview_payload(data)
     with _locked(request["proposal_dir"]) as directory:
         state, rejected = _load(directory, request)
         if rejected:

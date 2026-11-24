@@ -172,6 +172,21 @@ class InterviewDraftTests(ComponentCase):
         self.assertEqual(step_data(work, "qa")["required_categories"], QA["required_categories"])
         self.assertIsNotNone(step_data(work, "script"), "未出现在本次请求里的讲稿继续保留")
 
+    def test_null_or_empty_payload_never_drops_saved_content(self):
+        """不支持删除单项：写成 null 或空对象报错，已保存内容保持不变。"""
+        from research_proposal._interview import step_data
+
+        directory, revision = self.begin()
+        self.save_interview(directory, revision, {"script": SCRIPT, "qa": QA})
+        for payload in ({"script": {}}, {"qa": None}, {"script": None, "qa": QA}, {}):
+            with self.subTest(payload=payload):
+                with self.assertRaises(ValueError):
+                    self.save_interview(directory, revision, payload)
+                work = self.work(directory, revision)
+                self.assertIsNotNone(step_data(work, "script"), "讲稿不能被静默覆盖")
+                self.assertIsNotNone(step_data(work, "qa"), "问答不能被静默删除")
+                self.assertEqual(work["steps"]["interview"]["status"], "complete")
+
     def test_unselected_deliverable_is_ignored_but_not_exported(self):
         directory, revision = self.begin(deliverable_names=("md",))
         saved = self.save_interview(directory, revision, {"script": SCRIPT})
