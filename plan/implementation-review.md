@@ -362,3 +362,29 @@ RP-13 的实际结果符合原观察点：缺视觉配置返回明确错误，�
 | B-4 / RP-14 第三关 | 已闭合。`plan/test-plan-review.md` 的 r23 一节记录了安装后产品上的六个场景；rp-tests-r6 的第一关与第二关见同文件同名小节 | 测试计划负责人 |
 
 **限定**：本节只说明实现符合性，不构成计划关口、第三关或合并批准。审核为只读静态核对，未运行测试与 Nix 构建。
+
+## r23 合并审核（2026-11-25）
+
+审核者：只读代理，按 `Merge Reviewer Rule.md` 执行 M1、M2、M3。两轮：首轮因 D-1 判 `NOT_READY`，补齐记录后复审判 `READY`。
+
+- `Requirement revision`：`rp-requirements-r3-interview-2026-11-25`
+- `Base SHA`：`786d1402929f25ca91f8cdaa4090e8bd73d6989b`
+- `Head SHA`：`1a0db384d06e3d5f0c48e25d58de2083fdc769ad`
+- `Canonical Plan revision`：`rp-plan-r5-interview-2026-11-25`，SHA256 `aec2492a0b3d655a3e6797f222f4ea32782610a6bd9bc24352b4abe34a59d5f3`，APPROVED
+- `Test Engineer Gate 2`：`rp-tests-r6`，通过，所审 `plan/test-plan.md` SHA256 `eb4f2b052ed196a740dd019aa61d70d1720a1cf4ecb4919d1799e01c4e805c56`
+- `Test Engineer Gate 3`：r23，通过——RP-14 六场景在安装后产品 `ca5ab5e` 上实际执行；`ca5ab5e..1a0db38` 的产品与构建文件无差异
+
+| 关口 | 结论 |
+|---|---|
+| M1 Authority & Baseline | PASS |
+| M2 Implementation Conformance | PASS |
+| M3 Scope, Regression & Merge Readiness | PASS |
+| Review completeness | COMPLETE |
+| Defects | 无（D-1 已闭合） |
+| **Merge conclusion** | **READY** |
+
+**首轮阻断项 D-1**（`REVIEW_DEFECT`）：r6 测试计划修订新增 RP-14 与 `rp-recipe-r15`，但缺第一关与第二关记录，`test-plan.md` 的指针指向不存在的小节。已在 `1a0db38` 补齐：`test-plan-review.md` 新增「rp-tests-r6：RP-14 的第一关与第二关」，第一关记录范围确认并否决「组件证据可替代安装后执行」的放宽条款，第二关记录步骤可执行、覆盖必测项、无超范围、证据级别四项；指针改为可解析的小节名；校验值同步。
+
+**沿用说明**：M2 沿用三轮实现符合性审核（末轮所审 `b667732` 判完整）；M3 与第三关沿用 r23。理由为 `git diff b667732..HEAD -- skills nix flake.nix flake.lock README.md` 为空，`test/` 仅有文档字符串改动，不改变生产调用链、状态字段、失效规则或交付行为。
+
+**限定**：`READY` 是审核结论，不代表已获合并授权或已经合并。
