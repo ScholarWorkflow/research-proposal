@@ -212,3 +212,51 @@ Plan conclusion: APPROVED
 以上是计划审核结论。目标产品尚不存在，本轮没有运行构建、安装或业务测试，也没有审核正式测试计划及合并条件。
 
 后续实现负责人按计划第 298 行起的顺序实施，建立目标仓库时将计划迁入 `plan/implementation-plan.md`，并一并迁移本审核记录、保留版本和校验值。测试负责人另按既有规则准备适用测试。计划正文若发生实质变化，应按受影响范围重新审核；本记录只对应上述校验值。
+
+## r5：讲稿与想定问答交付（2026-11-25）
+
+审核类型：执行计划审核。审核者：专用 `plan_reviewer` 代理（只读，`~/.codex/agents/plan-reviewer.toml`）。
+
+- `Requirement revision`：`rp-requirements-r3-interview-2026-11-25`。
+- `Plan revision`：`rp-plan-r5-interview-2026-11-25`，取代 `rp-plan-r4-markdown-2026-11-04`。
+- `Candidate SHA256`：`aec2492a0b3d655a3e6797f222f4ea32782610a6bd9bc24352b4abe34a59d5f3`（382 行）。
+- `Target repository revision`：`feat/interview-script-artifacts`，base `786d1402929f25ca91f8cdaa4090e8bd73d6989b`；审阅时 HEAD `50651c9a770d517869db199280cb4dc1a5e7a9db`。
+- 审核轮次：三轮。首轮提出 P-01 至 P-10；第二轮提出 P-11 至 P-14，并确认 P-01、P-02、P-03、P-06、P-07、P-08 闭合；第三轮复核 P-04a–d、P-09a、P-13、P-14 并给出批准结论。
+
+| 关口 | 结论 |
+|---|---|
+| P1 Requirement & Reality Grounding | PASS |
+| P2 Solution Validity & Ownership | PASS |
+| P3 Impact, Safety & Counterexample | PASS |
+| P4 Executability | PASS |
+| Gate review completeness | COMPLETE |
+
+**Plan conclusion: APPROVED**
+
+`Approved behavior changes`：当前交付 Markdown 正文，并按用途加选发表讲稿与想定问答（`implementation-plan.md` 的「本轮新增与延期」一节）；Word、学校表格填入、页面调试延期，LibreOffice 不参与测试与完成判断。来源为 `rp-requirements-r3-interview-2026-11-25` 与用户 2026 年 11 月 25 日「两项都算本次范围」的决定。
+
+**问题闭合情况**：
+
+| 编号 | 内容 | 状态 |
+|---|---|---|
+| P-01 | 需求授权没有可引用修订 | 闭合（第三轮确认） |
+| P-02 | 完成度四条底线超出本轮范围 | 闭合（第三轮确认） |
+| P-03 | 缺少 revision 标识 | 闭合（第三轮确认） |
+| P-04、P-04a–d | 权威依据不唯一、残留「只交付 Markdown」表述 | 闭合（第三轮） |
+| P-05 | 删除单项的补救路径不可执行 | 闭合（第二轮） |
+| P-06 | 「只影响对应交付文件」不成立 | 闭合（第二轮） |
+| P-07 | 加选连带正文失效未写清 | 闭合（第二轮） |
+| P-08 | 失效规则把 Word 写成需重新生成 | 闭合（第二轮） |
+| P-09、P-09a | 契约细节缺失、权威次序倒置 | 闭合（第三轮） |
+| P-10、P-13 | 计划与记录未对齐、证据指向不一致 | 闭合（第三轮） |
+| P-11 | 空对象与 `null` 会丢失已保存讲稿 | 闭合（实现改为拒绝，第二轮） |
+| P-12 | 条件表写了不存在的保存门 | 闭合（第二轮） |
+| P-14 | 非对象入参报 `TypeError` | 闭合（第三轮） |
+
+**未闭合但非阻断**：
+
+| 编号 | 内容 | 负责人 | 处理 |
+|---|---|---|---|
+| P-15 | `test-plan.md` 的执行说明段仍写 `rp-recipe-r14-markdown-2026-11-04`、指向 r5 业务清单，未含 RP-14 步骤 | 测试计划负责人 | 已在 `50651c9` 之后的提交中处理：执行说明升为 `rp-recipe-r15-interview-2026-11-25`，范围句加入 RP-14，并补 RP-14 的执行步骤；`test-plan-review.md` 与 `test-preparation-review.md` 是历史记录，保留原文 |
+
+**限定**：该结论只表示当前方案适合实施，不代表实现正确、第三关通过或可以合并。本轮审核未运行代码与测试，未审 Nix 构建与真实会话。

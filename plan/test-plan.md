@@ -8,7 +8,7 @@
 - 需求版本：`rp-requirements-r3-interview-2026-11-25`；沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
 - 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r5-interview-2026-11-25`，校验值 `aec2492a0b3d655a3e6797f222f4ea32782610a6bd9bc24352b4abe34a59d5f3`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。
 - 目标仓库：`research-proposal`；工作树：`.agents/worktrees/research-proposal-interview`；分支：`feat/interview-script-artifacts`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 执行说明版本：`rp-recipe-r14-markdown-2026-11-04`。本次修订替代 r4 业务清单及 r13 的现行执行义务；历史尝试、实际问题和不受影响的通过结果保留。独立设计复核、第一关及第二关结论见 `plan/test-plan-review.md`，准备符合性结论见 `plan/test-preparation-review.md`；准备完成不表示正式测试通过。
+- 执行说明版本：`rp-recipe-r15-interview-2026-11-25`，替代 `rp-recipe-r14-markdown-2026-11-04`。本次修订替代 r5 业务清单及 r14 的现行执行义务；历史尝试、实际问题和不受影响的通过结果保留。独立设计复核、第一关及第二关结论见 `plan/test-plan-review.md`，准备符合性结论见 `plan/test-preparation-review.md`；准备完成不表示正式测试通过。
 - 本次准备清除与本范围矛盾的残留步骤：RP-09 的 Word 模板映射、`test_export.TemplateTests`（该文件已在工作区删除）、RP-08 的“所有产品页图”阅读、RP-11 的受控 `page_review` 分支。清理依据为已获批准的 r14 范围与 `Test Engineer Rule.md` 第 6 节“超范围要求必须从计划中删除”，不是临场删测或缩项。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
@@ -191,7 +191,9 @@
 
 ### 当前版本与复用范围
 
-本节版本为 `rp-recipe-r14-markdown-2026-11-04`，落实上面的 r5 业务清单，整段替代 r13 的现行执行义务。当前交付只验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
+本节版本为 `rp-recipe-r15-interview-2026-11-25`，落实上面的 r6 业务清单，整段替代 r14 的现行执行义务。当前交付验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态，并按需加选验收讲稿与想定问答（RP-14）。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
+
+RP-14 的执行步骤：在隔离消费者中从已提交稿件出发，先加选 `script`（必要时加 `qa`）并保存内容，再导出、核对、提交，逐场景记录结果；用例与场景对应见 `test-results.md` 的 r23 一节。旧状态场景用本修订前代码生成状态文件，只改测试准备，不改产品。
 
 旧产品 b983 的 r13 运行、失败和诊断保留，不视为 Markdown 完成。RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划第 274、280、317 行声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
 
