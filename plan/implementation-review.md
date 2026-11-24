@@ -391,3 +391,5 @@ RP-13 的实际结果符合原观察点：缺视觉配置返回明确错误，�
 **限定**：`READY` 是审核结论，不代表已获合并授权或已经合并。
 
 **对 `a5ba3b49587ed731283f3294e72969efabc4e87d` 的适用性确认**：`1a0db38..a5ba3b4` 只追加本记录，未触及 `skills/`、`nix/`、`flake.nix`、`flake.lock`、`README.md`、`test/` 与其它计划文件；`a5ba3b4` 上重算的两份计划校验值不变，第三关所测产品仍是当前版本。审核者独立核对后确认 M1、M2、M3、`Review completeness: COMPLETE`、`Merge conclusion: READY` 在 `a5ba3b4` 上仍然成立。
+
+**对 `e94398d677aa3047def029a53ef7e098097c3e62` 的适用性确认**：`a5ba3b4..e94398d` 只改 `plan/implementation-review.md` 与 `plan/test-results.md` 两个记录文件，未触及 `skills/`、`nix/`、`flake.nix`、`flake.lock`、`README.md`、`test/`、`plan/implementation-plan.md`、`plan/test-plan.md`、`plan/test-plan-review.md`；两份计划校验值与第三关所测产品均未变。审核者独立核对后确认本节的 M1、M2、M3、`Review completeness: COMPLETE`、`Merge conclusion: READY` 在 `e94398d` 上仍然成立。
