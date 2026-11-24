@@ -1,6 +1,6 @@
 """讲稿与想定问答的组件检查；只调用本地组件，不调用上游代理或模型服务。
 
-这些用例尚未进入 plan/test-plan.md 的必测清单，属于本次交付的组件证据。
+这些用例对应 plan/test-plan.md 的 RP-14；其中六个场景已在安装后的产品上正式执行，见 plan/test-plan-review.md 的 r23 一节。
 """
 
 from pathlib import Path

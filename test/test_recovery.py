@@ -280,7 +280,7 @@ class RecoveryTests(SavedDraftCase):
 class InterviewRecoveryTests(SavedDraftCase):
     """讲稿交付的失败与失效分支；基准是本轮已提交的真实稿件。
 
-这些用例尚未进入 plan/test-plan.md 的必测清单，属于本次交付的组件证据。
+这些用例对应 plan/test-plan.md 的 RP-14；其中场景 4 的已执行路径见 plan/test-plan-review.md 的 r23 一节。
 """
 
     SCRIPT = {
