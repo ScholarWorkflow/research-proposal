@@ -4,11 +4,14 @@
 
 本文保留已确认的业务要求，并落实第二阶段的真实前置条件、固定版本的 Nix 依赖组合、材料读写及稿件提交与恢复。用户现明确要求撤掉 LibreOffice 测试，Word 以后处理，先把 Markdown 做对。本次将当前交付改为 Markdown，撤回 Word 导出、模板填写及页面核对的当前完成要求，并解除它们对 Markdown 提交的阻塞；研究问题、中文方案确认、正文与引用、修改和版本恢复要求保留。首版由一个主技能承担研究计划自己的工作，上游要求的代理照常调用。
 
-- `Requirement revision`：`rp-requirements-r2-markdown-2026-11-04`；沿用原 Q6–Q16 决定，并采用用户最新要求：“给我删掉用这玩意测试。word的可以以后慢慢调，把markdown弄对就好了”。上轮只测本仓库、手动准备上游输入的验收范围继续有效。
-- `Plan revision`：`rp-plan-r4-markdown-2026-11-04`。
-- `Target repository revision`：`research-proposal` 的 `feat/research-proposal` 开发工作树，测试与文档基线 `1b6c462b23e5bc736d80ba15fa7a2106643ebfbd`，已安装产品基线 `b983497308157dedec6b4d97f16c95dc0b0f60f9`；源码采用 `skills/research-proposal/`。
+- `Requirement revision`：`rp-requirements-r3-interview-2026-11-25`。沿用 `rp-requirements-r2-markdown-2026-11-04` 的 Q6–Q16 决定与“给我删掉用这玩意测试。word的可以以后慢慢调，把markdown弄对就好了”，并采用用户在 2026 年 11 月 24—25 日会话中的两项要求：
+  - 研究计划的完成度：“研究计划要写到什么程度为止，是「我作为一个学生我对xxx感兴趣，所以我要学习xxx然后进行xxx研究」，还是说要专注于研究课题，然后真的说清楚怎么做。”
+  - 面试发表：“需要用一个ppt来说明你入学后的研究计划和到现在为止的研究/工作经历的面试或者提交的说明书文本……写这些文本和准备面试稿有什么经验。”
+  - 范围决定：用户在确认“本次实际包含两块内容（研究计划完成度 / 讲稿与想定问答）”后选择“两项都算本次范围”。批准人：用户；日期：2026 年 11 月 25 日。
+- `Plan revision`：`rp-plan-r5-interview-2026-11-25`，取代 `rp-plan-r4-markdown-2026-11-04`；r4 中未被本次改写触及的条款继续有效。
+- `Target repository revision`：`research-proposal` 仓库分支 `feat/interview-script-artifacts`，基线 `786d1402929f25ca91f8cdaa4090e8bd73d6989b`；源码采用 `skills/research-proposal/`。已安装产品基线仍指 `b983497308157dedec6b4d97f16c95dc0b0f60f9` 用于历史对照，本次交付以前者为准。
 - `Proposed review status`：`pending`，正式结论由独立计划审核记录给出。
-- 唯一完整计划位于 `research-proposal` 仓库的 `feat/research-proposal` 开发工作树内，即 `worktrees/research-proposal-plan/plan/implementation-plan.md`。总目录中的原文件只保留指向这里的说明；审核记录同存于本工作树的 `plan/implementation-plan-review.md`。
+- 唯一完整计划是本文件，即 `plan/implementation-plan.md`。此前开发工作树中的同名副本不再作为依据；审核记录位于 `plan/implementation-plan-review.md`。
 
 目标为工作区下的独立技能仓库 `research-proposal`，本地仓库与开发工作树已建立。首版面向日本高校修士申请，学科不限，具体用于联系教授、正式申请或面试准备。它接收用户给定的资料路径，整理已有研究材料；论文路线按需调用现有工作流补齐输入，非论文路线首先处理用户提供的材料，最终生成可继续修改的研究计划草稿。
 
@@ -107,11 +110,14 @@ flowchart TD
     P -->|补充材料或决定后| J
     K -->|是| L[用户确认中文方案]
     L --> M[生成目标语言草稿]
-    M --> N[核对并修订对应步骤]
-    N --> O[交付 Markdown 并保存版本]
+    M --> S{是否加选讲稿或想定问答}
+    S -->|是| T[按页写讲稿、按类别写想定问答]
+    S -->|否| N[核对并修订对应步骤]
+    T --> N
+    N --> O[交付已选文件并保存版本]
 ```
 
-**研究计划部分分为六步**。
+**研究计划部分分为七步**。
 
 1. **整理用途、要求和材料**。确定本稿所属的日本修士申请项目，以及联系教授、正式申请或面试准备中的一种用途，记录语言、篇幅、栏目、研究期限及适用来源。区分论文和非论文材料的处理路径，整理真实的个人准备和资源条件。缺少格式要求时，可以先按明确标注的暂定格式起草；缺少的事实不能由格式假设替代。
 
@@ -123,7 +129,9 @@ flowchart TD
 
 5. **生成目标语言草稿**。在关键条件已解决、中文方案已确认后，按学校要求组织章节，生成日文、英文或中文正文。需要图示才能解释清楚时，增加简洁流程图。写预期成果时保持计划性表述，不将设想写成已取得的结果。Markdown 从已采用的结构化正文生成，核对实际栏目、篇幅与引用，不能直接改导出文件后宣称正式正文已同步。
 
-6. **核对并修订**。检查问题、方法和验证办法是否相互对应，引用及定位信息是否支持论断，个人经历和资源取得状态是否如实表述，栏目和篇幅是否符合要求，以及 Markdown 与正式正文是否一致。发现问题后返回对应步骤修订；不影响方案成立的未定细节集中保留在待确认清单，关键条件仍未解决时不能标为完整草稿。语言润色放在内容确定之后，保留术语、引用和原有确定程度。
+6. **按需准备讲稿与想定问答**。本稿 `inputs.deliverables` 含 `script` 或 `qa` 时，先从学校要项确认这场面试的形式（发表几分、是否发表、口述配点），再按页保存讲稿、按类别保存想定问答，最后由同一稿件生成对应 Markdown。要项没有规定发表时不自行假设需要讲稿。讲稿里的方法、期限和数字必须与正文一致；正文或方案变了，这两份交付文件一起重做。
+
+7. **核对并修订**。检查问题、方法和验证办法是否相互对应，引用及定位信息是否支持论断，个人经历和资源取得状态是否如实表述，栏目和篇幅是否符合要求，以及 Markdown 与正式正文是否一致；加选讲稿与想定问答时，另核对它们与正文一致、时长与字数相称。发现问题后返回对应步骤修订；不影响方案成立的未定细节集中保留在待确认清单，关键条件仍未解决时不能标为完整草稿。语言润色放在内容确定之后，保留术语、引用和原有确定程度。
 
 除上游已有的必要选择外，研究计划保留“选定研究问题”和“确认中文研究方案”两处用户决定。后续只有研究问题、核心方法或关键数据条件发生实质变化时，才说明变化及影响，重新确认受影响部分。用户已经明确要求的修改直接执行，无需再次确认；措辞、排版和不改变结论的引用修正也直接处理，未受影响的确认和成果继续复用。
 
@@ -271,13 +279,13 @@ TXT 和 Markdown 读取原始文本；Markdown、EPUB 和 HTML 经 Pandoc 读取
 
 用户明确指定了最新正文时，以该版本为本轮修订依据，并保留导入原件及其基准版本；没有交回修改稿时，沿用上次提交的正文。出现多个互相冲突的版本时，由用户指定本轮采用哪一版，不按修改时间自动合并。每份稿件有独立编号，申请项目、用途、核心问题与其绑定；跨校另建稿件编号，只显式复用材料和方案。
 
-**版本保存以一份核对完成的 Markdown 为提交单位**。在每份稿件目录内，`研究计划状态.json` 是当前版本和进行中修订的唯一入口；它区分已提交版本、工作版本、研究问题及中文方案的确认、已完成步骤和缺项。当前工作版由组件记录 `delivery_formats:["md"]`，不新增用户格式模式；正文、Markdown 和必要的输入记录按修订编号放在独立目录中，旧版本不覆盖，用户导入原件单独保留。程序只为本稿更新状态，不建立跨稿件事务服务。
+**版本保存以一份核对完成的 Markdown 为提交单位**。在每份稿件目录内，`研究计划状态.json` 是当前版本和进行中修订的唯一入口；它区分已提交版本、工作版本、研究问题及中文方案的确认、已完成步骤和缺项。当前工作版由组件记录 `delivery_formats:["md"]`；Word 不进入当前交付。交付文件由 `inputs.deliverables` 决定：`md` 必有，`script`、`qa` 按用途加选；加选是用户决定，不按用途自动补上。正文、Markdown 和必要的输入记录按修订编号放在独立目录中，旧版本不覆盖，用户导入原件单独保留。程序只为本稿更新状态，不建立跨稿件事务服务。
 
 提交顺序固定如下：
 
 1. 读取当前已提交版本及本轮工作版本，建立本轮独占工作目录。每次完成材料读取、方案确认、正文修订或一个导出步骤后，将结果保存到该工作目录，再更新进行中进度；不提前改当前已提交版本。
 2. 在同一工作目录保存结构化正文，再生成 Markdown 和待确认事项。各步骤记录所使用的正文、引用和相关输入内容摘要，便于中断后判断哪些结果仍适用。
-3. Markdown 与正式正文一致、关键条件和适用确认均有效后，才具备提交条件。核对记录包含由组件确定的 `checked_formats:["md"]` 和 `content_consistent`；不要求或伪造 `pages_ok`。对同一稿件的状态更新使用本地 `fcntl.flock` 文件锁；耗时的模型调用期间不持锁，回写时核对本轮基准仍未改变。冲突时保留各自工作目录，不覆盖另一轮的决定。
+3. Markdown 与正式正文一致、关键条件和适用确认均有效后，才具备提交条件。核对记录包含由组件确定的 `checked_formats`（等于本版全部已选交付文件）和 `content_consistent`；提交要求两者与当前交付集一致；不要求或伪造 `pages_ok`。对同一稿件的状态更新使用本地 `fcntl.flock` 文件锁；耗时的模型调用期间不持锁，回写时核对本轮基准仍未改变。冲突时保留各自工作目录，不覆盖另一轮的决定。
 4. 进行中状态先记录准备提交的修订编号、工作目录、目标版本目录和已完成核对；在同一文件系统内把完整工作结果目录改名为该修订的版本目录，然后用临时文件写出新状态，最后以 `os.replace` 替换 `研究计划状态.json`。状态中的当前版本指向新目录才表示提交完成。用户收到的 Markdown 路径来自这一个已提交版本。恢复只定位该记录指明的修订，不扫描后按最大编号或修改时间猜测当前稿。
 5. 状态替换之前失败，当前版本保持旧值；目录已改名但状态未切换时，该目录只是待接续结果，不自动成为当前稿。状态替换之后中断，新版已经提交，恢复时重报该版文件即可，不重新生成或退回旧版。
 
@@ -306,21 +314,49 @@ TXT 和 Markdown 读取原始文本；Markdown、EPUB 和 HTML 经 Pandoc 读取
 | `read_material` | `path`、`material_type`、`source`、`output_dir`；`source` 是用户提供的出处字符串 | `material` 包含 `material_id`、`material_type`、`source`、`original_path`、`digest`、`reader`、`blocks`、`issues`。每块为 `{block_id, text, locator}`；定位包含 `kind` 和该载体实际可得的页、区域、章节、段落或表格位置。另存图像解释时用 `interpretation`，不放入逐字转录 `text`。保存提取结果，保留原文件；无法读取的内容以缺项返回 |
 | `import_revision` | `path`、`baseline_body`（基准 `正文.json` 路径）、`output_dir` | `body` 为待处理 Pandoc AST；`original_copy` 指向保留原件；`changes`、`comments`、`unsupported` 分别返回 `{kind, text, location}` 数组，保留未决修订和具体位置；Markdown 的普通内容差异也进入 `changes`。此操作只读入和展示差异，不接受修订、不覆盖正式正文、不擅自更新用户确认 |
 | `begin_revision` | `proposal_dir`、`inputs`、`expected_state_version`（首次创建为 `null`，既有稿为读取到的整数版本） | 创建采用 `delivery_formats:["md"]` 的工作版本，返回 `revision_id`、`directory`、`state_version`、`state`。`inputs` 至少含 `application_id`、`purpose`、`question_id`（尚未选择可空）、`material_paths`，以及已有的项目要求、来源和用户选择；既有 `template_path` 可保留为空或历史引用，不作为当前 Word 填写要求。新稿建立自己的输入与状态文件，既有稿以当前提交为基准 |
-| `save_revision` | `proposal_dir`、`revision_id`、`expected_state_version`、`stage`、`data` | `stage` 为 `materials`、`question`、`scheme` 或 `body`，保存该步骤结果并返回新的 `state_version`、`state`。材料步骤保存材料记录；问题步骤保存 `question_id`、`text`、`confirmation`；方案步骤保存 `scheme`、`conditions`、`confirmation`；正文步骤保存 `body`（Pandoc AST）和 `references`（材料编号、定位与正文关联）。问题与方案的 `confirmation` 是 `{revision, status, decision}`，状态为 `confirmed` 或 `needs_input`，`decision` 保存用户原意和来源；`conditions` 为 `{resolved, notes}`。主技能负责语义判断并据真实用户决定传入，组件不从文件存在推定授权。正文只在关键条件和相关确认有效时保存；变更只使依赖它的工作和确认失效 |
-| `export_revision` | `proposal_dir`、`revision_id`、`expected_state_version`；当前使用 `formats:["md"]`，省略时同样采用该值 | 从正式正文导出 Markdown，返回 `state_version`、`state` 和实际生成的 `artifacts.md`，不切换当前版本。仅 Markdown 不检查或复制 Word 模板，不生成 Word 或预览；旧 Word 分支及其 `template_path`、`mapping` 参数可保留为延期实现，不作为当前调用或可用性承诺 |
-| `review_revision` | `proposal_dir`、`revision_id`、`expected_state_version`；当前不需要 `page_review` | 实际读回 Markdown 与正式正文核对，保存 `checks.content_consistent`、`checks.checked_formats:["md"]` 及相关摘要，返回 `state_version`、`state`、`checks`。核对与正式正文、引用及 Markdown 实际内容绑定；相关内容改变即失效。缺文件或内容不符不能由调用者给出成功标记补齐；不调用页面程序，不写页面成功 |
-| `commit_revision` | `proposal_dir`、`revision_id`、`expected_state_version` | 按既定文件锁、待提交记录、目录改名和最后切换状态的顺序提交。实际核对当前交付要求中的 Markdown、摘要、确认、条件和对应核对记录，未齐全则保留工作版本；延期 Word 的状态不影响 Markdown 提交。返回 `state_version`、`state`，成功另有已提交目录的 `artifacts.md`，不混入旧 Word |
+| `save_revision` | `proposal_dir`、`revision_id`、`expected_state_version`、`stage`、`data` | `stage` 为 `materials`、`question`、`scheme`、`body` 或 `interview`，保存该步骤结果并返回新的 `state_version`、`state`。`interview` 保存 `script`（发表讲稿）与 `qa`（想定问答）两项内容，字段与检查见 `references/interview.md`。材料步骤保存材料记录；问题步骤保存 `question_id`、`text`、`confirmation`；方案步骤保存 `scheme`、`conditions`、`confirmation`；正文步骤保存 `body`（Pandoc AST）和 `references`（材料编号、定位与正文关联）。问题与方案的 `confirmation` 是 `{revision, status, decision}`，状态为 `confirmed` 或 `needs_input`，`decision` 保存用户原意和来源；`conditions` 为 `{resolved, notes}`。主技能负责语义判断并据真实用户决定传入，组件不从文件存在推定授权。正文只在关键条件和相关确认有效时保存；变更只使依赖它的工作和确认失效 |
+| `export_revision` | `proposal_dir`、`revision_id`、`expected_state_version`；可选 `formats` | 省略 `formats` 时生成本稿全部已选交付文件，也可按名只补一份（如 `["script"]`）。从正式正文与已保存的讲稿内容生成 Markdown，返回 `state_version`、`state` 和实际生成的 `artifacts`，不切换当前版本。没有在 `deliverables` 里加选的文件不能导出。仅 Markdown 不检查或复制 Word 模板，不生成 Word 或预览；旧 Word 分支及其 `template_path`、`mapping` 参数可保留为延期实现，不作为当前调用或可用性承诺 |
+| `review_revision` | `proposal_dir`、`revision_id`、`expected_state_version`；当前不需要 `page_review` | 实际读回全部已选交付文件核对：Markdown 与正式正文比较，讲稿与想定问答与保存内容重新生成的文本逐字比较；保存 `checks.content_consistent`、`checks.checked_formats`（全部已选文件）、`checks.deliverable_digests` 及相关摘要，返回 `state_version`、`state`、`checks`。只补导出一份时也核对全部已选文件。核对与正式正文、引用及 Markdown 实际内容绑定；相关内容改变即失效。缺文件或内容不符不能由调用者给出成功标记补齐；不调用页面程序，不写页面成功 |
+| `commit_revision` | `proposal_dir`、`revision_id`、`expected_state_version` | 按既定文件锁、待提交记录、目录改名和最后切换状态的顺序提交。实际核对当前交付要求中的全部交付文件、摘要、确认、条件和对应核对记录，未齐全则保留工作版本；延期 Word 的状态不影响提交。返回 `state_version`、`state`，成功另有已提交目录的实际 `artifacts`，不混入旧 Word |
 | `resume_revision` | `proposal_dir`、`expected_state_version`；可选 `revision_id`、当前 `inputs` | 依据唯一状态入口定位工作或已提交版本，核对相关输入及工作文件内容摘要，返回 `state_version`、`state`、`next_steps` 和仍有效的交付文件。旧未提交版本按前述方式明确转为 Markdown，保留有效进度并要求重新核对；已提交记录只读。目录已改名但指针未切换时，仅按明确待提交记录续接；正文、材料或用户选择改变时使相关步骤失效。当前 `next_steps` 不要求 Word 或页面；手改 Markdown 须先保留和导入，不能覆盖后再报告恢复 |
 
 材料定位 `locator.kind` 使用 `pdf`、`image`、`text`、`epub`、`html`、`docx`；物理页使用从 1 开始的 `page`，图像或 PDF 区域用 `bbox`，文本用从 1 开始的 `line`、`paragraph` 及可用的 `section`，电子书和网页用 `fragment`、`paragraph`，Word 用从 0 开始的 `paragraph` 或 `table`、`row`、`column`。缺少的定位字段不编造；引文直接引用记录内的材料编号和定位。模板的 `target` 使用 `{paragraph}` 或 `{table, row, column}`，也均从 0 开始。正文关联和定位均由实际读入生成，不要求用户事先填写。
 
-`研究计划状态.json` 保持 `schema_version: 1`，保留 `proposal_id`、`binding: {application_id, purpose, question_id}`、`state_version`、`current`、`works`。`current` 为空或 `{revision_id, directory}`；`works` 以修订编号为键，每项含 `directory`、`base_revision`、`inputs`、`fingerprints`、`steps`、`confirmations`、`conditions`、`checks`、`pending_commit`，新工作版增加由组件设置的 `delivery_formats:["md"]`。历史已提交记录缺此字段时按原双格式要求只读解释，未提交记录在公开恢复中迁移。`steps` 保留 `materials`、`question`、`scheme`、`body`、`docx`、`md`、`review` 的既有结构，但当前交付不依赖 `docx`；状态仍为 `complete|pending|failed`，不能把延期项改成成功。`checks` 增加实际核对的 `checked_formats`，旧页面字段不参与 Markdown 通过判断。`fingerprints` 由组件计算实际正文、材料、交付格式及采用的输入／决定摘要，不接受调用者伪造；核对摘要只依赖本版交付要求中的实际产物。`pending_commit` 仍为空或 `{revision_id, work_directory, target_directory}`，对应前述提交恢复安排。
+`研究计划状态.json` 保持 `schema_version: 1`，保留 `proposal_id`、`binding: {application_id, purpose, question_id}`、`state_version`、`current`、`works`。`current` 为空或 `{revision_id, directory}`；`works` 以修订编号为键，每项含 `directory`、`base_revision`、`inputs`、`fingerprints`、`steps`、`confirmations`、`conditions`、`checks`、`pending_commit`，新工作版增加由组件设置的 `delivery_formats:["md"]`。历史已提交记录缺此字段时按原双格式要求只读解释，未提交记录在公开恢复中迁移。`steps` 为 `materials`、`question`、`scheme`、`body`、`interview`、`docx`、`md`、`script`、`qa`、`review` 十项，当前交付不依赖 `docx`；读回旧状态时把缺失的步骤补成未开始，只补键、不改已有步骤与用户决定，新增步骤没有保存件时摘要为 `None`，不判为内容变化；状态仍为 `complete|pending|failed`，不能把延期项改成成功。`checks` 增加实际核对的 `checked_formats`，旧页面字段不参与 Markdown 通过判断。`fingerprints` 由组件计算实际正文、材料、交付格式及采用的输入／决定摘要，不接受调用者伪造；核对摘要只依赖本版交付要求中的实际产物。`pending_commit` 仍为空或 `{revision_id, work_directory, target_directory}`，对应前述提交恢复安排。
 
-提交后在 `works[revision_id]` 保留该版记录，将其 `directory` 更新为版本目录并清空 `pending_commit`；已提交记录供读取，不再原地修订，因此 `works[current.revision_id]` 可取得该版材料、确认、条件及核对结果。`begin_revision` 从当前版本复制仍有效的材料、问题、方案、确认及正文到新工作目录；按新 `inputs` 只使受影响部分失效，新工作版的 Markdown 导出和核对另行完成。旧版本文件和记录保持不变；对已提交版的手动修改经导入流程进入新工作版本。
+提交后在 `works[revision_id]` 保留该版记录，将其 `directory` 更新为版本目录并清空 `pending_commit`；已提交记录供读取，不再原地修订，因此 `works[current.revision_id]` 可取得该版材料、确认、条件及核对结果。`begin_revision` 从当前版本复制仍有效的材料、问题、方案、确认、正文及讲稿内容到新工作目录；按新 `inputs` 只使受影响部分失效，新工作版的各交付文件导出和核对另行完成。新工作版沿用旧讲稿保存件，因此讲稿步骤中的内容会一并带过去。旧版本文件和记录保持不变；对已提交版的手动修改经导入流程进入新工作版本。
 
 每次状态修改递增 `state_version`；包括创建和恢复在内，写入调用均须传入上次读取的 `expected_state_version`，在锁内核对。调用方可直接读取正式状态文件取得版本；首次创建传 `null`，只在锁内确认状态文件仍不存在时允许建立，初始版本为 1，否则返回 `conflict`。恢复时先读取现存状态的版本，不使用中断前缓存的计数；若其后另一轮改变状态，仍返回 `conflict`，不能将旧 `inputs` 写入新决定。保存或提交工作还要核对其 `base_revision` 未被另一轮提交替代；已提交的同一修订只重报结果。若模型返回前另一轮已改变状态，保留本轮工作和新返回内容，不覆盖对方结果。该计数只用于本稿的过期写入检查，不是跨稿件事务设施。`resume_revision` 根据当前状态和原有进行中记录恢复，不能凭过期计数绕过新决定。内存中的状态不算保存成功；文件替换失败保留磁盘上的旧指针。
 
-本次保留九个公开操作，只改变当前交付格式、核对与提交前置及旧未提交稿的恢复。论文前置顺序、上游代理、依赖版本、材料读取、用户确认、文件锁和最后替换状态的顺序沿用 r3。调用者仍通过业务函数操作状态，不另提供测试专用命令、故障开关或通用事务接口。
+本次保留九个公开操作，只改变当前交付集、核对与提交前置及旧未提交稿的恢复。论文前置顺序、上游代理、依赖版本、材料读取、用户确认、文件锁和最后替换状态的顺序沿用 r3。调用者仍通过业务函数操作状态，不另提供测试专用命令、故障开关或通用事务接口。
+
+**面试发表讲稿与想定问答按用途加选**。这是本修订新增的交付，服务“用一个 PPT 说明入学后的研究计划和以往研究/工作经历”这类面试与说明材料。它不是新代理，也不是自动产物：只有本稿 `inputs.deliverables` 列出 `script`（逐页讲稿）或 `qa`（想定问答）时才要求。
+
+| 对象 | 保存与检查 |
+|---|---|
+| 讲稿 `script` | `timing` 给目标时长、页数、每分钟口述字数、允许误差；`sections` 按页给页码、标题、分配时长、实际要讲的话，可选画面要点。检查页数与页码连续、每页有标题与正时长、各页时长合计与目标时长的差、以及按字数折算的时长与目标时长的差都不超过允许误差；`chars_per_minute` 须在 100 至 700。字数按非空白字符统计 |
+| 想定问答 `qa` | 按类别给 `question`、`answer`，可选 `source`。检查条目非空、每条答案按每分钟字数折算不超过 `max_answer_minutes`（省略时按 1.5 分钟）、`required_categories` 非空且不重复、每个必备类别至少一条问题、`category` 属于声明的类别 |
+
+- 两项共用 `save_revision(stage="interview")` 一个保存步骤。后一次保存会带上步骤里已有的另一项，本次请求显式给出的那项覆盖旧值，因此补齐缺项不必重写全部内容。
+- 该步骤只能覆盖、不能删除单项，也没有删除入口；空对象与空值都会被拒绝。从已提交稿建立的新工作版会把讲稿步骤与保存件一并带过去，从进行中的工作版建立则重新开始该步骤。确实要丢掉某项时只能另建稿件目录，本稿保留原记录。
+- 保存过的内容一律参与检查，即使那一项没有加选；未加选的内容不通过时，该步骤保持未完成并阻塞已加选文件的导出。
+- 讲稿与想定问答都从正文派生。正文、研究问题、中文方案或材料变化时，两份交付文件与核对一起重做；只改讲稿内容时，两份讲稿交付与核对一起失效，正文与 Markdown 交付保持完成。
+- 加选或取消 `deliverables` 属于本稿输入变化，会连带使正文步骤失效，因此加选后需要重新保存正文再导出。
+
+**交付、核对与提交的条件**。下表是调用方需要知道的完整前置；字段级细节以 `references/interview.md` 为准，两者不一致时以该参考文件为准并修正本表。
+
+| 环节 | 前置与结果 |
+|---|---|
+| 加选交付 | `deliverables` 必含 `md`；`script`、`qa` 可加选；`docx` 不能列入。只写 `script` 或 `qa` 时自动包含 `md`。省略该字段只交付 Markdown。 |
+| 保存讲稿 | 正文步骤完成、关键条件解决、问题与方案确认有效后才可保存；正文未完成时返回 `body_required`。 |
+| 导出 | 正文、讲稿步骤均完成；未加选的文件不能导出（`deliverable_not_selected`）。省略 `formats` 生成本稿全部已选文件。 |
+| 核对 | 总是核对本稿全部已选交付文件，并把 `checked_formats` 记为这一整组；只补导出一份不改变这一点。 |
+| 提交 | 正文、`md`、`review` 及每个已选交付步骤都完成；`checks.content_consistent` 为真且 `checked_formats` 等于当前交付集；各交付文件存在且摘要与记录一致。 |
+| 讲稿必填项 | 讲稿需 `timing`（目标时长、页数、每分钟字数、误差）与 `sections`；想定问答需 `chars_per_minute`、`required_categories` 与 `items`，`max_answer_minutes` 可省略，省略时按 1.5 分钟。 |
+
+**研究计划的完成度有明确下限**。`references/research-design.md` 的「写完到什么程度」一节适用于所有稿件，不只是加选讲稿的稿件。它给出四条底线与对应的“不必有”清单，并要求写明方案弱点；这些是写作判断，不是组件可自动检查的字段，由主技能在形成方案与正文时落实。学校栏目、语言和篇幅要求仍然优先。
+
+**本轮新增与延期**。新增：`script`、`qa` 两项按需交付、`interview` 保存步骤、上述完成度要求。延期不变：Word 导出、学校模板填入、页面排版与页图核对。正文变化时 `docx` 步骤会被标为待重做，但它不参与当前交付、核对与提交。
 
 **实现顺序与责任已经确定**。
 
