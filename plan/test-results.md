@@ -512,9 +512,19 @@ RP-13 的原稿状态含绝对工作目录，普通副本续接会指回原稿�
 
 本轮新增 `script`（发表讲稿）与 `qa`（想定问答）两项按需交付，并新增必测项 RP-14。计划依据为 [implementation-plan.md](implementation-plan.md) 的 `rp-plan-r5-interview-2026-11-25`，场景见 [test-plan.md](test-plan.md) 的 RP-14。
 
-**产品版本**：`feat/interview-script-artifacts` 分支，HEAD `93a827536207bdb15e6daeb6ba35512694e6b71a`，基线 `786d1402929f25ca91f8cdaa4090e8bd73d6989b`，执行时工作树干净。
+**产品版本**：`feat/interview-script-artifacts` 分支，HEAD `f06ac53`（试跑时为 `93a8275`，此后只改文档与讲稿入参检查，见下方“版本沿革”），基线 `786d1402929f25ca91f8cdaa4090e8bd73d6989b`，执行时工作树干净。
 
-**执行方式**：本地执行工程师在仓库外隔离目录运行组件测试，固定依赖 `uv run --no-project --python 3.12 --with PyMuPDF==1.27.2.3 --with lxml==6.1.1 --with python-docx==1.2.0 --with Pillow==12.3.0 python -m unittest -v <套件>`；输出目录 `/tmp/rp-final7`，完整逐用例清单在同一目录的 `run.log`。
+**执行方式**：本地执行工程师在仓库外隔离目录运行组件测试，固定依赖 `uv run --no-project --python 3.12 --with PyMuPDF==1.27.2.3 --with lxml==6.1.1 --with python-docx==1.2.0 --with Pillow==12.3.0 python -m unittest -v <套件>`；定稿记录的输出目录为 `/tmp/rp-final10`，完整逐用例清单在同一目录的 `run.log`。
+
+**版本沿革**（同一组用例在不同时点的记录，均保留）：
+
+| 时点 | HEAD | 用例数 | 输出目录 |
+|---|---|---|---|
+| 首次记录 | `93a8275` | 26 | `/tmp/rp-final7` |
+| 入参检查修复后 | `e7e52f5` + 与 `bf00791` 相同的未提交改动 | 27 | `/tmp/rp-final9` |
+| 定稿 | `f06ac53` | 27 | `/tmp/rp-final10` |
+
+前两次的用例数已不再对应当前代码，只作过程记录；现行结论以 `f06ac53` 为准。
 
 | 套件 | 基准 | 用例数 | 结果 |
 |---|---|---|---|
