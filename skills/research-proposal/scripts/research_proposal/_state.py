@@ -704,6 +704,8 @@ def _check_interview_payload(data: dict) -> None:
     """
     from ._interview import FILES
 
+    if not isinstance(data, dict):
+        raise ValueError("讲稿步骤的 data 须是对象，含 script 或 qa。")
     given = [name for name in FILES if name in data]
     if not given:
         raise ValueError("讲稿步骤须至少保存 script 或 qa 对象")

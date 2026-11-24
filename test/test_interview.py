@@ -178,7 +178,7 @@ class InterviewDraftTests(ComponentCase):
 
         directory, revision = self.begin()
         self.save_interview(directory, revision, {"script": SCRIPT, "qa": QA})
-        for payload in ({"script": {}}, {"qa": None}, {"script": None, "qa": QA}, {}):
+        for payload in ({"script": {}}, {"qa": None}, {"script": None, "qa": QA}, {}, "script", []):
             with self.subTest(payload=payload):
                 with self.assertRaises(ValueError):
                     self.save_interview(directory, revision, payload)
