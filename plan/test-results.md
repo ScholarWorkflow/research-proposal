@@ -507,3 +507,42 @@ RP-13 的原稿状态含绝对工作目录，普通副本续接会指回原稿�
 **未完成项与负责人**：`plan/test-plan-review.md` 的第三关记录已在 `bb83bec` 更新为 r22 与产品 `457d8cf`（本行所述时点早于该更新，保留为历史）；RP-11 的基准偏离（IR-39）与 IR-41、IR-42、IR-43 的既有偏离仍待测试计划负责人确认；RP-09 继续延期。
 
 本轮未手改任何 `正文.json`、Markdown 或状态文件；论文稿的保存、导出、核对与提交都由安装后的公开入口完成。以上结果只说明实现符合性与测试执行情况，不构成计划关口、第三关或合并批准。
+
+## r23：讲稿与想定问答交付的组件执行（2026-11-25）
+
+本轮新增 `script`（发表讲稿）与 `qa`（想定问答）两项按需交付，并新增必测项 RP-14。计划依据为 [implementation-plan.md](implementation-plan.md) 的 `rp-plan-r5-interview-2026-11-25`，场景见 [test-plan.md](test-plan.md) 的 RP-14。
+
+**产品版本**：`feat/interview-script-artifacts` 分支，HEAD `93a827536207bdb15e6daeb6ba35512694e6b71a`，基线 `786d1402929f25ca91f8cdaa4090e8bd73d6989b`，执行时工作树干净。
+
+**执行方式**：本地执行工程师在仓库外隔离目录运行组件测试，固定依赖 `uv run --no-project --python 3.12 --with PyMuPDF==1.27.2.3 --with lxml==6.1.1 --with python-docx==1.2.0 --with Pillow==12.3.0 python -m unittest -v <套件>`；输出目录 `/tmp/rp-final7`，完整逐用例清单在同一目录的 `run.log`。
+
+| 套件 | 基准 | 用例数 | 结果 |
+|---|---|---|---|
+| `test_interview` | 用例自建隔离目录 | 26 | 通过 |
+| `test_recovery.RecoveryTests` | 只交 Markdown 的已提交稿件（`/tmp/rp-recovery`） | 8 | 通过 |
+| `test_recovery.InterviewRecoveryTests` | 加选讲稿的已提交稿件（`/tmp/rp-script-recovery`） | 4 | 通过 |
+
+**RP-14 场景与用例对应**：
+
+| 场景 | 用例 |
+|---|---|
+| 场景 1 加选并导出提交 | `InterviewDeliveryFlowTests.test_export_produces_script_then_review_and_commit` |
+| 场景 2 不达标仍保存后补齐 | `InterviewDraftTests.test_selected_deliverable_must_be_saved`、`InterviewDraftTests.test_second_save_keeps_the_first_deliverable`、`InterviewDeliveryFlowTests.test_unchecked_script_content_blocks_export` |
+| 场景 3 想定问答问题 | `InterviewRenderTests.test_question_coverage_and_answer_length` |
+| 场景 4 手改导出文件核对失败 | `InterviewDraftTests.test_review_reports_edited_deliverable`、`InterviewRecoveryTests.test_edited_script_breaks_review` |
+| 场景 5 旧状态恢复与提交 | `LegacyStateTests` 五项 |
+| 场景 6 未加选不要求讲稿 | `InterviewStateTests.test_markdown_only_proposal_skips_interview_step` |
+
+**另做的定向验证**（脚本与产物在仓库外 `/tmp/oldstate`、`/tmp/edge-probe`、`/tmp/delprobe`、`/tmp/addprobe`）：
+
+- 用本修订前代码 `7da08f4` 生成真实旧状态稿件，`resume_revision` 返回 `committed`、`begin_revision` 返回 `ready`、`commit_revision` 返回 `committed`，未提交旧稿 `resume_revision` 返回 `ready`。
+- 改动既有步骤的保存件后仍判为 `committed_content_changed`。
+- 未加选但保存了有错的讲稿内容时返回 `interview_rate`，且该步骤保持未完成。
+- 讲稿步骤无删除入口：空对象与 `null` 都被拒绝，已保存内容保留；从已提交稿建立的新工作版会带旧讲稿内容，从进行中的工作版建立则重新开始该步骤。
+- 加选 `deliverables` 后正文步骤失效，`next_steps` 出现 `body`，与计划「交付、核对与提交的条件」一致。
+
+**未执行**：Nix 构建（本修订未改 `flake.nix`、`flake.lock`、`nix/`）与真实评估会话。RP-14 的正式业务执行由测试计划负责人按第三关安排，本记录只说明组件测试结果。
+
+**资源清单的过期描述**：上文 RP-01、RP-02 与 r22 的安装检查写「四份参考文件」，那是当时的产品内容。本修订新增 `references/interview.md` 后，安装后的参考文件为五份。这些历史行保留原文，不改写为当时未发生的结果；重新执行 RP-01、RP-02 时应按五份核对，是否需要重跑由测试计划负责人在第三关决定。
+
+**实现符合性审核**：专用 `implementation_reviewer` 已对 `94519be` 与 `25956d0` 两次审核，B-1、B-2 已闭合；对 `b7a2819` 的计划审核结论为 `NEEDS_MODIFICATION`，其 P-01 至 P-10 已在本轮处理，计划合并后待复审。本记录不代表计划关口、第三关或合并批准。
