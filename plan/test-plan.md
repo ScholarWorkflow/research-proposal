@@ -195,7 +195,7 @@
 
 RP-14 的执行步骤：在隔离消费者中从已提交稿件出发，先加选 `script`（必要时加 `qa`）并保存内容，再导出、核对、提交，逐场景记录结果；用例与场景对应见 `test-results.md` 的 r23 一节。旧状态场景用本修订前代码生成状态文件，只改测试准备，不改产品。
 
-旧产品 b983 的 r13 运行、失败和诊断保留，不视为 Markdown 完成。RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划第 274、280、317 行声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
+旧产品 b983 的 r13 运行、失败和诊断保留，不视为 Markdown 完成。RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划「版本保存以一份核对完成的交付集为提交单位」一节与「提交顺序」第 3 步声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
 
 固定共享夹具继续为 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`，使用前的更新记录沿本轮主代理交接。模型仍为夹具默认 `gpt-6-luna`、`low`；保留 `workspace-write`、实际 `on-request`、单主线程和 600 秒。未获批准的 `auto_review` 和其他模型候选不加载，也不启停任何服务。
 
