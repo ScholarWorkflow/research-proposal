@@ -4,18 +4,18 @@
 
 ## 版本与范围
 
-- 测试计划版本：`rp-tests-r5-markdown-2026-11-04`。
-- 需求版本：`rp-requirements-r2-markdown-2026-11-04`；沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，再按用户最新决定撤掉 LibreOffice 测试，Word 交付和调试延后，当前先把 Markdown 做对。
-- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r4-markdown-2026-11-04`，校验值 `4776b1d75a6763608a788166e0aa74719ac9c88c0bf2ae5459c66a17b35b5f9a`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。
-- 目标仓库：`research-proposal`；工作树：`worktrees/research-proposal-plan`；分支：`feat/research-proposal`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 执行说明版本：`rp-recipe-r14-markdown-2026-11-04`。本次修订替代 r4 业务清单及 r13 的现行执行义务；历史尝试、实际问题和不受影响的通过结果保留。独立设计复核、第一关及第二关结论见 `plan/test-plan-review.md`，准备符合性结论见 `plan/test-preparation-review.md`；准备完成不表示正式测试通过。
+- 测试计划版本：`rp-tests-r6-interview-2026-11-25`，取代 `rp-tests-r5-markdown-2026-11-04`；本次只新增 RP-14，其余编号与场景沿用。
+- 需求版本：`rp-requirements-r3-interview-2026-11-25`；沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
+- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r5-interview-2026-11-25`，校验值 `aec2492a0b3d655a3e6797f222f4ea32782610a6bd9bc24352b4abe34a59d5f3`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。
+- 目标仓库：`research-proposal`；工作树：`.agents/worktrees/research-proposal-interview`；分支：`feat/interview-script-artifacts`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
+- 执行说明版本：`rp-recipe-r15-interview-2026-11-25`，替代 `rp-recipe-r14-markdown-2026-11-04`。本次修订替代 r5 业务清单及 r14 的现行执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
 - 本次准备清除与本范围矛盾的残留步骤：RP-09 的 Word 模板映射、`test_export.TemplateTests`（该文件已在工作区删除）、RP-08 的“所有产品页图”阅读、RP-11 的受控 `page_review` 分支。清理依据为已获批准的 r14 范围与 `Test Engineer Rule.md` 第 6 节“超范围要求必须从计划中删除”，不是临场删测或缩项。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
-下面除已明确延期的 RP-09 外，其余编号及各项明确列出的场景构成唯一必测清单。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
+下面除已明确延期的 RP-09 外，RP-01 至 RP-14 的编号及各项明确列出的场景构成唯一必测清单；RP-14 为本修订新增。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
 
-只验收本仓库的安装交付、输入发现与交接安排、材料整理、研究设计、Markdown 成稿、修改和恢复。上游产物由 Recipe 手动准备为输入；不运行采集、Zotero 保存、全文下载、论文分析或套磁候选生成来证明这些输入的生成过程，也不验收上游子代理、服务、批次或委派链。已有上游检查随产品发现入口正常使用，不为本次测试重写或绕过它们。
+只验收本仓库的安装交付、输入发现与交接安排、材料整理、研究设计、Markdown 成稿、修改、恢复，以及按需加选的讲稿与想定问答交付。上游产物由 Recipe 手动准备为输入；不运行采集、Zotero 保存、全文下载、论文分析或套磁候选生成来证明这些输入的生成过程，也不验收上游子代理、服务、批次或委派链。已有上游检查随产品发现入口正常使用，不为本次测试重写或绕过它们。
 
 每项按自己的观察点判断，不因某项安排了实际会话，就重新检查其他项已经覆盖的全部行为。不追加所有学科、学校、语言、文件格式的组合，不测试其他平台或运行工具，不重新验收共享安装器或模型服务。RP-04、RP-05 不再是 RP-07、RP-08 的前置运行；本次手工准备的是外部输入，不是 research-proposal 的成功输出或用户确认。
 
@@ -153,6 +153,16 @@
 
 **检查方式**：使用安装后的主技能观察缺项说明和资料状态；外部条件补齐后的继续执行采用对应正常项的结果，不另跑全流程。该项预期的缺配置表现与测试运行中偶发的服务故障分开记录，后者按实际影响记为无法判断。
 
+### RP-14：讲稿与想定问答交付
+
+**目标**：`inputs.deliverables` 加选 `script` 或 `qa` 后，讲稿与想定问答作为正式交付随稿件保存、生成、核对和提交；不加选时不产生这两份文件，旧稿件行为不变。
+
+**输入或场景**：先在隔离消费者中建立或复用一份已提交的研究计划稿件。场景 1：加选 `script`，保存一份页数、时长与字数相符的讲稿，导出并提交，检查实际生成的文件与返回的 `artifacts`。场景 2：故意提交页数不符或时长超差的讲稿，检查逐条问题与内容仍被保存；补齐后再次保存并通过。场景 3：加选 `qa`，提交缺少必备类别或答案超长的想定问答，检查对应问题。场景 4：手改导出的讲稿 Markdown 后执行核对，检查核对失败且提交被拒。场景 5：用本修订之前的稿件状态（缺 `interview`、`script`、`qa` 步骤）调用 `resume_revision`、`begin_revision`、`commit_revision`，检查按原行为返回而不是报错。场景 6：不加选 `deliverables` 时确认 `next_steps` 不含 `interview`，且不生成讲稿文件。
+
+**预期结果**：加选后两份文件按保存内容生成，提交成功时 `artifacts` 含实际路径；内容不达标时返回逐条问题并保留已写内容；手改导出文件不能通过核对；旧状态稿件可正常恢复与提交；未加选时不要求讲稿步骤。
+
+**检查方式**：正式执行由本地执行工程师在仓库外隔离消费者中发起，先加选并保存讲稿，再导出、核对、提交，按上述场景分别记录逐项结果。旧状态场景使用本修订前代码生成的状态文件，只改测试准备，不改产品。在安装环境尚未就绪时，可以暂时用隔离目录中的组件调用取得同场景结果并明确标注证据级别；这不等同于经安装后主技能的业务执行，是否足以判定通过由第三关决定。依据为 `plan/implementation-plan.md` 的「交付、核对与提交的条件」与 `skills/research-proposal/references/interview.md`。
+
 ## 准备和执行的边界
 
 需要真实用户选择或确认的场景，使用现有评估服务对同一隔离使用目录和同一稿件逐次发送请求。每次都明确点名安装后的 `research-proposal` 主技能，并提供真实资料或稿件路径；不把新的评估请求当成继承上次技能上下文的对话。先检查上一请求的实际问题、方案和产品保存的状态，再将针对该问题或该版方案的具体用户决定作为下一请求的输入；不预先灌入尚未提出的问题的答案，也不直接改写产品确认状态。交互之间继续使用产品已经保存的有效成果，不重复成稿。依据为现有评估服务 [app-server 入口约定](../../../eval-server/docs/appserver-migration.md)第 193–201 行，源码版本 `1ae8b6131bd0041b82cf3cc3789bf7fe09dfac6e`：每次评估创建新的主对话，不支持 `resume`。明确产品入口不等于在提示中提供内部保存函数或实现步骤。
@@ -181,9 +191,11 @@
 
 ### 当前版本与复用范围
 
-本节版本为 `rp-recipe-r14-markdown-2026-11-04`，落实上面的 r5 业务清单，整段替代 r13 的现行执行义务。当前交付只验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
+本节版本为 `rp-recipe-r15-interview-2026-11-25`，落实上面的 r6 业务清单，整段替代 r14 的现行执行义务。当前交付验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态，并按需加选验收讲稿与想定问答（RP-14）。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
 
-旧产品 b983 的 r13 运行、失败和诊断保留，不视为 Markdown 完成。RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划第 274、280、317 行声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
+RP-14 的执行步骤：在隔离消费者中从已提交稿件出发，先加选 `script`（必要时加 `qa`）并保存内容，再导出、核对、提交，逐场景记录结果；用例与场景对应见 `test-results.md` 的 r23 一节。旧状态场景用本修订前代码生成状态文件，只改测试准备，不改产品。
+
+旧产品 b983 的 r13 运行、失败和诊断保留，不视为 Markdown 完成。RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划「版本保存以一份核对完成的交付集为提交单位」一节与「提交顺序」第 3 步声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
 
 固定共享夹具继续为 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`，使用前的更新记录沿本轮主代理交接。模型仍为夹具默认 `gpt-6-luna`、`low`；保留 `workspace-write`、实际 `on-request`、单主线程和 600 秒。未获批准的 `auto_review` 和其他模型候选不加载，也不启停任何服务。
 

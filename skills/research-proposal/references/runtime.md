@@ -67,6 +67,7 @@
     "question_id": null,
     "material_paths": ["/资料目录/材料/材料甲.pdf"],
     "template_path": null,
+    "deliverables": ["md"],
     "requirements": {"language": "日文", "format_status": "待核学校表格"},
     "sources": ["用户给定的招生资料"],
     "user_choices": {}
@@ -74,7 +75,11 @@
 }
 ```
 
-上例只是字段示意，不能把其项目、语言或来源当成用户事实。实际资料尚未明确时保留缺项。
+`deliverables` 是本稿要交付的文件：`md` 必选，`script`（发表讲稿）和 `qa`
+（想定问答）按用途加选，`docx` 尚未实现、不能列入。省略该字段时只交付 Markdown。
+加选后这项要求随稿件保存，同一目录的后续工作版沿用；改变加选内容会改变本稿
+输入并触发相应失效，不要用改输入代替重新生成文件。上例只是字段示意，不能把其
+项目、语言或来源当成用户事实。实际资料尚未明确时保留缺项。
 
 返回 `revision_id`、`directory`、`state_version`、`state`。其后的写入操作都带 `proposal_dir`、`revision_id` 和**最近一次结果中的** `expected_state_version`。已有稿先读正式 `研究计划状态.json` 的版本，再 `resume_revision`；不要用中断前缓存的版本覆盖后来的决定。每次成功修改状态都会得到新版本号。
 
@@ -109,9 +114,11 @@
 
 后三个操作仍带本稿目录、修订编号和当前版本号：
 
-1. `export_revision`：当前使用 `formats:["md"]`；省略 `formats` 时同样只导出 Markdown。仅 Markdown 时不读取或复制 Word 模板，不生成 Word 或预览。结果 `artifacts` 只列实际成功的 `md`。即使失败也消费返回的新状态与成功项，不能改当前指针。旧 Word 分支及其 `template_path`、`mapping` 参数作为延期实现保留，当前调用不使用。
-2. `review_revision`：无额外字段，当前不需要 `page_review`。组件实际读回 Markdown 与正式正文核对，返回 `checks.content_consistent`、`checks.checked_formats:["md"]` 及相关摘要。缺文件或内容不符不能由调用者给出成功标记补齐；不调用页面程序，不写页面成功。
-3. `commit_revision`：无额外字段。确认、条件、Markdown 输出及内容核对均有效才返回 `committed`，成功另返回已提交目录的 `artifacts.md`，不混入旧 Word。延期 Word 的状态不影响提交；非关键待定项保留在该版待确认清单。
+1. `export_revision`：省略 `formats` 时生成本稿全部已选加的文件；只补一份时按名传入，例如 `formats:["script"]`。当前不交付 Word：不读取或复制 Word 模板，不生成 Word 或预览。结果 `artifacts` 只列实际成功的文件。即使失败也消费返回的新状态与成功项，不能改当前指针。旧 Word 分支及其 `template_path`、`mapping` 参数作为延期实现保留，当前调用不使用。
+2. `review_revision`：无额外字段，当前不需要 `page_review`。组件实际读回每份交付文件与正式正文核对，返回 `checks.content_consistent`、`checks.checked_formats` 及相关摘要；加选讲稿或想定问答时另返回 `checks.deliverable_digests`。缺文件或内容不符不能由调用者给出成功标记补齐；不调用页面程序，不写页面成功。
+3. `commit_revision`：无额外字段。确认、条件、全部交付文件及内容核对均有效才返回 `committed`，成功另返回已提交目录的实际 `artifacts`，不混入旧 Word。延期 Word 的状态不影响提交；非关键待定项保留在该版待确认清单。
+
+讲稿与想定问答先用 `save_revision(stage="interview")` 保存内容，再由 `export_revision` 生成 Markdown；字段与检查规则见 [讲稿与想定问答](interview.md)。
 
 ## 恢复结果
 

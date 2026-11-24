@@ -23,17 +23,54 @@ from ._record_paths import (
 STATE_NAME = "研究计划状态.json"
 BODY_NAME = "正文.json"
 REFERENCE_NAME = "引用定位.json"
-STAGES = ("materials", "question", "scheme", "body", "docx", "md", "review")
-FORMAT_NAMES = {"docx": "研究计划草稿.docx", "md": "研究计划草稿.md"}
-# 当前交付只要求 Markdown；Word 导出与页图为延期实现，状结构保留但不参与交付。
+STAGES = (
+    "materials", "question", "scheme", "body", "interview",
+    "docx", "md", "script", "qa", "review",
+)
+FORMAT_NAMES = {
+    "docx": "研究计划草稿.docx", "md": "研究计划草稿.md",
+    "script": "研究计划讲稿.md", "qa": "研究计划想定问答.md",
+}
+# 当前交付只要求 Markdown；Word 导出与页图为延期实现，状态结构保留但不参与交付。
 DELIVERY_FORMATS = ["md"]
+# 讲稿与想定问答按用途加选：inputs.deliverables 含 script 或 qa 时才要求。
+INTERVIEW_FORMATS = ("script", "qa")
 DEFERRED_FORMATS = ("docx",)
-_FORMAT_LABELS = {"docx": "Word（.docx）", "md": "Markdown（.md）"}
+_FORMAT_LABELS = {
+    "docx": "Word（.docx）", "md": "Markdown（.md）",
+    "script": "发表讲稿（Markdown）", "qa": "想定问答（Markdown）",
+}
+# 各保存步骤或正文变化时连带失效的步骤。`interview` 是保存讲稿与想定问答内容
+# 的步骤，`script`、`qa` 是由它生成的两份交付文件。
+_DEPENDENT = {
+    "materials": ("interview", "script", "qa", "body", "docx", "md", "review"),
+    "question": ("scheme", "interview", "script", "qa", "body", "docx", "md", "review"),
+    "scheme": ("interview", "script", "qa", "body", "docx", "md", "review"),
+    "interview": ("script", "qa", "review"),
+    "body": ("script", "qa", "docx", "md", "review"),
+}
 STORED_PATH_BASE = "."
 
 
 def _absolute(value: str | Path) -> str:
     return str(Path(value).expanduser().resolve())
+
+
+def _deliverables(value) -> list:
+    """本稿需要的交付文件；Markdown 正文始终包含。"""
+    if value is None:
+        return list(DELIVERY_FORMATS)
+    if not isinstance(value, list) or not value:
+        raise ValueError("deliverables 必须是包含 md 的非空数组")
+    names = ["md"]
+    for name in value:
+        if name == "docx":
+            raise ValueError("Word 交付尚未实现，不能列入 deliverables")
+        if name not in {"md", *INTERVIEW_FORMATS}:
+            raise ValueError(f"deliverables 只能包含 md、script、qa，收到 {name}")
+        if name not in names:
+            names.append(name)
+    return names
 
 
 def _normal_inputs(value: dict) -> dict:
@@ -50,6 +87,8 @@ def _normal_inputs(value: dict) -> dict:
     inputs["material_paths"] = [_absolute(path) for path in inputs["material_paths"]]
     if inputs["template_path"] is not None:
         inputs["template_path"] = _absolute(inputs["template_path"])
+    if "deliverables" in inputs:
+        inputs["deliverables"] = _deliverables(inputs["deliverables"])
     return inputs
 
 
@@ -107,9 +146,23 @@ def _preserve_return(directory: Path, state: dict | None, request: dict) -> str 
     return str(path)
 
 
+def _ensure_steps(work: dict) -> dict:
+    """补齐本版新增、旧状态里没有的步骤键。
+
+    只补缺失键为未开始，不改已有步骤、确认、条件和用户决定；补进来的步骤没有
+    保存件，摘要为 None，不算作内容变化。
+    """
+    steps = work.setdefault("steps", {})
+    for name in STAGES:
+        steps.setdefault(name, {"status": "pending", "artifacts": {}, "issues": []})
+    return work
+
+
 def _load(directory: Path, request: dict, *, create=False):
     path = directory / STATE_NAME
     state = read_json(path) if path.is_file() else None
+    for work in (state or {}).get("works", {}).values():
+        _ensure_steps(work)
     expected = request.get("expected_state_version")
     matches = (
         (state is None and create and "expected_state_version" in request and expected is None)
@@ -172,13 +225,24 @@ def _artifact_digests(artifacts: dict) -> dict:
 
 
 def _delivery_formats(work: dict) -> list:
-    """本版交付要求；历史已提交记录缺该字段时按原双格式只读解释。"""
+    """本版交付要求；历史已提交记录缺该字段时按原双格式只读解释。
+
+    Markdown 正文始终交付；讲稿与想定问答由 `inputs.deliverables` 加选，
+    没有该字段的历史稿件不会因为新增文件而失效。
+    """
     value = work.get("delivery_formats")
     if isinstance(value, list) and value:
-        return [name for name in value if name in FORMAT_NAMES]
-    if work.get("committed"):
+        formats = [name for name in value if name in FORMAT_NAMES]
+    elif work.get("committed"):
         return ["docx", "md"]
-    return list(DELIVERY_FORMATS)
+    else:
+        formats = list(DELIVERY_FORMATS)
+    requested = (work.get("inputs") or {}).get("deliverables")
+    if isinstance(requested, list):
+        for name in requested:
+            if name in INTERVIEW_FORMATS and name not in formats:
+                formats.append(name)
+    return formats
 
 
 def _delivery_artifact_names(formats) -> set:
@@ -286,7 +350,7 @@ def _snapshot(work: dict) -> dict:
     directory = Path(work["directory"])
     template = work.get("template_path", inputs.get("template_path"))
     stage_files = {}
-    for stage in ("materials", "question", "scheme"):
+    for stage in ("materials", "question", "scheme", "interview"):
         data_path = work["steps"][stage].get("artifacts", {}).get("data")
         stage_files[stage] = _digest_file(data_path)
     return {
@@ -310,18 +374,28 @@ LATE_FINGERPRINTS = ("material_sources", "adopted_materials")
 
 
 def _fingerprints_changed(previous: dict, current: dict, keys=None) -> bool:
-    """比较整体摘要；keys 指定时只比这些键，延期项不参与。"""
+    """比较整体摘要；keys 指定时只比这些键，延期项不参与。
+
+    旧状态补齐新增步骤后，这些步骤的保存件摘要仍为 None；它们只是新增的步骤键，
+    不构成内容变化，否则每次读取旧稿都会被判成已改动。
+    """
     for key, value in current.items():
         if keys is not None and key not in keys:
             continue
         if key in LATE_FINGERPRINTS and key not in previous:
             continue
+        if key == "stage_files" and isinstance(value, dict):
+            before = previous.get(key)
+            before = before if isinstance(before, dict) else {}
+            value = {name: digest for name, digest in value.items()
+                     if name in before or digest is not None}
         if previous.get(key) != value:
             return True
     return False
 
 
 def _dependencies(work: dict) -> dict:
+    """交付与核对依赖；`stage_files` 已覆盖各步骤保存件本身。"""
     snapshot = _snapshot(work)
     names = [
         "inputs", "materials", "material_sources", "adopted_materials", "template",
@@ -336,7 +410,9 @@ def _dependencies(work: dict) -> dict:
 def _delivery_stages(work: dict) -> tuple:
     """本版交付实际要求的导出与核对步骤；延期 Word 不参与 Markdown 的失效判断。"""
     formats = _delivery_formats(work)
-    return ("docx", "md", "review") if "docx" in formats else ("md", "review")
+    stages = ("docx", "md", "review") if "docx" in formats else ("md", "review")
+    stages = (*stages, *(name for name in INTERVIEW_FORMATS if name in formats))
+    return tuple(dict.fromkeys(stages))
 
 
 def _with_delivery(work: dict, *stages) -> tuple:
@@ -421,27 +497,22 @@ def _sync_work(work: dict, inputs: dict | None = None) -> bool:
         # 仅 Markdown 交付时不因 Word 模板或栏目映射变化而使 Markdown 失效。
         _invalidate(work, ("docx", "md", "review") if "docx" in _delivery_formats(work) else ("docx",),
                     issue("template_changed", "模板或栏目映射变化，须重新导出并核对。", "inputs.template_path"))
-    for stage in ("materials", "question", "scheme"):
+    for stage in ("materials", "question", "scheme", "interview"):
         if work["steps"][stage]["status"] != "complete":
             continue
         if current["stage_files"][stage] != previous.get("stage_files", {}).get(stage):
             reason = issue("saved_content_changed", "已保存步骤文件变化，请通过保存入口明确采用内容。", stage)
-            affected = _with_delivery(work, *{
-                "materials": ("materials", "body"),
-                "question": ("question", "scheme", "body"),
-                "scheme": ("scheme", "body"),
-            }[stage])
-            _invalidate(work, affected, reason)
+            _invalidate(work, _with_delivery(work, stage, *_DEPENDENT[stage]), reason)
             if stage in {"question", "scheme"}:
                 _unconfirm(work, ("question", "scheme") if stage == "question" else ("scheme",))
     if work["steps"]["body"]["status"] == "complete" and any(
         current[name] != previous.get(name) for name in ("body", "references")
     ):
-        _invalidate(work, _with_delivery(work, "body"), issue(
+        _invalidate(work, _with_delivery(work, "body", *_DEPENDENT["body"]), issue(
             "body_changed", "工作正文或引用发生变化，请明确采用后重新导出。", str(Path(work["directory"]) / BODY_NAME),
         ))
     dependencies = _dependencies(work)
-    for name in ("docx", "md"):
+    for name in ("docx", "md", *INTERVIEW_FORMATS):
         step = work["steps"][name]
         if step["status"] == "complete" and (
             step.get("dependencies") != dependencies
@@ -471,7 +542,7 @@ def _remap(value, old: Path, new: Path, field=None):
         return [_remap(item, old, new, field) for item in value]
     state_paths = {
         "directory", "work_directory", "target_directory", "data", "body", "references",
-        "docx", "md", "preview_pdf", "location",
+        "docx", "md", "script", "qa", "preview_pdf", "location",
     }
     if field in PATH_FIELDS | PATH_LIST_FIELDS | state_paths and isinstance(value, str) and Path(value).is_absolute():
         try:
@@ -611,12 +682,82 @@ def _body_prerequisites(work: dict) -> list:
 
 
 def _next_steps(work: dict) -> list:
-    """当前下一步不把延期的 Word 列为未完成。"""
-    deferred = set(DEFERRED_FORMATS) - set(_delivery_formats(work))
+    """当前下一步不把延期的 Word 或未加选的交付文件列为未完成。"""
+    formats = _delivery_formats(work)
+    deferred = set(DEFERRED_FORMATS) - set(formats)
+    optional = set(INTERVIEW_FORMATS) - set(formats)
+    if not set(INTERVIEW_FORMATS) & set(formats):
+        # 没有加选讲稿或想定问答时，保存这两项内容的步骤也不是必经步骤。
+        optional.add("interview")
     return [
         name for name in STAGES
-        if name not in deferred and work["steps"][name]["status"] != "complete"
+        if name not in deferred and name not in optional
+        and work["steps"][name]["status"] != "complete"
     ]
+
+
+def _check_interview_payload(data: dict) -> None:
+    """讲稿步骤的入参检查：不接受的写法直接拒绝，避免静默覆盖已保存内容。
+
+    两项内容都只能整体替换成非空对象；写成 null 或空对象一律报错，而不是当作
+    删除或过滤掉，这样误传不会把已写好的讲稿或问答悄悄抹掉。
+    """
+    from ._interview import FILES
+
+    if not isinstance(data, dict):
+        raise ValueError("讲稿步骤的 data 须是对象，含 script 或 qa。")
+    given = [name for name in FILES if name in data]
+    if not given:
+        raise ValueError("讲稿步骤须至少保存 script 或 qa 对象")
+    for name in given:
+        value = data[name]
+        if not isinstance(value, dict) or not value:
+            raise ValueError(
+                f"讲稿步骤的 {name} 须是非空对象；本步骤不支持删除单项，"
+                "写成 null 或空对象会被拒绝。"
+            )
+
+
+def _merged_interview(work: dict, data: dict) -> dict:
+    """把本次未提交的讲稿项沿用步骤里已保存的内容。
+
+    讲稿与想定问答共用同一个保存件；只补其中一项时，另一项仍按已有内容参与
+    检查与导出。本次显式给出的字段覆盖旧值。
+    """
+    from ._interview import FILES, step_data
+
+    merged = {name: step_data(work, name) for name in FILES}
+    for name in FILES:
+        # 入参检查已拒绝 null 与空对象，这里只需覆盖有值的那一项。
+        if isinstance(data.get(name), dict) and data[name]:
+            merged[name] = data[name]
+    kept = {name: value for name, value in merged.items() if value is not None}
+    if isinstance(data, dict) and "pending_items" in data:
+        kept["pending_items"] = data["pending_items"]
+    return kept
+
+
+def _interview_problems(data: dict, formats) -> list:
+    """讲稿步骤的检查问题。
+
+    已提供的内容一律检查，避免未加选的内容带着错误保存；只有已加选的交付文件
+    在缺内容时才算问题。
+    """
+    from ._interview import validate
+
+    problems = []
+    for name in INTERVIEW_FORMATS:
+        value = data.get(name)
+        if value is None:
+            if name in formats:
+                problems.append(issue(
+                    "interview_missing",
+                    "本稿已加选这项交付文件，请在讲稿步骤中一并保存它的内容。",
+                    name,
+                ))
+            continue
+        problems.extend(validate(name, value))
+    return problems
 
 
 def begin_revision(request: dict) -> dict:
@@ -651,7 +792,7 @@ def begin_revision(request: dict) -> dict:
                 if candidate.is_relative_to(work_directory) and candidate.is_file():
                     candidate.unlink()
             work["artifacts"] = {}
-            for stage in ("docx", "md", "review"):
+            for stage in ("docx", "md", "script", "qa", "review"):
                 work["steps"][stage] = {"status": "pending", "artifacts": {}, "issues": []}
             work["checks"] = {"content_consistent": False, "checked_formats": []}
             _sync_work(work, _remap(inputs, old_directory, work_directory))
@@ -689,8 +830,8 @@ def _adopt_input_requirements(inputs: dict, data) -> dict:
 
 def save_revision(request: dict) -> dict:
     stage = request["stage"]
-    if stage not in {"materials", "question", "scheme", "body"}:
-        raise ValueError("stage 必须是 materials、question、scheme 或 body")
+    if stage not in {"materials", "question", "scheme", "body", "interview"}:
+        raise ValueError("stage 必须是 materials、question、scheme、body 或 interview")
     data = deepcopy(request["data"])
     if stage in {"question", "scheme"} and not _confirmation_valid(data.get("confirmation")):
         raise ValueError("confirmation 必须保存修订编号、有效状态和用户原意及来源")
@@ -707,6 +848,8 @@ def save_revision(request: dict) -> dict:
         or not isinstance(data.get("references"), list)
     ):
         raise ValueError("正文步骤须保存 Pandoc JSON 文档及 references 数组")
+    if stage == "interview":
+        _check_interview_payload(data)
     with _locked(request["proposal_dir"]) as directory:
         state, rejected = _load(directory, request)
         if rejected:
@@ -725,16 +868,14 @@ def save_revision(request: dict) -> dict:
                     _persist_work(directory, state, work)
                 return _response(state, "needs_input", problems)
         saved_data = encode_record_paths(data, work_directory, movable_root=work_directory)
+        if stage == "interview":
+            # 一次只交其中一项时，把步骤里已有的另一项带上，补齐缺项不必重写全部内容。
+            saved_data = _merged_interview(work, saved_data)
         content_digest = json_digest(_stage_content(stage, saved_data))
         differs = work["steps"][stage].get("content_digest") != content_digest
         if differs:
-            dependent = {
-                "materials": ("body", "docx", "md", "review"),
-                "question": ("scheme", "body", "docx", "md", "review"),
-                "scheme": ("body", "docx", "md", "review"),
-                "body": ("docx", "md", "review"),
-            }[stage]
-            _invalidate(work, dependent, issue("step_changed", "上游步骤已更新，需要继续对应的后续步骤。", stage))
+            _invalidate(work, _DEPENDENT[stage],
+                        issue("step_changed", "上游步骤已更新，需要继续对应的后续步骤。", stage))
             if stage == "question":
                 _unconfirm(work, ("scheme",))
         # 每次保存件独立命名；状态替换中断也不会覆盖先前保存件。
@@ -759,6 +900,20 @@ def save_revision(request: dict) -> dict:
             artifacts.update(body=str(work_directory / BODY_NAME), references=str(work_directory / REFERENCE_NAME))
         if isinstance(data, dict) and "pending_items" in data:
             work["pending_items"] = deepcopy(data["pending_items"])
+        if stage == "interview":
+            # 内容先落盘，检查问题作为待办返回；不会因为某项未达标而丢掉已写的话。
+            problems = _interview_problems(saved_data, _delivery_formats(work))
+            work["steps"][stage] = {
+                "status": "pending" if problems else "complete",
+                "artifacts": artifacts, "issues": problems,
+                "content_digest": content_digest, "fingerprints": _artifact_digests(artifacts),
+                "path_base": STORED_PATH_BASE,
+            }
+            _persist_work(directory, state, work)
+            if problems:
+                return _response(state, "needs_input", problems,
+                                 revision_id=request["revision_id"], directory=work["directory"])
+            return _response(state, revision_id=request["revision_id"], directory=work["directory"])
         work["steps"][stage] = {
             "status": "complete", "artifacts": artifacts, "issues": [],
             "content_digest": content_digest, "fingerprints": _artifact_digests(artifacts),
@@ -787,7 +942,12 @@ def _accept_export_result(work: dict, formats: list, exported: dict) -> None:
     work["artifacts"].update(actual)
     dependencies = _dependencies(work)
     for name in formats:
-        names = ("docx", "preview_pdf", "page_images") if name == "docx" else ("md",)
+        if name == "docx":
+            names = ("docx", "preview_pdf", "page_images")
+        elif name in INTERVIEW_FORMATS:
+            names = (name,)
+        else:
+            names = ("md",)
         artifacts = {key: actual[key] for key in names if key in actual}
         default_status = "complete" if exported["status"] == "ready" else "failed"
         status = exported.get("format_status", {}).get(name, default_status)
@@ -801,12 +961,25 @@ def _accept_export_result(work: dict, formats: list, exported: dict) -> None:
     _invalidate(work, ("review",), issue("export_updated", "导出已更新，需重新读回核对内容。", "review"))
 
 
+def _interview_export_problems(work: dict) -> list:
+    """讲稿与想定问答要先通过内容检查，才生成交付文件。"""
+    if work["steps"]["interview"]["status"] == "complete":
+        return []
+    return [issue(
+        "interview_incomplete",
+        "讲稿步骤尚未通过检查，请按返回的问题补齐内容后再导出。",
+        "interview",
+    )]
+
+
 def export_revision(request: dict) -> dict:
-    # 当前使用 formats:["md"]；省略时同样采用 Markdown。
-    formats = request.get("formats", list(DELIVERY_FORMATS))
-    if not isinstance(formats, list) or not formats or any(name not in {"docx", "md"} for name in formats):
-        raise ValueError("formats 必须是 docx、md 的非空子集")
-    formats = list(dict.fromkeys(formats))
+    # 省略 formats 时交付本稿全部已选加的文件。
+    formats = request.get("formats")
+    if formats is not None and (
+        not isinstance(formats, list) or not formats
+        or any(name not in {"docx", "md", *INTERVIEW_FORMATS} for name in formats)
+    ):
+        raise ValueError("formats 必须是 docx、md、script、qa 的非空子集")
     with _locked(request["proposal_dir"]) as directory:
         state, rejected = _load(directory, request)
         if rejected:
@@ -814,6 +987,10 @@ def export_revision(request: dict) -> dict:
         work, rejected = _work_for_write(directory, state, request)
         if rejected:
             return rejected
+        if formats is None:
+            formats = _delivery_formats(work)
+        else:
+            formats = list(dict.fromkeys(formats))
         inputs = deepcopy(work["inputs"])
         # 仅 Markdown 时不接受也不采用 Word 模板参数；旧分支作为延期实现保留。
         if "docx" in formats:
@@ -823,41 +1000,64 @@ def export_revision(request: dict) -> dict:
                     work["mapping"] = None
             if "mapping" in request:
                 work["mapping"] = deepcopy(request["mapping"])
+        missing = [name for name in formats
+                   if name in INTERVIEW_FORMATS and name not in _delivery_formats(work)]
+        if missing:
+            return _response(state, "needs_input", [issue(
+                "deliverable_not_selected",
+                "本稿的 deliverables 未包含这项文件；请先在本稿输入中加选，再生成。",
+                name,
+            ) for name in missing], artifacts=_delivery_artifacts(work, valid_only=True))
         changed = _sync_work(work, inputs)
         problems = _body_prerequisites(work)
         if work["steps"]["body"]["status"] != "complete":
             problems.append(issue("body_required", "请先保存本轮有效正文，再导出稿件。", "body"))
+        if any(name in formats for name in INTERVIEW_FORMATS):
+            problems.extend(_interview_export_problems(work))
         if problems:
             if changed:
                 _persist_work(directory, state, work)
             return _response(state, "needs_input", problems, artifacts=_delivery_artifacts(work, valid_only=True))
-        from ._documents import export_documents
-        try:
-            exported = export_documents(
-                work, formats,
-                template_path=work.get("template_path") if "docx" in formats else None,
-                mapping=work.get("mapping") if "docx" in formats else None,
-            )
-        except Exception as error:
-            # 不把异常改成成功；先保留已写出的文件及失败进度。
-            partial = {}
-            for name in formats:
-                path = Path(work["directory"]) / FORMAT_NAMES[name]
-                if path.is_file():
-                    partial[name] = str(path)
-            _accept_export_result(work, formats, {
-                "status": "blocked", "artifacts": partial,
-                "issues": [issue("export_failed", str(error), work["directory"])],
-            })
-            _persist_work(directory, state, work)
-            raise
-        _accept_export_result(work, formats, exported)
+        issues: list[dict] = []
+        status = "ready"
+        document_formats = [name for name in formats if name in {"docx", "md"}]
+        if document_formats:
+            from ._documents import export_documents
+            try:
+                exported = export_documents(
+                    work, document_formats,
+                    template_path=work.get("template_path") if "docx" in document_formats else None,
+                    mapping=work.get("mapping") if "docx" in document_formats else None,
+                )
+            except Exception as error:
+                # 不把异常改成成功；先保留已写出的文件及失败进度。
+                partial = {}
+                for name in document_formats:
+                    path = Path(work["directory"]) / FORMAT_NAMES[name]
+                    if path.is_file():
+                        partial[name] = str(path)
+                _accept_export_result(work, document_formats, {
+                    "status": "blocked", "artifacts": partial,
+                    "issues": [issue("export_failed", str(error), work["directory"])],
+                })
+                _persist_work(directory, state, work)
+                raise
+            _accept_export_result(work, document_formats, exported)
+            issues.extend(exported.get("issues", []))
+            if exported["status"] != "ready" or any(
+                work["steps"][name]["status"] != "complete" for name in document_formats
+            ):
+                status = "blocked"
+        interview_formats = [name for name in formats if name in INTERVIEW_FORMATS]
+        if interview_formats:
+            from ._interview import export_interview
+            exported_interview = export_interview(work, interview_formats)
+            _accept_export_result(work, interview_formats, exported_interview)
+            issues.extend(exported_interview["issues"])
+            if exported_interview["status"] != "ready":
+                status = "blocked"
         _persist_work(directory, state, work)
-        status = exported["status"]
-        if any(work["steps"][name]["status"] != "complete" for name in formats) and status == "ready":
-            status = "blocked"
-        return _response(state, status, exported.get("issues", []),
-                         artifacts=_delivery_artifacts(work, valid_only=True))
+        return _response(state, status, issues, artifacts=_delivery_artifacts(work, valid_only=True))
 
 
 def review_revision(request: dict) -> dict:
@@ -871,10 +1071,12 @@ def review_revision(request: dict) -> dict:
             return rejected
         _sync_work(work)
         from ._documents import review_documents
+        from ._interview import review_interview
         reviewed = review_documents(work)
         checks = deepcopy(reviewed.get("checks", {}))
         issues = deepcopy(reviewed.get("issues", []))
         formats = _delivery_formats(work)
+        interview_formats = [name for name in formats if name in INTERVIEW_FORMATS]
         exported = all(work["steps"][name]["status"] == "complete" for name in formats)
         artifacts = _delivery_artifacts(work)
         checks["content_consistent"] = bool(checks.get("content_consistent")) and exported
@@ -883,6 +1085,14 @@ def review_revision(request: dict) -> dict:
             issues.append(issue(
                 "exports_incomplete", "当前交付格式尚未完成或其内容已变化，不能沿用先前核对。", "exports",
             ))
+        if interview_formats:
+            consistent, details, digests = review_interview(work, interview_formats)
+            checks["deliverable_digests"] = digests
+            if not consistent:
+                checks["content_consistent"] = False
+                issues.append(issue(
+                    "content_inconsistent", "；".join(details), str(work["directory"]),
+                ))
         work["checks"] = checks
         complete = bool(checks["content_consistent"])
         work["steps"]["review"] = {
@@ -895,20 +1105,30 @@ def review_revision(request: dict) -> dict:
 
 def _commit_problems(work: dict) -> list:
     issues = _body_prerequisites(work)
-    # 延期 Word 的状态不影响 Markdown 提交。
-    for name in ("body", "md", "review"):
+    # 延期 Word 的状态不影响 Markdown 提交；讲稿与想定问答只在加选时要求。
+    for name in ("body", "md", "interview", "script", "qa", "review"):
+        if name in INTERVIEW_FORMATS and name not in _delivery_formats(work):
+            continue
+        if name == "interview" and not set(INTERVIEW_FORMATS) & set(_delivery_formats(work)):
+            continue
         if work["steps"][name]["status"] != "complete":
             issues.append(issue("incomplete_step", "此步骤尚未完成，当前有效稿保持不变。", name))
     checks = work["checks"]
     if not checks.get("content_consistent") or list(checks.get("checked_formats") or []) != _delivery_formats(work):
-        issues.append(issue("checks_required", "必须完成 Markdown 与正式正文的内容核对，才能提交当前交付。", "checks"))
-    for filename in (BODY_NAME, REFERENCE_NAME, "研究计划输入.json", "研究计划待确认事项.md"):
+        issues.append(issue(
+            "checks_required", "必须完成交付文件与正式正文的内容核对，才能提交当前交付。", "checks",
+        ))
+    required = [BODY_NAME, REFERENCE_NAME, "研究计划输入.json", "研究计划待确认事项.md"]
+    for name in ("script", "qa"):
+        if name in _delivery_formats(work):
+            required.append(FORMAT_NAMES[name])
+    for filename in required:
         path = Path(work["directory"]) / filename
         if not path.is_file():
             issues.append(issue("missing_artifact", "本轮必要文件缺失。", str(path)))
     artifacts = _delivery_artifacts(work, valid_only=True)
     if any(name not in artifacts for name in _delivery_artifact_names(_delivery_formats(work))):
-        issues.append(issue("missing_export", "本轮 Markdown 交付文件缺失。", work["directory"]))
+        issues.append(issue("missing_export", "本轮交付文件缺失。", work["directory"]))
     if "docx" in _delivery_formats(work) and work.get("template_path") \
             and _digest_file(work["template_path"]) is None:
         issues.append(issue("template_unavailable", "本轮采用的学校模板无法读取。", work["template_path"]))

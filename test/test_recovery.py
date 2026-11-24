@@ -275,3 +275,93 @@ class RecoveryTests(SavedDraftCase):
         self.assertTrue(late_directory.exists())
         self.assertEqual(self.state()["current"]["revision_id"], winner)
         self.assertEqual(digest(winner_directory / "正文.json"), winner_hash)
+
+
+class InterviewRecoveryTests(SavedDraftCase):
+    """讲稿交付的失败与失效分支；基准是本轮已提交的真实稿件。
+
+这些用例对应 plan/test-plan.md 的 RP-14；其中场景 4 的已执行路径见 plan/test-plan-review.md 的 r23 一节。
+"""
+
+    SCRIPT = {
+        "timing": {"target_minutes": 10, "slides": 1, "chars_per_minute": 300,
+                   "tolerance_minutes": 1},
+        "sections": [{"slide": 1, "title": "整场", "minutes": 10, "script": "字" * 3000}],
+    }
+
+    def export_all(self, revision):
+        """本组用例的稿件加选了讲稿，导出本稿全部已选加文件。"""
+        return self.call("export_revision", self.request(revision))
+
+    def review_all(self, revision):
+        self.assertEqual(self.export_all(revision)["status"], "ready")
+        review = self.review(revision)
+        self.assertTrue(review["checks"]["content_consistent"], review.get("issues"))
+        return review
+
+    def ready_work(self):
+        revision = self.begin()
+        self.review_all(revision)
+        return revision
+
+    def test_missing_script_file_blocks_commit_then_recovers(self):
+        revision = self.begin()
+        directory = Path(self.work(revision)["directory"])
+        self.assertEqual(self.work(revision)["steps"]["interview"]["status"], "complete")
+        blocked = self.call("commit_revision", self.request(revision))
+        self.assertEqual(blocked["status"], "blocked")
+        self.assertIn("missing_export", {item["kind"] for item in blocked["issues"]})
+        self.assert_current_unchanged()
+        self.assertEqual(self.export_all(revision)["status"], "ready")
+        review = self.review(revision)
+        self.assertEqual(review["checks"]["checked_formats"], ["md", "script"])
+        self.assertEqual(set(review["checks"]["deliverable_digests"]), {"script"})
+        committed = self.call("commit_revision", self.request(revision))
+        self.assertEqual(committed["status"], "committed")
+        script = Path(committed["artifacts"]["script"])
+        self.assertTrue(script.is_file())
+        self.assertIn("第 1 页", script.read_text(encoding="utf-8"))
+
+    def test_edited_script_breaks_review(self):
+        revision = self.ready_work()
+        directory = Path(self.work(revision)["directory"])
+        script = directory / "研究计划讲稿.md"
+        script.write_text(script.read_text(encoding="utf-8") + "\n手改的一句。\n", encoding="utf-8")
+        result = self.review(revision)
+        self.assertFalse(result["checks"]["content_consistent"])
+        self.assertIn("不一致", "".join(item["message"] for item in result["issues"]))
+        self.assertNotEqual(self.call("commit_revision", self.request(revision))["status"], "committed")
+        self.assert_current_unchanged()
+
+    def test_changed_script_only_invalidates_script(self):
+        revision = self.ready_work()
+        before = self.work(revision)
+        changed = {**self.SCRIPT, "sections": [
+            {**self.SCRIPT["sections"][0], "script": "改" * 3000},
+        ]}
+        saved = self.call("save_revision", self.request(revision, stage="interview", data={
+            "script": changed,
+        }))
+        self.assertEqual(saved["status"], "ready")
+        after = self.work(revision)
+        self.assertEqual(after["steps"]["script"]["status"], "pending")
+        self.assertEqual(after["steps"]["md"], before["steps"]["md"])
+        self.assertEqual(after["steps"]["body"], before["steps"]["body"])
+        self.assertFalse(after["checks"]["content_consistent"])
+        self.assertEqual(self.export_all(revision)["status"], "ready")
+        self.assertTrue(self.review(revision)["checks"]["content_consistent"])
+        self.assertEqual(self.call("commit_revision", self.request(revision))["status"], "committed")
+
+    def test_body_change_invalidates_script(self):
+        revision = self.ready_work()
+        work = self.work(revision)
+        self.assertEqual(work["steps"]["script"]["status"], "complete")
+        body_path = Path(work["directory"]) / "正文.json"
+        body = read_json(body_path)
+        body["blocks"].append({"t": "Para", "c": [{"t": "Str", "c": "正文又改了一句。"}]})
+        write_json(body_path, body)
+        resumed = self.call("resume_revision", self.request(revision))
+        updated = resumed["state"]["works"][revision]
+        self.assertEqual(updated["steps"]["script"]["status"], "pending")
+        self.assertEqual(updated["steps"]["md"]["status"], "pending")
+        self.assertNotEqual(self.call("commit_revision", self.request(revision))["status"], "committed")
