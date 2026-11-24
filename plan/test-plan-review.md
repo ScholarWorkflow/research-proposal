@@ -2,7 +2,7 @@
 
 日期：2026 年 11 月 4 日。
 
-## 当前状态：r5 第一关已确认，第二关通过，第三关通过（r21 首通过，r22 随 IR-45 修复复验）
+## 当前状态：r6 新增 RP-14 已于 r23 通过第三关；r5 第一关已确认，第二关通过，第三关通过（r21 首通过，r22 随 IR-45 修复复验）
 
 环境曾在机器重启后全部丢失并已重建（见下文「r21 环境重建与第三关」）。r21 第三关首审不通过，阻断项为 RP-06 扫描页「无法判断」与 RP-13 外部能力「未执行」；复审后两项均已按计划依据闭合，第三关结论为**通过**。r20 的结论（1 项内容层阻断）与 r21 首审结论均作为历史保留，不改写。第三关通过只确认测试结果与记录，不构成合并批准。
 
@@ -385,3 +385,42 @@ D4 是后续正式执行中的产物依赖：RP-04 生成真实上游成果，RP
 当前存在的执行说明和准备交付已核对；缺失的产品命令、组件测试及最终配置无法审查其可执行性，因此不批准第二关，不推定这些部分补齐后自动通过。业务目标和预期结果继续沿用第一关结论；后续只复核新增或改变的步骤、上述缺口及直接影响，不重做无关材料检查。
 
 本地测试工程师已按本轮授权修复现有准备问题并完成专用符合性审核。剩余工作首先依赖产品实现；用户本轮指定的 `local-test-engineer` 明确要求“不修改产品代码”，因此本次没有以测试准备角色补写产品。下一负责人为产品实现负责人，随后回交本地测试工程师继续接线和第二关复核。第三关未审核、未执行。
+
+## r23：RP-14 讲稿与想定问答交付的第三关（2026-11-25）
+
+审核对象：`rp-tests-r6-interview-2026-11-25` 的 RP-14；执行计划 `rp-plan-r5-interview-2026-11-25`（已 APPROVED）。
+
+**本关结论：通过**。RP-14 的六个场景在安装后的产品上实际执行，结果符合计划预期；其余需求沿用有效结论，不因本次执行重跑。
+
+### 环境与版本
+
+| 项 | 实际值 |
+|---|---|
+| 产品提交 | `ca5ab5efceb76fc589f90e18d52e0f4a680d81e8`，从远端固定提交构建 |
+| 基线 | `786d1402929f25ca91f8cdaa4090e8bd73d6989b`（本修订前产品，用于生成旧状态） |
+| 结果根 | `/private/tmp/research-proposal-r23-run.cSceAb` |
+| 消费者 | `/private/tmp/research-proposal-r23-run.cSceAb/consumer`，`agent-env apply` 退出 0 |
+| 四个 Nix 输出 | runtime、package、environment、activate 均构建退出 0，日志在 `logs/build-*.log` |
+| 安装核对 | 技能目录含五份参考文件（新增 `interview.md`）、`_interview.py` 与 `proposal-runtime` 入口 |
+| 请求方式 | 通过安装后的 `scripts/proposal-runtime <操作> --request <JSON>` 调用，请求与结果逐次保存在 `requests/` |
+
+### 逐场景结果
+
+| 场景 | 操作与结果 |
+|---|---|
+| 1 加选并导出提交 | `begin_revision` 加选 `md`/`script`/`qa` → 保存材料、问题、方案、正文、讲稿 → `export_revision` 省略 `formats` 返回 `ready`，`artifacts` 含三份 → `review_revision` 返回 `checked_formats:["md","script","qa"]`、`content_consistent:true`、`deliverable_digests` 含 `script`/`qa` → `commit_revision` 返回 `committed`，`artifacts` 三份齐全。已提交目录含 `研究计划草稿.md`、`研究计划讲稿.md`、`研究计划想定问答.md` |
+| 2 不达标仍保存后补齐 | 提交页数不符的讲稿返回 `needs_input`，问题为 `script_structure`（页数与页码）与 `interview_missing`（另加选的 qa 未交）；`步骤-interview-*.json` 已落盘且含已写内容，步骤状态 `pending`。补齐 script 与 qa 后再次保存返回 `ready`，两件保存件均在，状态指向的保存件含 3 页 script 与 4 条 qa |
+| 3 想定问答问题 | 提交缺两个必备类别且单条答案超长的 qa 返回 `needs_input`，问题为 `qa_answer_length`（600 字约 2 分钟，超过 1 分钟上限）与 `qa_coverage`（缺「可行性与期限」「研究不足」）；同一请求中已保存的 script 被合并保留 |
+| 4 手改导出文件核对失败 | 在已提交稿上直接核对返回 `blocked`/`committed_read_only`；改建新工作版后导出、手改 `研究计划讲稿.md`，`review_revision` 返回 `blocked`，`content_consistent:false`，问题含 `content_inconsistent`（「研究计划讲稿.md 与保存内容不一致」）；随后 `commit_revision` 返回 `blocked`。还原文件后重新导出与核对恢复 `ready` |
+| 5 旧状态兼容 | 用本修订前产品 `786d140` 构建的 runtime 生成并提交一份七步状态稿件（步骤为 `body,docx,materials,md,question,review,scheme`）。改用新产品后：`resume_revision` 返回 `committed`、`commit_revision` 重报返回 `committed`、`begin_revision` 返回 `ready`，均无问题；旧稿步骤随后补齐为十项 |
+| 6 未加选不要求讲稿 | 未传 `deliverables` 建立稿件，`next_steps` 为 `["materials","question","scheme","body","md","review"]`，不含 `interview`、`script`、`qa`、`docx`；按名导出 `script` 返回 `needs_input`/`deliverable_not_selected`，未生成讲稿文件 |
+
+### 契约核对
+
+加选 `deliverables` 属于本稿输入变化：从旧稿建立新工作版并加选 `script` 后，`body` 由 `complete` 转为 `pending`，与执行计划「交付、核对与提交的条件」一节所述一致。
+
+### 未执行与限定
+
+- 本轮未重跑 RP-01 至 RP-13 的业务场景。RP-01、RP-02 的安装检查在本次安装中顺带核到技能目录含五份参考文件与 `_interview.py`；其余编号沿用 `test-results.md` 的有效记录，受影响面仅为本次新增的交付与保存步骤。
+- 组件测试结果（27/8/4）见 `test-results.md` 的 r23 一节，作为本关的补充证据。
+- 本关只确认 RP-14 的测试结果与记录，不构成合并批准。
