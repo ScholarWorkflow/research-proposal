@@ -267,7 +267,7 @@ Plan conclusion: APPROVED
 
 - `Requirement revision`：`rp-requirements-r3-interview-2026-11-25`（含第一批与第二批追加条目）
 - `Plan revision`：`rp-plan-r6-novelty-2026-11-25`，取代 r5
-- `Candidate SHA256`：`bdec39f5930d5c25270914b6931aed0eb54d13aad6c24d37e316b329d59dd09b`
+- `Candidate SHA256`：`5c5c79e8fccfb5546430ec4b49e1d5c273e4b719309243be43819943cd4bf8ff`
 - `Target repository revision`：分支 `feat/novelty-guidance`，HEAD `06ea2a9`，基线 `f5c140f`
 - `Relevant upstream/runtime revision`：N/A（只改技能文档，不改变上游、依赖或运行版本）
 
@@ -287,10 +287,12 @@ Plan conclusion: APPROVED
 
 | 编号 | 内容 | 处理 |
 |---|---|---|
-| N-01 | `Requirement revision` 只列第一批，第二批修正只在正文出现 | 已在计划第 11 行补记第二批与原话来源 |
-| N-02 | 两处把第三落点简写为「对象」，权威表述是「对象或数据」 | 已统一为「对象或数据」 |
+| N-01 | `Requirement revision` 只列第一批，第二批修正只在正文出现 | 已把两批合并为一条需求记录，同时列明四项要求与第二批的修正来源，不再按批次归属 |
+| N-02 | 两处把第三落点简写为「对象」，权威表述是「对象或数据」 | 已统一为「对象或数据」（含「有限补查」证据表一处） |
 | N-03 | 计划只列两份 references，漏 `SKILL.md` 的文件级变化 | 已在第 11 行补记 |
 | N-04 | 第 364 行「此前」指代不明 | 已改为「本分支上一版草稿（`da1ea06`）」，并注明该句不在 r5 内 |
 | N-05 | `test-plan-review.md` 尚无 r7 的关口记录 | 交测试计划负责人；r7 只改版本与指针，未新增必测项 |
+
+**审计说明**：本记录审核的是 `06ea2a9` 上的计划正文（当时 SHA256 `d8a31354…`）。审核提出 N-01 至 N-04 后，计划做了编辑性修订：合并两批需求记录的归属、统一第三落点称谓；修正后的 SHA256 为上表所列值，行为范围与 P1–P4 的结论未变。产品 HEAD 与计划的对应关系以 `Target repository revision` 与 `Candidate SHA256` 两行为准。
 
 **限定**：该结论只表示当前方案适合实施，不代表实现正确、测试关口通过或可以合并。审核未运行构建、测试或产品入口；测试计划关口与合并条件不在本结论内。
