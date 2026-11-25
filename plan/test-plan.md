@@ -4,10 +4,10 @@
 
 ## 版本与范围
 
-- 测试计划版本：`rp-tests-r6-interview-2026-11-25`，取代 `rp-tests-r5-markdown-2026-11-04`；本次只新增 RP-14，其余编号与场景沿用。
+- 测试计划版本：`rp-tests-r7-novelty-2026-11-25`，取代 `rp-tests-r6-interview-2026-11-25`；本次不新增必测项，RP-01 至 RP-14 及其场景沿用，RP-09 继续延期。
 - 需求版本：`rp-requirements-r3-interview-2026-11-25`；沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
-- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r5-interview-2026-11-25`，校验值 `aec2492a0b3d655a3e6797f222f4ea32782610a6bd9bc24352b4abe34a59d5f3`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。
-- 目标仓库：`research-proposal`；工作树：`.agents/worktrees/research-proposal-interview`；分支：`feat/interview-script-artifacts`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
+- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r6-novelty-2026-11-25`，校验值 `5c5c79e8fccfb5546430ec4b49e1d5c273e4b719309243be43819943cd4bf8ff`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。
+- 目标仓库：`research-proposal`；工作树：`.agents/worktrees/research-proposal-novelty`；分支：`feat/novelty-guidance`，基线 `f5c140f`。RP-14 的正式执行环境仍为上一轮的分支 `feat/interview-script-artifacts` 与结果根 `/private/tmp/research-proposal-r23-run.cSceAb`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
 - 执行说明版本：`rp-recipe-r15-interview-2026-11-25`，替代 `rp-recipe-r14-markdown-2026-11-04`。本次修订替代 r5 业务清单及 r14 的现行执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
 - 本次准备清除与本范围矛盾的残留步骤：RP-09 的 Word 模板映射、`test_export.TemplateTests`（该文件已在工作区删除）、RP-08 的“所有产品页图”阅读、RP-11 的受控 `page_review` 分支。清理依据为已获批准的 r14 范围与 `Test Engineer Rule.md` 第 6 节“超范围要求必须从计划中删除”，不是临场删测或缩项。
 
@@ -191,7 +191,7 @@
 
 ### 当前版本与复用范围
 
-本节版本为 `rp-recipe-r15-interview-2026-11-25`，落实上面的 r6 业务清单，整段替代 r14 的现行执行义务。当前交付验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态，并按需加选验收讲稿与想定问答（RP-14）。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
+本节版本为 `rp-recipe-r15-interview-2026-11-25`，落实上面的 r7 业务清单（清单内容与 r6 相同），整段替代 r14 的现行执行义务。当前交付验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态，并按需加选验收讲稿与想定问答（RP-14）。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
 
 RP-14 的执行步骤：在隔离消费者中从已提交稿件出发，先加选 `script`（必要时加 `qa`）并保存内容，再导出、核对、提交，逐场景记录结果；用例与场景对应见 `test-results.md` 的 r23 一节。旧状态场景用本修订前代码生成状态文件，只改测试准备，不改产品。
 
