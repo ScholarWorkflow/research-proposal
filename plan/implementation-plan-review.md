@@ -268,7 +268,7 @@ Plan conclusion: APPROVED
 - `Requirement revision`：`rp-requirements-r3-interview-2026-11-25`（含第一批与第二批追加条目）
 - `Plan revision`：`rp-plan-r6-novelty-2026-11-25`，取代 r5
 - `Candidate SHA256`：`5c5c79e8fccfb5546430ec4b49e1d5c273e4b719309243be43819943cd4bf8ff`
-- `Target repository revision`：分支 `feat/novelty-guidance`，HEAD `06ea2a9`，基线 `f5c140f`
+- `Target repository revision`：分支 `feat/novelty-guidance`，HEAD `36d537e`（审阅时计划正文来源为 `06ea2a9`），基线 `f5c140f`
 - `Relevant upstream/runtime revision`：N/A（只改技能文档，不改变上游、依赖或运行版本）
 
 | 关口 | 结论 |
@@ -293,6 +293,8 @@ Plan conclusion: APPROVED
 | N-04 | 第 364 行「此前」指代不明 | 已改为「本分支上一版草稿（`da1ea06`）」，并注明该句不在 r5 内 |
 | N-05 | `test-plan-review.md` 尚无 r7 的关口记录 | 交测试计划负责人；r7 只改版本与指针，未新增必测项 |
 
-**审计说明**：本记录审核的是 `06ea2a9` 上的计划正文（当时 SHA256 `d8a31354…`）。审核提出 N-01 至 N-04 后，计划做了编辑性修订：合并两批需求记录的归属、统一第三落点称谓；修正后的 SHA256 为上表所列值，行为范围与 P1–P4 的结论未变。产品 HEAD 与计划的对应关系以 `Target repository revision` 与 `Candidate SHA256` 两行为准。
+**审计说明**：本记录审核的是 `06ea2a9` 上的计划正文（当时 SHA256 `d8a31354…`）。审核提出 N-01 至 N-04 后，计划做了编辑性修订：`plan/implementation-plan.md:11` 合并两批需求记录、补第二批来源与 `SKILL.md` 文件级接入；`:364` 把「此前」明确为 `da1ea06`，并注明该句不在 r5 内。第三落点称谓的修订在 `skills/research-proposal/references/research-design.md:27`，并同步同文件 `:176` 与 `SKILL.md:59`，不在计划正文。修正后计划 SHA256 为 `5c5c79e8…`。
+
+审核者已对 `d8a31354…` 与 `5c5c79e8…` 做 diff 级适用性确认：两者之间只有需求记录与措辞的编辑性修订，行为范围、必测范围、接口、依赖、owner 与 P1–P4 结论不变，原 `APPROVED` 继续适用于 `5c5c79e8…`，不需要重开任何关口。
 
 **限定**：该结论只表示当前方案适合实施，不代表实现正确、测试关口通过或可以合并。审核未运行构建、测试或产品入口；测试计划关口与合并条件不在本结论内。
