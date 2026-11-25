@@ -260,3 +260,37 @@ Plan conclusion: APPROVED
 | P-15 | `test-plan.md` 的执行说明段仍写 `rp-recipe-r14-markdown-2026-11-04`、指向 r5 业务清单，未含 RP-14 步骤 | 测试计划负责人 | 已在 `50651c9` 之后的提交中处理：执行说明升为 `rp-recipe-r15-interview-2026-11-25`，范围句加入 RP-14，并补 RP-14 的执行步骤；`test-plan-review.md` 与 `test-preparation-review.md` 是历史记录，保留原文 |
 
 **限定**：该结论只表示当前方案适合实施，不代表实现正确、第三关通过或可以合并。本轮审核未运行代码与测试，未审 Nix 构建与真实会话。
+
+## r6：新颖性、先行研究关系与准备程度（2026-11-25）
+
+审核类型：执行计划审核（r6 修订复核）。审核者：专用 `plan_reviewer` 代理（只读）。
+
+- `Requirement revision`：`rp-requirements-r3-interview-2026-11-25`（含第一批与第二批追加条目）
+- `Plan revision`：`rp-plan-r6-novelty-2026-11-25`，取代 r5
+- `Candidate SHA256`：`bdec39f5930d5c25270914b6931aed0eb54d13aad6c24d37e316b329d59dd09b`
+- `Target repository revision`：分支 `feat/novelty-guidance`，HEAD `06ea2a9`，基线 `f5c140f`
+- `Relevant upstream/runtime revision`：N/A（只改技能文档，不改变上游、依赖或运行版本）
+
+| 关口 | 结论 |
+|---|---|
+| P1 Requirement & Reality Grounding | PASS |
+| P2 Solution Validity & Ownership | PASS |
+| P3 Impact, Safety & Counterexample | PASS |
+| P4 Executability | PASS |
+| Gate review completeness | COMPLETE |
+
+**Plan conclusion: APPROVED**
+
+`Approved behavior changes`：新增写作与面试判断（四节参考规则、三类追问、`SKILL.md` 相关研究与中文方案两步接入），来源为用户 2026 年 11 月 25 日两批材料。这些是指导内容，不改变组件行为；r4、r5 的 Markdown 与讲稿交付变化继续有效。
+
+**审核发现（均为非阻断，已处理）**：
+
+| 编号 | 内容 | 处理 |
+|---|---|---|
+| N-01 | `Requirement revision` 只列第一批，第二批修正只在正文出现 | 已在计划第 11 行补记第二批与原话来源 |
+| N-02 | 两处把第三落点简写为「对象」，权威表述是「对象或数据」 | 已统一为「对象或数据」 |
+| N-03 | 计划只列两份 references，漏 `SKILL.md` 的文件级变化 | 已在第 11 行补记 |
+| N-04 | 第 364 行「此前」指代不明 | 已改为「本分支上一版草稿（`da1ea06`）」，并注明该句不在 r5 内 |
+| N-05 | `test-plan-review.md` 尚无 r7 的关口记录 | 交测试计划负责人；r7 只改版本与指针，未新增必测项 |
+
+**限定**：该结论只表示当前方案适合实施，不代表实现正确、测试关口通过或可以合并。审核未运行构建、测试或产品入口；测试计划关口与合并条件不在本结论内。
