@@ -89,7 +89,7 @@
 
 | `stage` | `data` |
 |---|---|
-| `materials` | `{materials:[read_material返回的完整material对象], candidates:[候选], literature:[补查记录], issues:[缺项], pending_items:[待确认文字]}`。摘要、解释、转换与原文核对可在同一 `data` 内另记，不能改写 `materials` 中的组件记录。候选说明问题、材料编号和定位、价值、方法、缺项；补查记录保留来源、读取范围、结论及定位。从项目要求材料整理出的栏目、语言、篇幅等结构化要求另放 `input_requirements`。组件保存整个对象，路径在 `steps.materials.artifacts.data`。 |
+| `materials` | `{materials:[read_material返回的完整material对象], candidates:[候选], literature:[补查记录], issues:[缺项], pending_items:[待确认文字]}`。摘要、解释、转换与原文核对可在同一 `data` 内另记，不能改写 `materials` 中的组件记录。候选说明问题、材料编号和定位、价值、方法、缺项；补查记录保留来源、读取范围、结论及定位。候选需要比较时，把权重、证据截止时间、逐项分数和依据放在同一 `data` 的 `candidate_scores`，与 `candidates` 并列；详细规则见[候选选题评分](candidate-scoring.md)。从项目要求材料整理出的栏目、语言、篇幅等结构化要求另放 `input_requirements`。组件保存整个对象，路径在 `steps.materials.artifacts.data`。 |
 | `question` | `{question_id, text, confirmation, pending_items}`。先保存具体候选或待选问题，再取得用户真实决定；选定后固定本稿核心问题编号。 |
 | `scheme` | `{scheme, conditions:{resolved,notes}, confirmation, pending_items}`。`scheme` 保存实际中文方案、方法、验证、期限、备用和来源；未解决的条件用 `resolved:false`。 |
 | `body` | `{body: Pandoc文档对象, references:[引用关联], pending_items}`。正文必须基于当前有效的问题与方案确认、已解决关键条件。 |
