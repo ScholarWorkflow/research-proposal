@@ -1,6 +1,62 @@
 # 研究计划草稿技能计划审核记录
 
-## 当前状态：r4 Markdown 交付修订已通过
+## 当前状态：r9 撞车评分映射与篇数上限已通过
+
+## r9 撞车评分映射与篇数上限（2026-11-26）
+
+用户 2026 年 11 月 26 日追加两点：评估评分细则是否需要新增维度；去掉“五篇左右”的篇数上限。评估结论是不新增第十个评分项，改为在 `candidate-scoring.md` 增加撞车类型到既有评分项的映射；三步诊断改为篇数不设上限。执行计划为 `rp-plan-r9-collision-scoring-2026-11-26`，需求 `rp-requirements-r5-collision-scoring-2026-11-26`，目标分支 `feat/collision-guidance`，基线 `8032701`，当前 head `1bddb0c`。独立审核者为专用 `plan_reviewer`，只读，未修改文件、未运行测试。
+
+首次审核提出 P3-01：新映射把方法置换、对象置换、同结论不同路径统一写成“按 1 分”，并给方法置换增加“多回答什么”，比既有「空白成因 1 分」的方法判据更严，属于改变评分判据而不是映射。计划作者改为“只说明落到哪一项，不重述、不收紧判据”，映射表按既有判据引用，不固定分数、不新增条件；计划第 373、396 行同步写明九项权重、两项硬门槛和九项 0/1/2 判据不变，第 396 行另写评分公式不变。复审 P3-01 关闭，结论 `APPROVED`。
+
+```text
+Plan revision: rp-plan-r9-collision-scoring-2026-11-26
+Requirement revision: rp-requirements-r5-collision-scoring-2026-11-26
+Target repository revision: research-proposal 分支 feat/collision-guidance，HEAD 1bddb0c，基线 8032701
+Candidate SHA256: d49b9135a67acda9a5442f173e28566e4d21d763c5e919827040c09ea288966c
+P1 Requirement & Reality Grounding: PASS
+P2 Solution Validity & Ownership: PASS
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE（r9 修正及直接影响；r8 未触及条款复用）
+Critical assumptions: N/A
+Unresolved impacts: N/A
+Approved behavior changes: 不新增第十个评分项；candidate-scoring.md 增加撞车类型到既有评分项的映射；去掉“五篇左右”，改为篇数不设上限；九项权重、两项硬门槛、评分公式和九项 0/1/2 判据不变
+Reused prior Plan Gate PASS: r9 的 P1、P2、P4；P3 原残留已由第 396 行修正关闭
+Required modifications: N/A
+Missing evidence: N/A（测试计划与执行不在本轮范围）
+Plan conclusion: APPROVED
+```
+
+本结论只表示当前方案适合实施，不表示实现正确、测试通过或可以合并。
+
+## r8 撞车判断文档增补（2026-11-26）
+
+用户 2026 年 11 月 26 日要求在技能中增加一节“研究方向撞车”的判断标准和建议，只改文档，不改产品接口、状态、依赖和交付行为。执行计划改为 `rp-plan-r8-collision-2026-11-26`，需求为 `rp-requirements-r4-collision-2026-11-26`，目标为分支 `feat/collision-guidance`、基线 `8032701`。独立审核者为专用 `plan_reviewer` 代理，只读审核计划修订及直接影响，未修改文件、未运行测试。
+
+首次审核（候选 SHA256 `984e3b23fcd5cec08f6291601b6a0936866208e4cfa6ed0e28109af3b0a9b7b3`）结论为 `NEEDS_MODIFICATION`，提出四项阻塞：面试三句只从研究步骤可达；新节与既有新颖性、空白成因评分、矛盾处理规则没有优先级；计划未写隐私边界；未把保留行为和本次获批变化记全。计划作者据此修订为 r8，并在第 366、368、382、391 行补入面试指针、诊断层兼容说明、隐私禁止项和保留行为；复审结论为 `APPROVED`。
+
+复审后按非阻断文案建议修正四处（断链、措辞、范围摘要、状态措辞），候选 SHA256 变为 `18113696a3a292d33ee7adf19be8edcee1de30a867b53c16a2d474b29c646ab6`。审核者确认这四处只涉及文案、指针和路径，未改变需求、owner、change point、保留行为、隐私边界或测试范围，原 `APPROVED` 继续适用，不需要重开 P2/P3。
+
+```text
+Plan revision: rp-plan-r8-collision-2026-11-26
+Requirement revision: rp-requirements-r4-collision-2026-11-26
+Target repository revision: research-proposal 分支 feat/collision-guidance，HEAD 8032701（PR #5 合并后的 main）
+Candidate SHA256: 18113696a3a292d33ee7adf19be8edcee1de30a867b53c16a2d474b29c646ab6
+P1 Requirement & Reality Grounding: PASS
+P2 Solution Validity & Ownership: PASS
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE（r8 修正及直接影响；r6 未触及条款复用）
+Critical assumptions: N/A
+Unresolved impacts: N/A
+Approved behavior changes: 在研究设计中增加撞车判断，并在 SKILL.md 相关研究步骤与 interview.md 三类追问末尾接入；来源 rp-requirements-r4-collision-2026-11-26
+Reused prior Plan Gate PASS: P1、P4 复用 r7 的结论；P2、P3 针对 r8 修正重新检查后 PASS
+Required modifications: N/A
+Missing evidence: N/A（测试计划与执行不在本轮范围）
+Plan conclusion: APPROVED
+```
+
+本结论只表示当前方案适合实施，不表示实现正确、测试通过或可以合并；测试计划与合并审核由对应关口负责。
 
 ## r4 第 177 行依赖基线的文字更正（不升版）
 
