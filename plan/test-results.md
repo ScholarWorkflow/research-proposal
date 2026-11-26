@@ -578,3 +578,23 @@ RP-13 的原稿状态含绝对工作目录，普通副本续接会指回原稿�
 **复用**：RP-01 至 RP-14 的既有结果不受文档增补影响，直接沿用，不因本次提交编号变化重跑。本轮未执行安装、组件测试或实际会话。
 
 **限定**：本记录只说明 RP-15 的检查结果，不构成计划关口、第三关或合并批准；第三关结论见 `test-plan-review.md` 的 r8 一节。
+
+## r25：撞车评分映射与篇数上限修正（2026-11-26）
+
+用户追加要求：评估评分细则是否需要新增维度；去掉“五篇左右”的篇数上限。评估结论是不新增第十个评分项，改为在 `candidate-scoring.md` 增加撞车类型到既有评分项的映射；三步诊断改为“篇数不设上限、不按固定篇数停手”。计划依据为 `rp-plan-r9-collision-scoring-2026-11-26`（SHA256 `d49b9135…`），测试计划 `rp-tests-r9-collision-scoring-2026-11-26`（SHA256 `260ac730…`），执行说明 `rp-recipe-r17-collision-scoring-2026-11-26`。目标分支 `feat/collision-guidance`，基线 `8032701`。
+
+**执行方式**：在仓库外 `/tmp/rp-collision-check` 运行只读检查脚本 `check_docs.py`，同时执行基线 diff。完整输出保存在 `/tmp/rp-collision-check/rp15-run-r9b.log`。不安装、不启动产品、不运行组件测试。
+
+| 检查 | 结果 |
+|---|---|
+| 基线 diff（`skills/research-proposal flake.nix flake.lock nix README.md`） | 4 files changed，94 insertions(+)，1 deletion(-)：`SKILL.md`、`candidate-scoring.md`、`interview.md`、`research-design.md` |
+| `candidate-scoring.md` 定向 diff | 19 insertions(+)，无删除行；只新增「撞车类型怎么落到评分」 |
+| `skills/research-proposal/scripts` 与 `test/` diff | 空 |
+| 只读检查脚本 | PASS 133 checks |
+| `git diff --check` | PASS |
+
+**覆盖**：`candidate-scoring.md` 的九项权重表、两项硬门槛、评分公式和九项 0/1/2 判据未改；新增映射明确“不是第十个评分项”，只说明四类撞车与三种结论状态落到「先行核对」「空白成因」「新意落点」「价值」的哪一项，不固定 1 分、不新增条件；三步诊断不再出现“五篇”，写明“篇数不设上限”“不要按固定篇数停手”；“五篇工作”改为“多篇工作”；新增行未出现真实人名、学校、机构、产品名或具体论文示例。
+
+**复用**：RP-01 至 RP-14 的既有结果不受本次文档修正影响，直接沿用；r24 的 RP-15 结果只覆盖上一版三份文档，本轮的 4 文件结果以本节为准。
+
+**限定**：本记录只说明 RP-15 的检查结果，不构成计划关口、第三关或合并批准；第三关结论见 `test-plan-review.md` 的 r9 一节。

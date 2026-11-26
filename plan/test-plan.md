@@ -4,18 +4,18 @@
 
 ## 版本与范围
 
-- 测试计划版本：`rp-tests-r8-collision-2026-11-26`，取代 `rp-tests-r7-novelty-2026-11-25`；本次新增 RP-15，RP-01 至 RP-14 及其场景沿用，RP-09 继续延期。
-- 需求版本：`rp-requirements-r4-collision-2026-11-26`；沿用 `rp-requirements-r3-interview-2026-11-25` 的已确认要求，并增加“撞车判断文档”这一文档目标。沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
-- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r8-collision-2026-11-26`，校验值 `18113696a3a292d33ee7adf19be8edcee1de30a867b53c16a2d474b29c646ab6`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。
+- 测试计划版本：`rp-tests-r9-collision-scoring-2026-11-26`，取代 `rp-tests-r8-collision-2026-11-26`；本次不新增必测项，RP-15 增加评分映射与篇数上限检查，RP-01 至 RP-14 及其场景沿用，RP-09 继续延期。
+- 需求版本：`rp-requirements-r5-collision-scoring-2026-11-26`；沿用 `rp-requirements-r4-collision-2026-11-26` 的已确认要求，并增加“撞车诊断不设篇数上限”和“评分细则不新增维度、只加映射”两项。沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
+- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r9-collision-scoring-2026-11-26`，校验值 `d49b9135a67acda9a5442f173e28566e4d21d763c5e919827040c09ea288966c`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。
 - 目标仓库：`research-proposal`；工作树：`.agents/worktrees/research-proposal-collision`；分支：`feat/collision-guidance`，基线 `8032701`。RP-14 的正式执行环境仍为上一轮的分支 `feat/interview-script-artifacts` 与结果根 `/private/tmp/research-proposal-r23-run.cSceAb`。首个正式产品为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 执行说明版本：`rp-recipe-r16-collision-2026-11-26`，替代 `rp-recipe-r15-interview-2026-11-25`。本次修订只新增 RP-15 的直接文件检查，不改变 RP-01 至 RP-14 的执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
+- 执行说明版本：`rp-recipe-r17-collision-scoring-2026-11-26`，替代 `rp-recipe-r16-collision-2026-11-26`。本次修订只更新 RP-15 的直接文件检查，不改变 RP-01 至 RP-14 的执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
 - 本次准备清除与本范围矛盾的残留步骤：RP-09 的 Word 模板映射、`test_export.TemplateTests`（该文件已在工作区删除）、RP-08 的“所有产品页图”阅读、RP-11 的受控 `page_review` 分支。清理依据为已获批准的 r14 范围与 `Test Engineer Rule.md` 第 6 节“超范围要求必须从计划中删除”，不是临场删测或缩项。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
-下面除已明确延期的 RP-09 外，RP-01 至 RP-15 的编号及各项明确列出的场景构成唯一必测清单；RP-15 为本修订新增。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
+下面除已明确延期的 RP-09 外，RP-01 至 RP-15 的编号及各项明确列出的场景构成唯一必测清单；RP-15 沿用 r8 并增加评分映射与篇数上限检查。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
 
-只验收本仓库的安装交付、输入发现与交接安排、材料整理、研究设计、Markdown 成稿、修改、恢复、按需加选的讲稿与想定问答交付，以及本次新增的撞车判断文档。上游产物由 Recipe 手动准备为输入；不运行采集、Zotero 保存、全文下载、论文分析或套磁候选生成来证明这些输入的生成过程，也不验收上游子代理、服务、批次或委派链。已有上游检查随产品发现入口正常使用，不为本次测试重写或绕过它们。
+只验收本仓库的安装交付、输入发现与交接安排、材料整理、研究设计、Markdown 成稿、修改、恢复、按需加选的讲稿与想定问答交付，以及本次新增的撞车判断文档与评分映射。上游产物由 Recipe 手动准备为输入；不运行采集、Zotero 保存、全文下载、论文分析或套磁候选生成来证明这些输入的生成过程，也不验收上游子代理、服务、批次或委派链。已有上游检查随产品发现入口正常使用，不为本次测试重写或绕过它们。
 
 每项按自己的观察点判断，不因某项安排了实际会话，就重新检查其他项已经覆盖的全部行为。不追加所有学科、学校、语言、文件格式的组合，不测试其他平台或运行工具，不重新验收共享安装器或模型服务。RP-04、RP-05 不再是 RP-07、RP-08 的前置运行；本次手工准备的是外部输入，不是 research-proposal 的成功输出或用户确认。
 
@@ -167,9 +167,9 @@
 
 **目标**：技能在研究设计参考中提供“研究方向撞车”的判断标准和建议，用户能从相关研究步骤和面试追问入口读到；新内容不改变既有新颖性、候选评分、面试三类追问和产品行为。
 
-**输入或场景**：直接读取技能源码中的 `references/research-design.md`、`SKILL.md`、`references/interview.md` 和 `references/candidate-scoring.md`；不安装、不启动产品、不运行组件测试。用基线 `8032701` 做一次只读 diff：`git diff --stat 8032701 -- skills/research-proposal flake.nix flake.lock nix README.md` 与 `git diff 8032701 -- skills/research-proposal/SKILL.md skills/research-proposal/references/research-design.md skills/research-proposal/references/interview.md skills/research-proposal/references/candidate-scoring.md`，确认只新增撞车一节和两处入口，`candidate-scoring.md` 无改动，frontmatter、脚本、依赖和安装文件未变。检查新节是否位于「新颖性写在哪里」与「与教授已有研究的关系」之间，两个入口是否可达，新节是否覆盖四类撞车、三种结论状态、三步诊断、四种切口、两个以上放弃信号和面试三句，是否保留“诊断层”边界与“换基底或指标”的更高门槛。隐私检查只看新增行，核对不含真实人名、学校、机构、产品名或具体论文示例。
+**输入或场景**：直接读取技能源码中的 `references/research-design.md`、`SKILL.md`、`references/interview.md` 和 `references/candidate-scoring.md`；不安装、不启动产品、不运行组件测试。用基线 `8032701` 做一次只读 diff：`git diff --stat 8032701 -- skills/research-proposal flake.nix flake.lock nix README.md` 与 `git diff 8032701 -- skills/research-proposal/SKILL.md skills/research-proposal/references/research-design.md skills/research-proposal/references/interview.md skills/research-proposal/references/candidate-scoring.md`，确认只新增撞车一节、两处入口和 `candidate-scoring.md` 的评分映射；`candidate-scoring.md` 的九项权重、两项硬门槛、评分公式和九项 0/1/2 判据不变；评分映射只引用既有判据，不固定分数、不新增条件；`research-design.md` 的三步诊断不再出现固定篇数（如「五篇左右」），改为篇数不设上限、不按固定篇数停手；frontmatter、脚本、依赖和安装文件未变。检查新节是否位于「新颖性写在哪里」与「与教授已有研究的关系」之间，两个入口是否可达，新节是否覆盖四类撞车、三种结论状态、三步诊断、四种切口、两个以上信号和面试三句，是否保留“诊断层”边界与“换基底或指标”的更高门槛；评分映射是否明确“不是第十个评分项”，并落到既有评分项。隐私检查只看新增行，核对不含真实人名、学校、机构、产品名或具体论文示例。
 
-**预期结果**：新节存在且入口可达；内容覆盖上述判断项；相对链接与锚点有效；基线 diff 只包含新节和两处入口；既有 `candidate-scoring.md` 的权重与硬门槛、`interview.md` 的三类追问和 `research-design.md` 原有各节未被改写；没有把用户材料中的可识别信息带入公开技能文档。
+**预期结果**：新节存在且入口可达；内容覆盖上述判断项；相对链接与锚点有效；基线 diff 只包含新节、两处入口和评分映射；`candidate-scoring.md` 只新增映射，九项权重、两项硬门槛、评分公式和九项 0/1/2 判据未改；映射没有「按 1 分」或额外「多回答什么」条件；三步诊断不设固定篇数上限；`interview.md` 的三类追问和 `research-design.md` 原有各节未被改写；没有把用户材料中的可识别信息带入公开技能文档。
 
 **检查方式**：直接阅读改动后的四份文档，运行一次基线 diff 和一次只读的链接/锚点/关键词检查脚本；脚本只对新增行做隐私检查。不运行安装、组件测试或实际会话。RP-01 至 RP-14 的既有结果不受文档增补影响，直接沿用，不因本次提交编号变化重跑。检查脚本放在仓库外临时目录，不提交。
 
@@ -201,11 +201,11 @@
 
 ### 当前版本与复用范围
 
-本节版本为 `rp-recipe-r16-collision-2026-11-26`，落实上面的 r8 业务清单；RP-01 至 RP-14 沿用 r7，新增 RP-15，整段替代 r15 的现行执行义务。当前交付验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态，并按需加选验收讲稿与想定问答（RP-14）。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
+本节版本为 `rp-recipe-r17-collision-scoring-2026-11-26`，落实上面的 r9 业务清单；RP-01 至 RP-14 沿用 r7，RP-15 沿用 r8 并增加评分映射与篇数上限检查，整段替代 r16 的现行执行义务。当前交付验收论文日文稿和非论文中文稿的 Markdown、正式正文、引用、确认及版本状态，并按需加选验收讲稿与想定问答（RP-14）。Word 生成、模板填写、LibreOffice 转换、页图核对及相关权限候选均撤回本轮执行；RP-09 延后，不增加替代页面检查。
 
 RP-14 的执行步骤：在隔离消费者中从已提交稿件出发，先加选 `script`（必要时加 `qa`）并保存内容，再导出、核对、提交，逐场景记录结果；用例与场景对应见 `test-results.md` 的 r23 一节。旧状态场景用本修订前代码生成状态文件，只改测试准备，不改产品。
 
-RP-15 的执行步骤：直接读取 `skills/research-proposal/references/research-design.md`、`skills/research-proposal/SKILL.md`、`skills/research-proposal/references/interview.md` 和 `skills/research-proposal/references/candidate-scoring.md`；用基线 `8032701` 运行 `git diff --stat 8032701 -- skills/research-proposal flake.nix flake.lock nix README.md` 和 `git diff 8032701 -- <上述四份文档>`，确认只新增撞车一节及两处入口、`candidate-scoring.md` 无改动、frontmatter/脚本/依赖/安装未变；运行仓库外临时目录中的只读链接/锚点/关键词脚本，隐私检查只看新增行。不安装、不启动产品、不运行组件测试，也不重跑 RP-01 至 RP-14。
+RP-15 的执行步骤：直接读取 `skills/research-proposal/references/research-design.md`、`skills/research-proposal/SKILL.md`、`skills/research-proposal/references/interview.md` 和 `skills/research-proposal/references/candidate-scoring.md`；用基线 `8032701` 运行 `git diff --stat 8032701 -- skills/research-proposal flake.nix flake.lock nix README.md` 和 `git diff 8032701 -- <上述四份文档>`，确认只新增撞车一节、两处入口和评分映射，`candidate-scoring.md` 的九项权重、两项硬门槛、评分公式和九项 0/1/2 判据未改，映射不固定分数、不新增条件，三步诊断不再出现固定篇数，frontmatter/脚本/依赖/安装未变；运行仓库外临时目录中的只读链接/锚点/关键词脚本，隐私检查只看新增行。不安装、不启动产品、不运行组件测试，也不重跑 RP-01 至 RP-14。
 
 旧产品 b983 的 r13 运行、失败和诊断保留，不视为 Markdown 完成。RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划「版本保存以一份核对完成的交付集为提交单位」一节与「提交顺序」第 3 步声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
 
