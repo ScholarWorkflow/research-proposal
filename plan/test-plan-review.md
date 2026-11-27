@@ -51,7 +51,7 @@ r8 新增 RP-15「撞车判断文档」的第一关、第二关、第三关已�
 
 ### 第三关：通过
 
-执行结果见 [test-results.md](test-results.md) r26 一节。基线 diff 为 4 files changed、102 insertions(+)、5 deletions(-)，只有 `SKILL.md`（2+/2−）、`references/candidate-scoring.md`（4+/1−）、`references/interview.md`（7+/0−）、`references/research-design.md`（89+/2−）；`flake.nix`、`flake.lock`、`nix/`、`README.md`、`test/`、`skills/research-proposal/scripts` 均无 diff，frontmatter 未改。只读检查脚本 `PASS 66 checks`、`ALL OK`、退出 0；`git diff --check` 无输出。RP-01 至 RP-15 未重跑，按计划沿用既有结果。
+执行结果见 [test-results.md](test-results.md) r26 一节。基线 diff 为 4 files changed、103 insertions(+)、5 deletions(-)，只有 `SKILL.md`（2+/2−）、`references/candidate-scoring.md`（4+/1−）、`references/interview.md`（7+/0−）、`references/research-design.md`（90+/2−）；`flake.nix`、`flake.lock`、`nix/`、`README.md`、`test/`、`skills/research-proposal/scripts` 均无 diff，frontmatter 未改。只读检查脚本 `PASS 66 checks`、`ALL OK`、退出 0；`git diff --check` 无输出。RP-01 至 RP-15 未重跑，按计划沿用既有结果。上述数字是第三关执行时的快照；实现审核采纳 O-01 至 O-03 三项措辞观察后，`research-design.md` 变为 90+/2−、合计 103 insertions(+)，复跑结果与修正内容见 [test-results.md](test-results.md) r26 的「实现审核后的措辞修正」段。
 
 记录限定：
 
