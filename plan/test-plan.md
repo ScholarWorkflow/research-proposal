@@ -4,16 +4,16 @@
 
 ## 版本与范围
 
-- 测试计划版本：`rp-tests-r10-direction-alignment-2026-11-27`，取代 `rp-tests-r9-collision-scoring-2026-11-26`；本次新增必测项 RP-16，检查教授方向对齐的三节文档（研究室轴、学术脉络定位、多课题点合并），RP-01 至 RP-15 及其场景全部沿用，RP-09 继续延期。
-- 需求版本：`rp-requirements-r6-direction-alignment-2026-11-27`；沿用 `rp-requirements-r5-collision-scoring-2026-11-26` 的已确认要求，并增加用户 2026-11-27 提出的三处缺口。沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
-- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r10-direction-alignment-2026-11-27`，审核对象 SHA256 `37a0c8be6c93edd9d188c1c78f1f05731ee771fddb1a7f2ae95b3da253e6e742`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。计划若有语义修订，本计划引用同一版本号，并在 `plan/test-plan-review.md` 记录当次审核对象的校验值。
-- 目标仓库：`research-proposal`；工作树：`.agents/worktrees/research-proposal-alignment`；分支：`feat/direction-alignment`，基线 `61257df`。RP-14 的正式执行环境仍为分支 `feat/interview-script-artifacts` 与结果根 `/private/tmp/research-proposal-r23-run.cSceAb`。RP-15 的执行环境仍为分支 `feat/collision-guidance`，基线 `8032701`。RP-16 为文档静态检查，不安装、不启动产品，其 diff 基线为 `61257df`。首个正式产品仍为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 执行说明版本：`rp-recipe-r18-direction-alignment-2026-11-27`，替代 `rp-recipe-r17-collision-scoring-2026-11-26`。本次修订只新增 RP-16 的直接文件检查，不改变 RP-01 至 RP-15 的执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
+- 测试计划版本：`rp-tests-r11-verdict-2026-11-27`，取代 `rp-tests-r10-direction-alignment-2026-11-27`；本次新增必测项 RP-17，检查方向判决口径的两节文档（「判决与停因」「证据推翻方案之后」）与 `SKILL.md` 入口，RP-01 至 RP-16 及其场景全部沿用，RP-09 继续延期。
+- 需求版本：`rp-requirements-r7-verdict-2026-11-27`；沿用 `rp-requirements-r6-direction-alignment-2026-11-27` 的已确认要求，并增加用户 2026-11-27 追加的四项判决要求与同日审核问答的两项确认（`problem_invalid` 只写 `stop_reason`；`pending` 第二触发条件）。沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
+- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r11-verdict-2026-11-27`，审核对象 SHA256 `c28fd0bcb8c7551ff8334dc9cf57903837a49bb25b4a6ec46e6f85e417a4843b`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。计划若有语义修订，本计划引用同一版本号，并在 `plan/test-plan-review.md` 记录当次审核对象的校验值。
+- 目标仓库：`research-proposal`；工作树：本仓库同级容器下的 `worktrees/research-proposal-verdict`；分支：`feat/verdict-gate`，基线 `56369ad`。RP-14 的正式执行环境仍为分支 `feat/interview-script-artifacts` 与结果根 `/private/tmp/research-proposal-r23-run.cSceAb`。RP-15 的执行环境仍为分支 `feat/collision-guidance`，基线 `8032701`。RP-16 为文档静态检查，不安装、不启动产品，其 diff 基线为 `61257df`。RP-17 同为文档静态检查，diff 基线为 `56369ad`。首个正式产品仍为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
+- 执行说明版本：`rp-recipe-r19-verdict-2026-11-27`，替代 `rp-recipe-r18-direction-alignment-2026-11-27`。本次修订只新增 RP-17 的直接文件检查，不改变 RP-01 至 RP-16 的执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
 - 本次准备清除与本范围矛盾的残留步骤：RP-09 的 Word 模板映射、`test_export.TemplateTests`（该文件已在工作区删除）、RP-08 的“所有产品页图”阅读、RP-11 的受控 `page_review` 分支。清理依据为已获批准的 r14 范围与 `Test Engineer Rule.md` 第 6 节“超范围要求必须从计划中删除”，不是临场删测或缩项。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
-下面除已明确延期的 RP-09 外，RP-01 至 RP-16 的编号及各项明确列出的场景构成唯一必测清单；RP-15 沿用 r8、r9，RP-16 为本轮新增。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
+下面除已明确延期的 RP-09 外，RP-01 至 RP-17 的编号及各项明确列出的场景构成唯一必测清单；RP-15 沿用 r8、r9，RP-16 沿用 r10，RP-17 为本轮新增。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
 
 只验收本仓库的安装交付、输入发现与交接安排、材料整理、研究设计、Markdown 成稿、修改、恢复、按需加选的讲稿与想定问答交付，以及撞车判断、评分映射与本次新增的教授方向对齐文档。上游产物由 Recipe 手动准备为输入；不运行采集、Zotero 保存、全文下载、论文分析或套磁候选生成来证明这些输入的生成过程，也不验收上游子代理、服务、批次或委派链。已有上游检查随产品发现入口正常使用，不为本次测试重写或绕过它们。
 
@@ -190,6 +190,30 @@
 **预期结果**：三节存在且位置如上；全部入口可达，相对链接与锚点有效；内容覆盖上述判断项，且三项都有可执行判据而不是“适当处理”一类措辞；新增内容不把“已有人做过”写成“没人做过”，不把新节写成评分项；`candidate-scoring.md` 判据与权重未改；`interview.md` 三类追问未改；`research-design.md` 原有各节未被改写（允许：在「与教授已有研究的关系」与「撞车怎么判断」中新增指针行与「多课题点合并」新段；把「撞车怎么判断」原来的“理由见上一节”改为具名指向「新颖性写在哪里」）；没有把用户材料中的可识别信息带入公开技能文档。
 
 **检查方式**：直接阅读改动后的四份文档，运行一次基线 diff 和一次只读的链接/锚点/关键词检查脚本；脚本只对新增行做隐私检查。不运行安装、组件测试或实际会话。RP-01 至 RP-15 的既有结果不受文档增补影响，直接沿用，不因本次提交编号变化重跑。检查脚本放在仓库外临时目录，不提交。
+
+### RP-17：方向判决口径文档
+
+**目标**：技能能把“一个方向还能不能继续做”写成闭集判决：五种判决词与保存的 `gate` 一一对应；停只允许 `novelty_zero`、`gap_zero`、`problem_invalid` 三类；`pending` 不得改写为 `hard_stop`；负结果与边界题有落点；证据推翻前提时按五类分流改判；判决前先过三条证据要求。新内容不改变九项权重、两项硬门槛、评分公式、九项 0/1/2 判据、四类撞车、三种结论状态、四种切口、多课题点合并、研究室轴判断、学术脉络定位、`interview.md` 三类追问与组件接口。
+
+**输入或场景**：直接读取技能源码中的 `references/candidate-scoring.md`、`references/research-design.md`、`SKILL.md`；不安装、不启动产品、不运行组件测试、不调用上游。用基线 `56369ad` 做一次只读 diff：`git diff --stat 56369ad -- skills/research-proposal flake.nix flake.lock nix README.md test` 与 `git diff 56369ad -- skills/research-proposal`。
+
+逐项核对：
+
+- **新节与位置**：`candidate-scoring.md` 存在「判决与停因」，位于「先过门槛，再算总分」之后、「打分前先定证据」之前；`research-design.md` 存在「证据推翻方案之后」，位于「有限补查」之后、「新颖性写在哪里」之前。
+- **判决词与 `gate`**：五种判决词（可推进、待补、备选、并入、停）与 `pass`、`pending`、`soft_stop`、`hard_stop`、`merge` 一一对应；`hard_stop`、`pending`、`merge` 不给总分；`hard_stop` 写 `stop_reason`，`merge` 写 `merged_into`；`items` 字段清单与报告口径第 2 条按同一枚举写清。
+- **停因闭集**：只有三类停因；`problem_invalid` 单列、不并入前两种；五个诊断问句齐全（恒等、观测资料、不可观测、必然拒绝、定义域）；`problem_invalid` 只写 `stop_reason`，分数按既有判据照实记。
+- **`pending` 规则**：两个触发条件（还没查够三篇；推荐语第 2 句点名的领先项只有摘要级证据）；`pending` 不得改写为 `hard_stop`；「推荐怎么写」原“补不了就把领先项去掉”的路径改为指向新节。
+- **禁止清单与对称规则**：总分、三项合计、单项 1 分、判据线与效果量线、作者后续工作、单次实现、方法置换或对象置换本身都不能单独判停；「先过门槛，再算总分」末尾有“分数也不能把 1 分判成停”。
+- **价值自检与负结果**：价值项自检句与 0 分定义对应；负结果与边界题有判定句模板，并写明落在「解释」位置、记 1 分、不是失败计划。
+- **五类分流与三条证据要求**：`research-design.md` 新节含前提被证伪、效应量小、测量不可靠、效应来自混杂、不可识别五类，及“预注册判据是实验纪律，不是选题门槛”；三条证据要求齐全（效应量带尺度、覆盖率带宽度、单实现要复测）。
+- **入口**：`SKILL.md` 相关研究步骤末尾有指向「判决与停因」「证据推翻方案之后」的两个入口，并写明判停只允许三类理由。
+- **不扩散**：`candidate-scoring.md` 的权重表、评分公式、0/1/2 判据表、两条硬门槛原文未改；`research-design.md` 的新颖性四位置表、四类撞车表、三种结论状态表、四种切口标题未改；`interview.md`、`scripts/`、`test/`、`flake.nix`、`flake.lock`、`nix/`、`README.md` 无 diff。
+- **交叉引用**：`research-design.md` 基线的第 71、97、263 行（插入后约 91、117、283 行）的相对指代在插入新节后仍成立；新增锚点可达，未新增无法解析的锚点。
+- **隐私**：只查新增行，不含 URL、绝对路径、邮箱、真实人名、学校名或用户材料片段。
+
+**预期结果**：新节存在且位置如上；五种判决词与 `gate` 对应完整；三类停因齐全且 `problem_invalid` 单列；`pending` 不得改写规则与推荐段的新指向存在；禁止清单、对称规则、价值自检、负结果模板、五类分流、三条证据要求齐全；两个入口可达；`candidate-scoring.md` 与 `research-design.md` 的既有评分判据和判断表未改；其余文件无 diff；链接可解析；新增行无不适合入库的信息。
+
+**检查方式**：直接阅读改动后的三份文档，运行一次基线 diff 和一次只读的结构/关键词/锚点/隐私检查脚本；脚本只对新增行做隐私检查。不运行安装、组件测试或实际会话。RP-01 至 RP-16 的既有结果不受文档增补影响，直接沿用，不因本次提交编号变化重跑。检查脚本放在仓库外临时目录，不提交。
 
 ## 准备和执行的边界
 
