@@ -1,6 +1,46 @@
 # 研究计划草稿技能计划审核记录
 
-## 当前状态：r10 教授方向对齐已通过
+## 当前状态：r11 方向判决口径已通过
+
+## r11 方向判决口径（2026-11-27）
+
+用户 2026 年 11 月 27 日就“一个方向还能不能继续做”提出四处缺口：判决词与停因没有闭集、待补与负结果没有落盘位置、证据进来之后没有改判规则、判决前缺少证据门槛。评估结论是四处都是现有规则未覆盖的真实缺口：`candidate-scoring.md` 只有两条硬门槛且唯一一条“不要因为 1 分判死”只针对准备档位（第 66 行），`gate` 只有 `pass`、`hard_stop`、`soft_stop` 三态（第 234 行）；`research-design.md` 对“证据推翻当前问题或方法”只有一句“返回受影响步骤调整和确认”（第 30 行）。据此修订执行计划为 `rp-plan-r11-verdict-2026-11-27`，需求 `rp-requirements-r7-verdict-2026-11-27`，目标分支 `feat/verdict-gate`，基线 `56369ad`（PR #7 合并后的 `main`）。独立审核者为专用 `plan_reviewer` 代理，只读，未修改文件、未运行测试。
+
+**首轮**（候选 SHA256 `82f5db25…ec46e`）结论 `NEEDS_MODIFICATION`，两项 blocker：
+- B-01（P2，连带 P3）：计划要求 `problem_invalid` 判停后“把新意落点或空白成因记 0”，但保留的 0 分判据只覆盖“四项都没有变化”和“伪空白/缺三篇”，不可识别与检验恒真并不必然使这两项为 0；该停因因此可能没有 0 分依据，却被“不允许 1/1/1 而停”禁止按实际记录。
+- B-02（P3）：反例写“九项里七项 1 分、两项 2 分（总分 75）”，按保留公式最高只能 65，与“评分公式不变”矛盾。
+
+作者按最小修正处理，并取得验收决定人两项确认：`problem_invalid` 只写 `stop_reason`、分数按既有判据照实记（B-01）；`pending` 增加第二触发条件“推荐所依赖的关键项只有摘要级证据”（审核观察 3）。反例改为“五项 2 分、四项 1 分（2 分项权重合计 50，总分 75）”。另按非阻断观察把“相对指代只有三处”改为“需要检查的三处”、把对称规则写成追加到「先过门槛，再算总分」末尾、把软门槛旧词“待补”改称“备选”、给 `merge` 固定 `merged_into`。
+
+**第二轮复核**（候选 SHA256 `729d01fd…fbaa`）确认 B-01、B-02 正文已闭合，另提三项 blocker：
+- R2-01（P3）、R2-02（P3）：文末第 443 行仍是旧反例“七项 1 分、两项 2 分（75 分）”与“恒等式判停时评分表须按事实记 0”，与正文第 400、422 行冲突，两项均未完全闭合。
+- R2-03（P2，连带 P3/P4）：`pending` 第二触发条件与「推荐怎么写」第 180 行“补不了就把领先项从推荐理由里去掉”给出不同后果，“推荐所依赖的关键项”也未定义。
+
+作者修正：文末摘要与正文逐字对齐；把“推荐所依赖的关键项”写死为“推荐语第 2 句点名的领先项”，写明新触发条件取代第 180 行那条保留总分与排序的路径，并把「推荐怎么写」列入改动点；`items` 字段清单补 `stop_reason` / `merged_into`；软门槛补法改为“按备选处理”。
+
+**第三轮复核**（候选 SHA256 `b97d6341…ad68`）确认 R2-01、R2-02、R2-03 闭合，未发现新 blocker，结论 `APPROVED`。四条非阻断建议（改动计数措辞、“末段”改为第 180 行段末、反例补新触发条件情形、多项领先项口径）作者在批准后作为无判据变化的措辞与清单补全并入，计划文本更新为 SHA256 `c28fd0bc…a4843b`；未改停因、`gate` 枚举、字段名与改动范围。
+
+```text
+Plan revision: rp-plan-r11-verdict-2026-11-27
+Requirement revision: rp-requirements-r7-verdict-2026-11-27（含 2026-11-27 审核问答两项追加：problem_invalid 只写 stop_reason；pending 第二触发条件）
+Target repository revision: research-proposal 分支 feat/verdict-gate，基线/HEAD 56369ad（PR #7 合并后的 main）；源码 skills/research-proposal/
+Relevant upstream/runtime revision: N/A（本次只改仓库内参考文档；固定依赖未变）
+Candidate SHA256: b97d634138c0b094e67b3c1e6d41c9ef2515b0bd05a3e24bf6d29ae66741ad68（APPROVED 版本；其后仅措辞与清单补全，现为 c28fd0bcb8c7551ff8334dc9cf57903837a49bb25b4a6ec46e6f85e417a4843b）
+P1 Requirement & Reality Grounding: PASS
+P2 Solution Validity & Ownership: PASS
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE（首轮全量检查 r7 四处新增与连带引用；第二、三轮只复核 B/R2 修正及直接影响）
+Critical assumptions: N/A
+Unresolved impacts: N/A
+Approved behavior changes: 五个判决词与 gate 一一对应；problem_invalid 只写 stop_reason、分数照既有判据记；pending 两个触发条件（三篇不足、推荐语第 2 句点名的领先项只有摘要级证据）；负结果与边界题可推进；merge 与 merged_into。来源 rp-requirements-r7-verdict-2026-11-27 与用户 2026-11-27 审核问答
+Reused prior Plan Gate PASS: r10 的 P1–P4（37a0c8be…）用于未被 r7 触及的组件接口、状态字段、依赖、安装、交付与提交条款；r11 首轮的 P1 用于未变化的事实基础；P2、P3、P4 因 R2 修正重新检查
+Required modifications: N/A
+Missing evidence for PARTIAL review: N/A
+Plan conclusion: APPROVED
+```
+
+本结论只表示当前方案适合实施，不表示实现正确、测试通过或可以合并；测试计划与合并审核由对应关口负责。
 
 ## r10 教授方向对齐（2026-11-27）
 
