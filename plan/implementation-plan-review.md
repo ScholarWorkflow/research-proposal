@@ -1,6 +1,45 @@
 # 研究计划草稿技能计划审核记录
 
-## 当前状态：r9 撞车评分映射与篇数上限已通过
+## 当前状态：r10 教授方向对齐已通过
+
+## r10 教授方向对齐（2026-11-27）
+
+用户 2026 年 11 月 27 日就“研究方向怎么和教授对齐”提出三处缺口，要求先判断是否需要更新技能：研究室“轴”的判断方法（缺口 A）、学术脉络定位（缺口 B）、多课题点合并（缺口 C）。评估结论是三处都是现有规则未覆盖的真实缺口：`candidate-scoring.md` 的「范围连接」只有主线 2／邻近 1／无关 0 三档，判据是“教授近年论文或学生论文在做的问题”，不含指标组；`research-design.md` 的「空白成因」查的是同一层级的三篇最接近工作，给不出换层重新定位的动作；撞车一节的四种切口不含“把多个已承认缺口合并成一次解决”。据此修订执行计划为 `rp-plan-r10-direction-alignment-2026-11-27`，需求 `rp-requirements-r6-direction-alignment-2026-11-27`，目标分支 `feat/direction-alignment`，基线 `61257df`（PR #6 合并后的 `main`）。独立审核者为专用 `plan_reviewer` 代理，只读，未修改文件、未运行测试。
+
+**首轮**（候选 SHA256 `a42fe942…`）结论 `NEEDS_MODIFICATION`，两项 blocker：
+- R-01（P2，连带 P4）：`candidate-scoring.md` 的授权改动集自相矛盾。「三种常见打错」只存在于该文件，但计划把它写在以 `research-design.md` 为对象的段落里，未指名文件；同段又写该文件“只在「范围连接」末尾加一行指针”，变更清单未列该项，实现者须临场决定改哪个文件、改几处。
+- R-02（P3）：新增「学术脉络怎么定位」插在「新颖性写在哪里」之后，会使 `research-design.md` 现有的“完全没有相近先行研究是危险信号，理由见上一节”指向错误——该“上一节”目前指「新颖性写在哪里」，插入后落空。
+
+作者按最小修正处理：第 388 行指名 `candidate-scoring.md`、要求「三种常见打错」加第 4 条并同步改名为「四种常见打错」、统一计数，并把该文件本轮改动限定为两处；第 400 行变更清单补入；第 382 行的“只在”限定改为只针对轴节。第 384 行写明插入会改变指代、须把该句改为具名指向「新颖性写在哪里」，并列入变更清单。首轮的非阻断观察一并处理：把“第五种安全做法”改为“四种切口之外的安全做法”并写明不计入切口计数；把原文无逐字对应的引号引用改为间接表述；消解“r6”在旧计划修订号与本次需求号之间的歧义；补“稳定报告”的可判断口径、非计算类学科的同一原则、适用范围边界与入口归属。
+
+**第二轮复核**（候选 SHA256 `4884f4d2…`）确认 R-01、R-02 均已闭合，另提出两项新 blocker：
+- B-01（P1，连带 P3）：需求记录写“数该脉络里已有多少工作”，计划正文却改成“只作定性判断，不数篇数”，同一计划对同一已确认要求给出相反义务。
+- B-02（P3，连带 P2）：计划让轴判断“决定「范围连接」权重”，与 `candidate-scoring.md` 的既有规则冲突——该权重默认 0，只在用户明确要求把“导师能不能带”纳入比较时才调整；这会把权重的 owner 从用户移到新节。
+
+作者修正：第 384 行恢复数量义务（写明已有多少工作，给篇数或量级），并写明“说明规模”不是新的停止条件，阅读篇数不设上限、不按固定篇数停手，r5 的篇数口径不变；第 382 行改为“作为判断「范围连接」2/1/0 的输入”，权重仍默认 0、只在用户明确要求时调整，该节不自行启用或提高权重。另按非阻断观察补了“篇名属于对用户分析输出的要求，不写进技能文档正文”的半句。
+
+**第三轮复核**（候选 SHA256 `37a0c8be…`）确认 B-01、B-02 闭合，未发现新矛盾，结论 `APPROVED`。两条非阻断措辞建议（影响记录补「范围连接」默认权重规则、正文补“三篇是最低证据不是阅读上限”）作者评估后**未采纳**，理由是 `APPROVED` 已按 `37a0c8be…` 给出，采纳会使计划正文脱离被批准文本；这两点已分别由 `candidate-scoring.md` 的第 58–60 行与第 202、210 行原文生效，无需在新计划里复述。计划正文保持在 `37a0c8be…`。
+
+```text
+Plan revision: rp-plan-r10-direction-alignment-2026-11-27
+Requirement revision: rp-requirements-r6-direction-alignment-2026-11-27
+Target repository revision: research-proposal 分支 feat/direction-alignment，基线/HEAD 61257df（PR #6 合并后的 main），源码 skills/research-proposal/
+Candidate SHA256: 37a0c8be6c93edd9d188c1c78f1f05731ee771fddb1a7f2ae95b3da253e6e742
+P1 Requirement & Reality Grounding: PASS
+P2 Solution Validity & Ownership: PASS
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE（首轮全量检查 r6 三处新增与直接连带的既有文档引用；第二、三轮只复核 B-01、B-02 及修正的连带影响）
+Critical assumptions: N/A
+Unresolved impacts: N/A
+Approved behavior changes: 新增研究室轴判断、学术脉络定位、多课题点合并三项写作与面试判断，并在 SKILL.md、interview.md、candidate-scoring.md 的相关入口接入；不新增评分项、不改九项权重、两项硬门槛、评分公式、「范围连接」2/1/0 判据（来源：rp-requirements-r6-direction-alignment-2026-11-27，用户 2026-11-27）
+Reused prior Plan Gate PASS: P2、P4 复用第二轮对 4884f4d2… 的 PASS；第三轮只改第 382、384 行措辞，未触及核心方案、owner、change point、接口、状态、依赖与交付路径。r9 关于组件接口、状态字段、依赖、安装、交付与测试口径的结论未受本次文档增补影响，不作重新审核
+Required modifications: N/A
+Missing evidence for PARTIAL review: N/A
+Plan conclusion: APPROVED
+```
+
+本结论只表示当前方案适合实施，不表示实现正确、测试通过或可以合并；测试计划与合并审核由对应关口负责。
 
 ## r9 撞车评分映射与篇数上限（2026-11-26）
 
