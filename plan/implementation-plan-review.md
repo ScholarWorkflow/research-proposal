@@ -742,7 +742,7 @@ Plan conclusion: APPROVED
 
 复验：`test_verdict_record` 78 项 `OK`、`test_interview` 27 项 `OK`（合计 105 项）；四条缺陷探针 6/6；文档检查 `PASS 213 checks`、`ALL OK`。
 
-审核对象校验值（最终）：`implementation-plan.md` SHA256 `6a9353c307a3433eea715cfcb05ec42432831ecf841613e9f9a014f922a64655`，`test-plan.md` SHA256 `97b91abb2ef8e253fd6588262a73f43f0f0c7cf9468fe239f2806c10702b6181`，`_state.py` SHA256 `3054f0936ec3b392fe4921015777cd74b6410691c96be4e26835c6df6e746a9d`，`test_verdict_record.py` SHA256 `b7024d5d1845e548327dcbad8412dd5445cdda60e3a3f8c190bcdb53d7b1fbb2`。
+审核对象校验值（最终）：`implementation-plan.md` SHA256 `6a9353c307a3433eea715cfcb05ec42432831ecf841613e9f9a014f922a64655`，`test-plan.md` 当时为 `97b91abb2ef8e253fd6588262a73f43f0f0c7cf9468fe239f2806c10702b6181`（本计划审核读取时的版本；测试计划其后经独立审核修订为 `1fb92e33016b01c575e2056b9e1189d2010b2e5d60f16ce41133fdc00343356a` 并单独获批，见 `plan/test-plan-review.md` 最后一节；本计划审核不覆盖测试计划的批准），`_state.py` SHA256 `3054f0936ec3b392fe4921015777cd74b6410691c96be4e26835c6df6e746a9d`，`test_verdict_record.py` SHA256 `b7024d5d1845e548327dcbad8412dd5445cdda60e3a3f8c190bcdb53d7b1fbb2`。
 
 **最终结论 `APPROVED`（2026 年 11 月 28 日，第五轮，`Gate review completeness: COMPLETE`）**：
 

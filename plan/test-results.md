@@ -868,7 +868,7 @@ RP_TEST_OUTPUT="$RP_R18_RUN/component-output" \
 
 ## RP-18 第三轮复验：用户复核第二轮（三条）修正后的正式执行（2026-11-28）
 
-> **结果指针**：本节是 RP-18 的**当前最终结果**。测试计划 RP-18 步骤 4 写的是“记入 `plan/test-results.md` 的 r28 一节”，而 r28 一节记录的是当时轮次的 30 项，已被后续轮次取代；按实现符合性审核 R-1 的建议，此处就地说明两者关系，不改动已批准的测试计划文本（改动测试计划会使其获批版本失效，而该指针分歧不涉及任何观察点或步骤变化）。
+> **结果指针（历史）**：本节是 RP-18 **第三轮**的结果（69 项／`PASS 169 checks`），**已被后续轮次取代**；当前最终结果是本文件最后一节「RP-18 第四轮复验」（78 项／`PASS 217 checks`）。测试计划 RP-18 步骤 4 写的是“记入 `plan/test-results.md` 的 r28 一节”，而 r28 记录的是更早轮次的 30 项；按实现符合性审核 R-1 的建议，此处就地说明各节关系，不改动已批准的测试计划文本（改动测试计划会使其获批版本失效，而该指针分歧不涉及任何观察点或步骤变化）。
 
 
 用户对 PR head `15bb375` 再次判 `NOT_READY`，提出三条业务问题。修正后执行计划获 `APPROVED`（`implementation-plan-review.md` 最后一节），测试计划获 `APPROVED`（`test-plan-review.md` 的「rp-tests-r12：用户复核第二轮（三条）后的观察点修订与复核」）。
@@ -918,7 +918,7 @@ RP_TEST_OUTPUT="$RP_R18_RUN/component-output" \
 - 角色：本地执行工程师。工作树 `worktrees/research-proposal-record`，分支 `feat/verdict-record`，基线 `97c1340`，执行时 HEAD `de1e42f`（本轮改动未提交）。
 - 执行计划 `rp-plan-r12-verdict-record-2026-11-28`，SHA256 `6a9353c307a3433eea715cfcb05ec42432831ecf841613e9f9a014f922a64655`（`APPROVED`，见 [implementation-plan-review.md](implementation-plan-review.md) 最后一节）。
 - 测试计划 `rp-tests-r12-verdict-record-2026-11-28`，SHA256 `1fb92e33016b01c575e2056b9e1189d2010b2e5d60f16ce41133fdc00343356a`（`APPROVED`，见 [test-plan-review.md](test-plan-review.md) 最后一节）。
-- 产品源码 `_state.py` SHA256 `3054f0936ec3b392fe4921015777cd74b6410691c96be4e26835c6df6e746a9d`；测试文件 `test/test_verdict_record.py` SHA256 `b7024d5d1845e548327dcbad8412dd5445cdda60e3a3f8c190bcdb53d7b1fbb2`（78 项）。
+- 产品源码 `_state.py` SHA256 `3054f0936ec3b392fe4921015777cd74b6410691c96be4e26835c6df6e746a9d`；测试文件 `test/test_verdict_record.py` SHA256 `0140f2d898bce2f4733d3d91775aacfd663844021914b1009f527ca7fbe739ef`（79 项）。
 
 **执行环境（按 RP-18 步骤 0）**：`RP_WORKTREE` 绑定到工作树根；`RP_R18_RUN` 为仓库外一次性目录；`RP_R18_RUNTIME=$RP_R18_RUN/runtime`；未设置 `PYTHONPATH`（实测为空）。
 
@@ -932,11 +932,11 @@ RP_TEST_OUTPUT="$RP_R18_RUN/component-output" \
 
 | 项目 | 命令 | 结果 |
 |---|---|---|
-| RP-18 组件 | `"$RP_R18_RUNTIME/bin/python3" -m unittest -v test_verdict_record` | `Ran 78 tests`、`OK`、退出 0 |
+| RP-18 组件 | `"$RP_R18_RUNTIME/bin/python3" -m unittest -v test_verdict_record` | `Ran 79 tests`、`OK`、退出 0 |
 | 兼容性回归 | 同解释器 `-m unittest test_interview` | `Ran 27 tests`、`OK`、退出 0 |
 | 四条缺陷探针 | 独立探针（非入库用例） | 6/6 符合预期：同版本跨对象重复被拒、`stop_reason` 为 `[]` 与 `{}` 均按 `ValueError` 拒绝且两侧问题同报、`scores: []` 配空白依据时两项同报、唯一正权重项未评时 `pass` 被拒 |
 
-78 项覆盖本轮四条：整次保存的判决身份（跨对象重复被拒、不同版本／不同候选可并存、同对象重复不误报、`merge` 可指向只记在 `verdicts` 里的候选、报错含补救办法）；分母下限（`pass` 与 `soft_stop` 各提交一次、整表权重全为 0 同样被拒、改记 `pending` 可保存）；非法停因不打断报错（候选侧 `[]` 与 `{}` 两形态、另一对象错误同报；`verdicts` 侧四种形态）；依据取值可独立判断（`scores` 为 `[]`／`"70"`／`None` 时空白依据一并报出）。
+79 项覆盖本轮四条：整次保存的判决身份（跨对象重复被拒、同一候选不同版本可并存、同一题面文字下不同候选可并存、同对象重复不误报、`merge` 可指向只记在 `verdicts` 里的候选、报错含补救办法）；分母下限（`pass` 与 `soft_stop` 各提交一次、整表权重全为 0 同样被拒、改记 `pending` 可保存）；非法停因不打断报错（候选侧 `[]` 与 `{}` 两形态、另一对象错误同报；`verdicts` 侧四种形态）；依据取值可独立判断（`scores` 为 `[]`／`"70"`／`None` 时空白依据一并报出）。
 
 **步骤 1：文档检查**（脚本 `$RP_R18_RUN/check.py`，日志 `$RP_R18_RUN/rp18-doccheck.log`）
 - 结果：`PASS 217 checks / 217`、`ALL OK`、退出 0。
@@ -949,5 +949,9 @@ RP_TEST_OUTPUT="$RP_R18_RUN/component-output" \
 - 九项权重、评分公式、两条硬门槛含义、三类停因、五态判决词未改（空白成因 0 分判据按 IR-01 收窄这一更早已批准的修订不变）；`candidate_scores` 对 `pass` 的数值总分要求未因新增 `verdicts` 而放宽；其他阶段与其他字段的保存行为不变。
 
 **隐私检查（只查新增行）**：新增行中无 URL、无用户主目录路径、无本次运行目录、无 `nix` store 具体哈希、无用户回看数值。`plan/test-plan.md` 中 RP-14 的历史结果根绝对路径在基线同一行已存在，本次只是同一行其他文字被改写。
+
+**快审后的补充复跑**：PR 快审指出两处记录层问题（本节前一轮的结果指针过期、`implementation-review.md` 的 R-1 表述未同步）与一处测试覆盖建议（“不同候选之间仍可保存”缺同版本不同候选的隔离用例）。已把第三轮复验标为历史、指针改指本节，并在 `test_verdict_record.py` 补 `test_same_version_different_candidates_can_coexist`（`C1/q1` 与 `C2/q1` 并存），用例数由 78 增至 79。测试计划观察点里“不同候选之间仍可保存”这句的对应案例名仍只列了原用例；补名会改变已批准的测试计划哈希，本轮不改计划文本，在此说明该覆盖由新增用例承担。
+
+复跑结果（重建运行包、同一解释器）：组件 `Ran 79 tests`、`OK`、退出 0；回归 `Ran 27 tests`、`OK`、退出 0；文档检查 `PASS 222 checks / 222`、`ALL OK`、退出 0；运行包内 `_state.py` 与工作树源码 SHA256 仍逐字节相同（`3054f093…746a9d`）。执行计划 `6a9353c3…` 与测试计划 `1fb92e33…` 两个获批版本未变。
 
 **结论**：RP-18 本轮必测项在当前版本取得通过结果，四条业务问题的失败输入均已被拒且不再抛 `TypeError`，合规输入仍可保存，跨对象重复报错给出可执行的补救办法。本结论不代替实现符合性审核、第三关口与合并批准。

@@ -1000,3 +1000,12 @@ class VerdictWithoutScoresTests(ComponentCase):
         message = str(caught.exception)
         self.assertIn("保留一条", message)
         self.assertIn("删掉或移走另一条", message)
+
+    def test_same_version_different_candidates_can_coexist(self):
+        """唯一键是 `(id, statement_version)`：同一题面文字下不同候选可以各有一条。"""
+        result = self.save({
+            "materials": [],
+            "candidate_scores": payload(record(id="C1", statement_version="q1")),
+            "verdicts": self.verdicts(self.verdict(id="C2", statement_version="q1")),
+        })
+        self.assertEqual(result["status"], "ready")
