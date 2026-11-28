@@ -597,3 +597,93 @@ Plan conclusion: APPROVED
 审核者另记录两项未独立核实：远端分支历史重写后的实际状态无法从本地核实；新增检查项 I4v、I4w 位于仓库外脚本，只能确认现行文本已无窄枚举。两处均不影响计划正确性。
 
 结论不代替测试关口与合并批准。
+
+## r12 用户复核第二轮（三条）的计划审批（2026-11-28）
+
+用户对 head `15bb375` 再次判 `NOT_READY`，提出三条，均由本地构造输入复现：①硬门槛分数与判决互相矛盾仍能写入；②`evidence` 可写空白、多键，且与 `scores` 的类型错误会互相遮蔽；③单候选免评分时无法同时做到“不评分”与“落判决记录”。
+
+其中①、②是校验覆盖不足，属已批准校验在文档既有规则内的补全（`candidate-scoring.md` 第 118–130 行判决表、第 87–99 行硬门槛定义、第 238 行“每一项的分数后面必须跟一句依据”），不改变产品要求。③是**保存形态缺一种**，需要新增 `materials` 步骤的可选对象 `verdicts`，属语义级改动，按 `Plan Reviewer Rule.md` 第 5 节重新交审核。
+
+**变更目的**：让“没有候选比较、因而不评分”的场合也能按题面版本落判决记录，解决 `SKILL.md` 第 58 行（单候选不评分）与第 59 行（要走完落判决记录）在同一场景下无法同时满足的问题。
+
+**关键差异**：
+1. 新增 `materials` 步骤的可选对象 `verdicts`（`{evidence_cutoff, items:[{id, statement_version, gate, experiment, missing, evidence}]}`），`gate` 限 `pass`、`pending`、`hard_stop` 三值，不写 `scores`、`weights`、`total`（写了被拒）。
+2. `candidate_scores` 的 `pass` 仍要求数值总分，不放宽；两对象可同时出现，各按自己的规则校验。
+3. 硬门槛分数与判决对齐：`gap_zero` 要求「空白成因 = 0」，`novelty_zero` 要求「新意落点 = 0」，`pass` 与 `soft_stop` 要求两道硬门槛都大于 0；`problem_invalid` 与 `merge` 不加入。
+4. `evidence` 键集合须与 `scores` 完全一致（多键报错），每项须为去掉首尾空白后仍有内容的字符串；`scores` 与 `evidence` 各判各的类型、累积报错。
+
+**受影响关口**：P2（新增 change point 与 owner 边界）、P3（新增可观察行为与兼容影响）、P4（可执行性）。P1 复用：三条问题均已用构造输入复现，事实来自基线 `97c1340` 之后的本分支代码，不涉及新的 requirement 或外部事实。
+
+**未受影响结论的沿用理由**：r12 已批准的「判决记录怎么写」节、九项权重与 0/1/2 判据、五态判决词、三类停因、`candidate_scores` 既有校验项、汇总与计分口径、去标识化处理，均未被本次改动触及，直接沿用。
+
+**变更记录**：计划新增「判决与硬门槛分数的对齐」「依据字段的结构与报错累积」「单候选免评分的保存形态选择」三段，RP-18 新增三条观察点（依据字段、分数与判决对齐、免评分 `verdicts`）并加严「一次报全」条；文档新增 `candidate-scoring.md` 的「只有一个候选、不评分时怎么存」节、`SKILL.md` 第 58 行入口、`runtime.md` 的 `verdicts` 说明。
+
+**首轮结论 `NEEDS_MODIFICATION`（2026 年 11 月 28 日，`Gate review completeness: COMPLETE`）**，五项阻断，均为事实：
+
+- **R-01**：计划两处仍把校验范围写成只有 `candidate_scores`（"校验只作用于…这一个可选对象"与实施顺序第 5 行），与新增的 `verdicts` 校验不自洽。
+- **R-02**：本轮替换段落时把 r12 的**校验方案总体选择**整段删掉（"只改文档不校验""另建 `references/verdict-record.md`""给分数加 `unrated` 枚举"三条替代方向随之丢失），且 r7 段仍留"组件不校验 `candidate_scores`"的相反描述。这是本轮的回归。
+- **R-03**：`evidence` 形态在通用「判决记录怎么写」节写"对象、键与 `scores` 一一对应"，在 `verdicts` 节写"数组"，两处未各自限定适用范围；计划里"文档第 363 行"所指位置已空，测试计划字段清单也未限定为 `candidate_scores`。
+- **R-04**：RP-18 文档侧只覆盖「判决记录怎么写」与 `candidate_scores`，没有 `verdicts` 的文档观察点；计划"文档同步三处"实际为四处；执行步骤导入断言只验 `_check_candidate_scores`，测试清单未列 `verdicts` 测试类。
+- **R-05**：两个可选对象同时有错时，`save_revision` 先校验 `candidate_scores`、失败即抛，`verdicts` 的问题不会一起列出——正是用户第 2 条所指"错误互相遮蔽"在对象层的复发。
+
+另接受非阻断观察 O-01（补用户建议来源日期、"汇总代码"改为"汇总时"）、O-02（`soft_stop` 排除依据写准：它要求总分照算而该形态不算总分；无比较时软门槛问题用 `pending` 记、补法写进 `missing`）、O-03（非停判决不得带 `stop_reason`、数组项须非空字符串，补进计划与文档）、O-04（补 `verdicts` 停因字段与多问题一次报全的用例）、O-05（行号漂移，改用小节名或实际行号）。
+
+**修正**：R-01 改计划两处为"作用于 `candidate_scores` 与 `verdicts` 两个可选对象，同时有错合并成一次 `ValueError`"；R-02 恢复 r12 校验方案选择整段（三条替代方向原样保留），并把 r7 旧句标注"r12 已改变这一状态，本条只说明 r7 当时为何不选该方向"；R-03 通用节改为"带 `scores` 的记录里 `evidence` 不是数组"、`verdicts` 节写明"没有 `scores` 可对应，所以是数组"，计划改指小节名，测试计划字段清单限定为 `candidate_scores` 的 item；R-04 新增 RP-18"免评分判决的文档部分"观察点、计划改"文档同步四处"并列出 `candidate-scoring.md` 开头入口、导入断言补 `_check_verdicts` 与 `_check_materials_records`、测试清单补 `VerdictWithoutScoresTests`；R-05 把免评分形态的校验抽成 `_verdicts_problems`（只返回问题列表、不抛），`_candidate_scores_problems` 沿用原有返回列表的实现，新增 `_check_materials_records` 把两者的问题合并后一次抛出；`save_revision` 改为调用它。
+
+复验：`test_verdict_record` 62 项 `OK`；独立探针 10/10、9/9、11/11（原三条问题、单候选免评分场景、畸形输入拒绝且状态不变）；文档检查 `PASS 139 checks`、`ALL OK`，其中 N1–N14 为上述五项修正的专项检查，已用故意破坏验证能失败。
+
+**变更记录补充**：除上述修正，本轮还（a）在 `candidate-scoring.md` 开头适用范围句补“不评分不等于不记判决”并指向新节；（b）把该文件「保存」节对 `evidence` 的描述限定为 `candidate_scores`，并新增 `verdicts` 的数组形态说明；（c）把「判决与三项内容的对齐」的总结句移到新增的分数对齐段之后，并把「保存」节里“三条对齐规则”的过期计数改为“判决对齐规则”；（d）在 `runtime.md` 的 `materials` 行补 `verdicts` 形态、校验范围与合并报错。
+
+**定向复核第二轮结论 `NEEDS_MODIFICATION`（2026 年 11 月 28 日，`Gate review completeness: COMPLETE`）**：P2 通过（R-02 闭合），P1 沿用；P3、P4 各留修正未同步到相邻位置的残留，均为修正不完整、非新发现的产品要求：
+
+- **R-01a**：计划实施顺序第 5 行仍只写 `candidate_scores` 校验。
+- **R-03a**：计划「三样内容分开填」仍把 `evidence` 无条件写成对象，未限定为带 `scores` 的记录。
+- **R-05a**：计划“互不合并、不互相顶替”与测试计划“互不影响”仍是合并报错前的旧措辞；测试计划测试清单未点名两对象同时报错的用例。
+
+**修正**：三处全部改为与新行为一致（实施顺序补 `verdicts` 与三项校验；`evidence` 两套形态各自限定适用范围；两对象同时有错合并成一次 `ValueError`，测试清单点名 `test_both_objects_report_problems_together` 与 `test_both_objects_valid_still_save`）。同时处理非阻断项：测试计划的目标摘要与版本摘要补 `verdicts`（N-01）；计划里 `soft_stop`／`merge` 的不适用依据改为文档同一口径并补“`pass` 与 `pending` 不得写 `stop_reason`”（N-02）；计划影响段改写“没有未解决的关键影响”一句，说明两个对象的校验范围、依据字段两套形态与合并报错方式均已写死（N-04）；补本节变更记录（N-03、O-07）。
+
+本轮修正后又发现 `candidate-scoring.md`「保存」节一处同类残留（仍无条件写“`evidence` 不是数组”），已一并限定。检索确认：在 `plan/implementation-plan.md`、`plan/test-plan.md` 与 `skills/research-proposal/references/*.md` 范围内，`互不合并`／`互不影响`／无条件的 `evidence 不是数组`／只写 `candidate_scores` 校验 四类表述均无残留。**该检索范围排除本记录自身**（`plan/implementation-plan-review.md`），因为本记录会引用这些旧措辞作为问题摘要，纳入检索必然误报；这也说明关键词检索的局限——它只能发现旧措辞，发现不了“缺失的正向表述”与“命令参数结构错误”。
+
+复验（修正后未改产品代码，仅文档与计划；运行包与源码仍逐字节相同）：`test_verdict_record` 62 项 `OK`；独立探针 10/10、9/9、11/11；文档检查 `PASS 148 checks`、`ALL OK`，新增 N15–N23 覆盖本轮三处修正，已用故意破坏验证能失败（破坏 3 条报 3 条失败）。
+
+**定向复核第三轮结论 `NEEDS_MODIFICATION`（2026 年 11 月 28 日，`Gate review completeness: COMPLETE`）**：P1、P2 沿用；P3、P4 各留一处直接连带残留。R-01a／R-03a／R-05a 与 N-01～N-05 均已闭合。新发现两项：
+
+- **R-04b**：测试计划里导入检查的命令写成三段引号串，`python3 -c` 只消费第一个参数，后两段断言变成 `sys.argv` 被忽略，命令仍以 0 退出——**预检实际上不验证任何断言**。已实测确认：三段写法打印路径后 exit 0；同一断言写成单段则 exit 1。
+- **R-05b**：`runtime.md` 的 `verdicts` 句只写"各按自己的规则校验"，缺"两个对象同时有不合规处时一次报错同时列出"，与详细文档、计划、代码不一致，也使本记录的变更记录 (d) 与文件不符。
+
+**修正**：导入命令改为**单个** `-c` 参数（多行字符串），并在步骤里写明"整段必须是一个 `-c` 参数；拆成多段引号会被当作 `sys.argv` 忽略，命令仍以 0 退出而不验证任何断言"，同时把断言扩到三个函数；`runtime.md` 补"两个对象同时有不合规处时，一次报错会同时列出，不先报一个、补完再报另一个"；RP-18 的运行时文档观察点同步要求这句；本记录 (d) 已按实际内容修正。
+
+**R-04b、R-05b 的修正与实证**：导入命令已改为单个 `-c` 多行参数，并用最小对照实证——同样的三个断言，写成三段引号时即使断言的是**必然不存在**的属性也 exit 0（被当作 `sys.argv` 忽略），写成单段 `-c` 时同一断言 exit 1；真实运行包单段执行 exit 0。改后的命令块已用 `bash` 实际执行通过。`runtime.md` 已补合并报错句，RP-18 的运行时文档观察点同步要求该句，计划的“文档同步四处”也写明 `runtime.md` 要写合并报错。
+
+**检索方式的教训**：关键词检索只能发现旧措辞，发现不了"缺失的正向表述"和"命令参数结构错误"。因此除关键词检索外补两类正向检查：①`runtime.md` 的 `verdicts` 行必须包含合并报错句；②导入命令必须是单个 `-c` 参数：检查块内 `-c` 之后不再出现“独立成段、以引号开头并以引号结尾”的参数行，并断言三个函数名都在同一段里——仅靠 `grep` 或 `bash -n` 不够，因为三段引号在 `bash -n` 下也合法。两项已加入仓库外检查脚本（P1–P5），其中 P3 的结构判定已用“好写法 / 坏写法”最小对照单独验证：好写法 0 段独立参数、坏写法 3 段。
+
+**最终结论 `APPROVED`（2026 年 11 月 28 日，第四轮，`Gate review completeness: COMPLETE`）**：
+
+```text
+Plan revision: rp-plan-r12-verdict-record-2026-11-28（SHA256 3a3a9956…839df1d6a）
+Requirement revision: rp-requirements-r8-verdict-record-2026-11-28
+Target repository revision: research-proposal 分支 feat/verdict-record，基线 97c1340，head 15bb375
+
+P1 Requirement & Reality Grounding: PASS（沿用）
+P2 Solution Validity & Ownership: PASS（沿用第二轮）
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE
+
+Approved behavior changes: materials 新增可选 verdicts 对象（evidence_cutoff + items，gate 限 pass/pending/hard_stop，
+不写 scores/weights/total，evidence 为数组）；candidate_scores 硬门槛分数与 gate 对齐；evidence 键集合与 scores 一致、
+空白/布尔/数字不计依据；两个对象同时有错合并成一次 ValueError；runtime.md 的 materials 行补合并报错
+Unresolved impacts: N/A
+
+Plan conclusion: APPROVED
+```
+
+审核者确认：R-04b（导入命令三段引号导致断言不执行）已闭合，命令现为单个 `-c` 多行参数且步骤写明失败方式；R-05b（`runtime.md` 缺合并报错句）已闭合；直接连带项（计划 `:435`／`:497`／`:500`／`:544`／`:556`，测试计划 `:240`／`:241`／`:320`，文档 `:170`／`:370`／`:385`，代码 `_check_materials_records`）均未回退；检索范围限定与两类正向检查的处理被确认为正确。
+
+审核者另确认两点：`test-plan-review.md` 仍无本轮 RP-18 观察点的测试计划复核记录属测试计划关口材料，本计划的 `APPROVED` 不代替它；固定检查清单不必作为批准前提，若写入计划应标为“执行自查”，不计入必测清单、不新增第三关通过条件。
+
+本结论只表示当前设计版本适合实施，不表示实现正确、测试全部通过或可以合并。
+
+`Proposed review status`：`pending`。正式结论由独立 `plan_reviewer` 给出。
+
+审核对象校验值（第三轮修正后）：`implementation-plan.md` SHA256 `3a3a99563099fcc77d00e420c243ce032a37188191c83e5401b95bd839df1d6a`（最终批准版，未再变动）；`test-plan.md` 当时为 `0fc1848981ce27861f02d9e3d1b69e901912982570699b2b55ec98ddfb2fd090`——该值只表示本计划审核读取时的测试计划版本；测试计划其后经独立审核修订为 `c81d68b39258cf12d7b803b858a684dcd13d7ff7ac4c392472d1d802c9e15028` 并单独获批（见 `plan/test-plan-review.md` 最后一节），本计划审核不覆盖测试计划的批准。

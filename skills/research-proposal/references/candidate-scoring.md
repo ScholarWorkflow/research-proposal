@@ -1,6 +1,6 @@
 # 候选选题评分
 
-两个以上候选、需要模型说明“为什么推荐这个”时，用同一组评分项逐项打分。只有一个候选，或用户已经明确决定时，不评分；直接按[写完到什么程度](research-design.md#写完到什么程度)检查方案。
+两个以上候选、需要模型说明“为什么推荐这个”时，用同一组评分项逐项打分。只有一个候选，或用户已经明确决定时，不评分；直接按[写完到什么程度](research-design.md#写完到什么程度)检查方案。不评分不等于不记判决：本轮补查下来能不能推进、实验说明了什么、哪条证据支撑、还缺什么，仍要按题面版本存进去，存法见[只有一个候选、不评分时怎么存](#只有一个候选不评分时怎么存)。
 
 这里评的是本稿的研究问题候选，不是上游教授方向的选择；教授方向只决定范围，不能拿这套分数替代 `discover` 的方向决定。
 
@@ -165,9 +165,9 @@
 |---|---|---|---|
 | `experiment` | 数组 | 实验说明了什么：跑出什么数、判据线命中与否、参数网格或口径变化带来的差别、负结果与反向结果 | 可以写空数组，字段不能省 |
 | `missing` | 数组 | 哪些材料还缺：缺什么、缺到什么程度、补上以后能改变哪一项判断 | 可以写空数组；记 `pending` 时不能为空 |
-| `evidence` | 与 `scores` 同键的对象 | 哪条证据支持当前判决，按[打分前先定证据](#打分前先定证据)的五类前缀写清来源与定位 | 逐项写；记 `hard_stop`、`pass`、`soft_stop` 时整体不能为空 |
+| `evidence` | 与 `scores` 同键的对象（不评分时见[只有一个候选、不评分时怎么存](#只有一个候选不评分时怎么存)，那里是数组） | 哪条证据支持当前判决，按[打分前先定证据](#打分前先定证据)的五类前缀写清来源与定位 | 逐项写；记 `hard_stop`、`pass`、`soft_stop` 时整体不能为空 |
 
-`experiment` 和 `missing` 是数组；`evidence` 不是数组，它按评分项逐项给依据，键与 `scores` 一一对应。确实没有做过实验就写 `experiment: []`，不能靠不写这个字段来表示。`missing` 每一条都要能说清补上之后会动到哪一项，只写“还需要更多文献”不算一条。
+`experiment` 和 `missing` 是数组；带 `scores` 的记录里 `evidence` 不是数组，它按评分项逐项给依据，键与 `scores` 一一对应（`verdicts` 的 `evidence` 是另一套形态，见下条）。确实没有做过实验就写 `experiment: []`，不能靠不写这个字段来表示。`missing` 每一条都要能说清补上之后会动到哪一项，只写“还需要更多文献”不算一条。`evidence` 的键集合要与 `scores` 完全一致：每一项分数后面都要有依据，也不能多写没有对应分数的键；每项依据要是去掉首尾空白后仍有内容的文字，空白串、`true`、数字都不算依据。
 
 ### 汇总从记录生成
 
@@ -184,7 +184,14 @@
 - `pass`、`soft_stop`：`evidence` 不能为空，`soft_stop` 还要写明补法。
 - `merge`：写 `merged_into`，指向被并入的候选 `id`。
 
-这条对齐规则是保存时校验的依据，不改变九项的 0/1/2 判据（空白成因 0 分的适用情形按上文收窄为“已证伪”），也不改变三类停因。
+**判决词与硬门槛分数也要对得上**。判决词和分数分开记，但方向必须一致，不能一边写停、一边把门槛记成过关：
+
+- 「停」的每一种都有自己的前提：`novelty_zero` 要求「新意落点 = 0」，`gap_zero` 要求「空白成因 = 0」。记了停因、对应那道门槛却不是 0 时，保存被拒——这会造出一条“候选被误记为停、分数却显示它过关”的记录。
+- `pass` 与 `soft_stop` 都要求两道硬门槛都大于 0：前者是“两条硬门槛都过”，后者是“硬门槛过了，但有软门槛为 0”。任一项记 0 却记这两个值，保存被拒——未过硬门槛的候选不能进入推荐。
+- `problem_invalid` 例外：它不是九项之一，不要求哪一项为 0。`merge` 也不要求：它的判据只有“并入另一个候选”。
+- 硬门槛项记「未评」时按上一节的规则只能记 `pending`，不再叠加分数对齐。
+
+以上对齐规则是保存时校验的依据，不改变九项的 0/1/2 判据（空白成因 0 分的适用情形按上文收窄为“已证伪”），也不改变三类停因。
 
 ### 「未评」不是 0 分
 
@@ -358,11 +365,24 @@
 
 - `weights`：实际启用的评分项权重；九项默认，启用“范围连接”时再加一项。如果用户调过，写实际使用的那一组，并标“按用户权重”，在旁边记一句用户原话和来源。
 - `evidence_cutoff`：这一轮评分使用的证据截止日期。
-- `items`：每项含 `id`、`question`、`statement_version`、实际启用项的 `scores` 和 `evidence`、`experiment`、`missing`、`total`、`gate`。`gate` 写 `pass`、`pending`、`soft_stop`、`hard_stop` 或 `merge`；另按 `gate` 写 `stop_reason`（`hard_stop` 时取 `novelty_zero`、`gap_zero`、`problem_invalid` 之一）或 `merged_into`（`merge` 时指向被并入的候选 `id`）。`hard_stop`、`pending` 和 `merge` 的候选不给总分。字段含义与三条对齐规则见[判决记录怎么写](#判决记录怎么写)。
+- `items`：每项含 `id`、`question`、`statement_version`、实际启用项的 `scores` 和 `evidence`、`experiment`、`missing`、`total`、`gate`。`gate` 写 `pass`、`pending`、`soft_stop`、`hard_stop` 或 `merge`；另按 `gate` 写 `stop_reason`（`hard_stop` 时取 `novelty_zero`、`gap_zero`、`problem_invalid` 之一）或 `merged_into`（`merge` 时指向被并入的候选 `id`）。`hard_stop`、`pending` 和 `merge` 的候选不给总分。字段含义与判决对齐规则见[判决记录怎么写](#判决记录怎么写)。
 
-结构可以按已有材料步骤调整，但上面这些字段不能省：`statement_version`、`experiment`、`evidence`、`missing` 都要在，确实为空就写空数组。
+结构可以按已有材料步骤调整，但上面这些字段不能省：`statement_version`、`experiment`、`evidence`、`missing` 都要在。`experiment` 与 `missing` 确实没有内容就写空数组；`candidate_scores` 的 `evidence` 不是数组，它逐项对应 `scores`，没有依据可写时说明还没有证据，不能改成空数组或空对象；`verdicts` 的 `evidence` 按下一小节写成数组。
 
-保存时组件会校验这份记录：`pending` 带总分、`hard_stop` 缺 `stop_reason`、`merge` 缺 `merged_into`、硬门槛项记「未评」却记 `pending` 以外的任何 `gate`、判决与三样内容对不上时，整份保存被拒绝并一次列出全部问题，不会静默入库。
+保存时组件会校验这份记录：`pending` 带总分、`hard_stop` 缺 `stop_reason`、`merge` 缺 `merged_into`、硬门槛项记「未评」却记 `pending` 以外的任何 `gate`、硬门槛分数与判决互相矛盾、`evidence` 与 `scores` 对不上或有空白项、判决与三样内容对不上时，整份保存被拒绝并一次列出全部问题，不会静默入库。
+
+### 只有一个候选、不评分时怎么存
+
+只有一个候选或用户已有明确决定时不评分（见本节开头的范围），但判决记录照样要落：本轮补查下来这题能不能推进、实验说明了什么、哪条证据支撑、还缺什么，都要按题面版本存下来。这时没有候选可比，没有总分，因此存到 `materials` 步骤的 `data.verdicts`，与 `candidate_scores` 同级但形态不同：
+
+- `evidence_cutoff`：这一轮判决使用的证据截止日期。
+- `items`：每项含 `id`、`statement_version`、`gate`、`experiment`（数组）、`missing`（数组）、`evidence`（数组）。这里没有 `scores` 可对应，所以 `evidence` 是逐条写支撑证据的数组，不是上面那种按评分项给依据的对象；每项须是去掉首尾空白后仍有内容的文字。
+- `gate` 只写 `pass`、`pending`、`hard_stop`。另两个不适用：`soft_stop` 要求“总分照算，写明不能直接推荐”，而这套记录本来就不算总分；`merge` 要求并入另一个候选，单候选没有并入对象。没有比较时软门槛的问题用 `pending` 记，把补法写进 `missing`。
+- 不写 `scores`、`weights`、`total`，写了会被拒（连写 `null` 也不行）：这三个键说明这条本该走 `candidate_scores`。`hard_stop` 仍写 `stop_reason`（三类之一），`pass` 与 `pending` 不得写 `stop_reason`；其中 `problem_invalid` 不依赖九项分数，最适合单候选场合。
+- `experiment`、`missing`、`evidence` 若是数组，每项都要是去掉首尾空白后仍有内容的文字。
+- `pass` 与 `hard_stop` 的 `evidence` 不能为空；`pending` 的 `missing` 不能为空。
+
+`verdicts` 与 `candidate_scores` 可以同时出现：一次保存里既有比较过的候选、又有单候选的直接判决时，两者各存各的，组件按各自规则分别校验；两个对象同时有不合规处时，一次报错会同时列出，不会先报一个、补完再报另一个。不要把免评分的条目塞进 `candidate_scores`，也不要给 `verdicts` 补分数——`candidate_scores` 记 `pass` 仍然要求数值总分，那是比较场景的要求。
 
 ### 被拒绝时怎么办
 

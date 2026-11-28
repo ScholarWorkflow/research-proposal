@@ -77,8 +77,11 @@ class VerdictRecordTests(ComponentCase):
         return {"materials": [], "candidates": [], **fields}
 
     def test_compliant_record_is_saved(self):
+        gap_scores = dict(SCORES)
+        gap_scores["空白成因"] = 0
         stopped = record(
             id="C2", gate="hard_stop", total=None, stop_reason="gap_zero",
+            scores=gap_scores,
             missing=["反例还待核"], experiment=["参数网格换过一档后仍然更低"],
         )
         result = self.save(self.materials(candidate_scores=payload(record(), stopped)))
@@ -446,3 +449,393 @@ class VerdictRecordTests(ComponentCase):
                 item = record(**{field: bad})
                 with self.assertRaises(ValueError):
                     self.save(self.materials(candidate_scores=payload(item)))
+
+    def test_hard_gate_score_must_match_stop_reason(self):
+        """停因要求对应硬门槛恰好为 0：分数全过却记停，是把候选误记为停。"""
+        for reason, gate_item in (("gap_zero", "空白成因"), ("novelty_zero", "新意落点")):
+            with self.subTest(reason=reason):
+                item = record(gate="hard_stop", total=None, stop_reason=reason)
+                with self.assertRaises(ValueError) as caught:
+                    self.save(self.materials(candidate_scores=payload(item)))
+                message = str(caught.exception)
+                self.assertIn(reason, message)
+                self.assertIn(gate_item, message)
+                self.assertIn("= 0", message)
+
+        # 停因与那一道门槛对得上才是合规的。
+        for reason, gate_item in (("gap_zero", "空白成因"), ("novelty_zero", "新意落点")):
+            with self.subTest(reason=reason, accepted=True):
+                scores = dict(SCORES)
+                scores[gate_item] = 0
+                item = record(gate="hard_stop", total=None, stop_reason=reason,
+                              scores=scores, missing=["反例还待核"])
+                self.assertEqual(
+                    self.save(self.materials(candidate_scores=payload(item)))["status"], "ready"
+                )
+
+    def test_problem_invalid_needs_no_zero_gate(self):
+        """`problem_invalid` 不在九项里，不要求哪一项为 0。"""
+        item = record(gate="hard_stop", total=None, stop_reason="problem_invalid",
+                      missing=["反例还待核"])
+        self.assertEqual(self.save(self.materials(candidate_scores=payload(item)))["status"], "ready")
+
+    def test_zero_hard_gate_cannot_pass_or_soft_stop(self):
+        """硬门槛记 0 却记可推进或备选，会让未过门槛的候选进入推荐。"""
+        for gate, gate_item in (("pass", "空白成因"), ("pass", "新意落点"),
+                                ("soft_stop", "空白成因"), ("soft_stop", "新意落点")):
+            with self.subTest(gate=gate, gate_item=gate_item):
+                scores = dict(SCORES)
+                scores[gate_item] = 0
+                item = record(scores=scores, gate=gate, missing=["软门槛补法：先找使用者"])
+                with self.assertRaises(ValueError) as caught:
+                    self.save(self.materials(candidate_scores=payload(item)))
+                message = str(caught.exception)
+                self.assertIn(gate_item, message)
+                self.assertIn("硬门槛", message)
+
+        # 记 0 又记 pending 是合规的：还没判完就该停在待补。
+        scores = dict(SCORES)
+        scores["空白成因"] = 0
+        stopped = record(scores=scores, gate="pending", total=None,
+                         missing=["已证伪后还要确认是否换切口"])
+        self.assertEqual(self.save(self.materials(candidate_scores=payload(stopped)))["status"], "ready")
+
+    def test_merge_does_not_require_zero_gate(self):
+        """`merge` 的判据只有并入目标，文档没有硬门槛要求，不扩大到它。"""
+        scores = dict(SCORES)
+        scores["空白成因"] = 0
+        merged = record(id="C2", scores=scores, gate="merge", total=None, merged_into="C1")
+        self.assertEqual(
+            self.save(self.materials(candidate_scores=payload(record(id="C1"), merged)))["status"],
+            "ready",
+        )
+
+    def test_blank_evidence_is_rejected(self):
+        """依据是空白串或非文本时，不能当成已有依据。"""
+        for bad in ("   ", "", True, 1, None):
+            with self.subTest(evidence_value=bad):
+                evidence = {name: "事实：合成依据" for name in WEIGHTS}
+                evidence["价值"] = bad
+                with self.assertRaises(ValueError) as caught:
+                    self.save(self.materials(candidate_scores=payload(record(evidence=evidence))))
+                self.assertIn("evidence", str(caught.exception))
+
+    def test_extra_evidence_key_is_rejected(self):
+        """多出一个没有对应分数的依据键，说明依据与分数对不上。"""
+        evidence = dict(EVIDENCE)
+        evidence["无对应评分项"] = "事实：x"
+        with self.assertRaises(ValueError) as caught:
+            self.save(self.materials(candidate_scores=payload(record(evidence=evidence))))
+        self.assertIn("evidence 含有 scores 里没有的项", str(caught.exception))
+        self.assertIn("无对应评分项", str(caught.exception))
+
+    def test_scores_and_evidence_errors_are_reported_together(self):
+        """一方类型写错不能让另一方的错误消失。"""
+        with self.assertRaises(ValueError) as caught:
+            self.save(self.materials(candidate_scores=payload(
+                record(scores=[], evidence=[], gate="keep"))))
+        message = str(caught.exception)
+        self.assertIn("scores 须是对象", message)
+        self.assertIn("evidence 须是对象", message)
+        self.assertIn("gate 须是", message)
+
+    def test_out_of_range_score_survives_evidence_error(self):
+        """`evidence` 不是对象时，越界分数仍要一起报出。"""
+        scores = dict(SCORES)
+        scores["价值"] = 9
+        with self.assertRaises(ValueError) as caught:
+            self.save(self.materials(candidate_scores=payload(record(scores=scores, evidence=[]))))
+        message = str(caught.exception)
+        self.assertIn("evidence 须是对象", message)
+        self.assertIn("分数须是", message)
+
+
+class VerdictWithoutScoresTests(ComponentCase):
+    """单候选、不评分时的判决记录：只记判决与三样内容，不记分数与总分。"""
+
+    def setUp(self):
+        super().setUp()
+        self.proposal = self.output / "proposal"
+        self.proposal.mkdir()
+        started = self.call("begin_revision", {
+            "proposal_dir": str(self.proposal), "expected_state_version": None,
+            "inputs": {
+                "application_id": "合成项目-免评分判决", "purpose": "联系教授",
+                "question_id": "q1", "material_paths": [],
+            },
+        })
+        self.assertEqual(started["status"], "ready")
+        self.revision = started["revision_id"]
+
+    def save(self, data):
+        state = read_json(self.proposal / "研究计划状态.json")
+        return self.call("save_revision", {
+            "proposal_dir": str(self.proposal), "revision_id": self.revision,
+            "expected_state_version": state["state_version"],
+            "stage": "materials", "data": data,
+        })
+
+    def verdict(self, **overrides):
+        item = {
+            "id": "C1",
+            "statement_version": "q1",
+            "gate": "pass",
+            "experiment": ["初测高于预注册判据线"],
+            "missing": [],
+            "evidence": ["全文：最接近的三篇都只回答相邻问题"],
+        }
+        item.update(overrides)
+        return item
+
+    def verdicts(self, *items):
+        return {"evidence_cutoff": "2026-11-28", "items": list(items)}
+
+    def test_single_candidate_verdict_is_saved(self):
+        """单候选、可以推进、没有总分：按题面版本读回判决。"""
+        result = self.save({
+            "materials": [], "candidates": [{"id": "C1", "question": "唯一候选"}],
+            "verdicts": self.verdicts(self.verdict()),
+        })
+        self.assertEqual(result["status"], "ready")
+        state = read_json(self.proposal / "研究计划状态.json")
+        saved = read_json(
+            state["works"][self.revision]["steps"]["materials"]["artifacts"]["data"]
+        )
+        saved_item = saved["verdicts"]["items"][0]
+        self.assertEqual(saved_item["statement_version"], "q1")
+        self.assertEqual(saved_item["gate"], "pass")
+        self.assertNotIn("total", saved_item)
+        self.assertNotIn("scores", saved_item)
+
+    def test_verdict_must_not_carry_scores_or_total(self):
+        """免评分形态不写 scores、weights、total；写了说明该走 candidate_scores。"""
+        for extra in ({"scores": {}}, {"scores": None}, {"weights": {}},
+                      {"total": 70.0}, {"total": None}):
+            with self.subTest(extra=list(extra)):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(
+                        self.verdict(**extra))})
+                message = str(caught.exception)
+                self.assertIn("免评分判决", message)
+                self.assertIn(list(extra)[0], message)
+
+    def test_verdict_gate_limited_to_three(self):
+        """没有比较就没有排序：备选与并入不能用在这条路径。"""
+        for gate in ("soft_stop", "merge"):
+            with self.subTest(gate=gate):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(
+                        self.verdict(gate=gate))})
+                self.assertIn("verdicts.items[0]", str(caught.exception))
+
+    def test_verdict_hard_stop_needs_reason(self):
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [], "verdicts": self.verdicts(
+                self.verdict(gate="hard_stop"))})
+        self.assertIn("stop_reason", str(caught.exception))
+
+        for bad_reason in ("too_low", "gap_zero_typo", "", None, ["gap_zero"]):
+            with self.subTest(stop_reason=bad_reason):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(
+                        self.verdict(gate="hard_stop", stop_reason=bad_reason))})
+                self.assertIn("stop_reason", str(caught.exception))
+
+        result = self.save({"materials": [], "verdicts": self.verdicts(
+            self.verdict(gate="hard_stop", stop_reason="problem_invalid"))})
+        self.assertEqual(result["status"], "ready")
+
+    def test_verdict_pending_needs_missing(self):
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [], "verdicts": self.verdicts(
+                self.verdict(gate="pending", missing=[]))})
+        self.assertIn("missing", str(caught.exception))
+
+        result = self.save({"materials": [], "verdicts": self.verdicts(
+            self.verdict(gate="pending", missing=["还缺关键数据"]) )})
+        self.assertEqual(result["status"], "ready")
+
+    def test_verdict_pass_and_hard_stop_need_evidence(self):
+        for gate, extra in (("pass", {}),
+                            ("hard_stop", {"stop_reason": "problem_invalid"})):
+            with self.subTest(gate=gate):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(
+                        self.verdict(gate=gate, evidence=[], **extra))})
+                self.assertIn("evidence", str(caught.exception))
+
+    def test_verdict_entries_must_be_non_empty_strings(self):
+        """数组项要是去掉首尾空白后仍有内容的字符串；空白串与非文本都不算。"""
+        for name in ("experiment", "missing", "evidence"):
+            for bad in ([None], [""], ["   "], [True], [1], ["有内容", None]):
+                with self.subTest(field=name, value=bad):
+                    with self.assertRaises(ValueError) as caught:
+                        self.save({"materials": [], "verdicts": self.verdicts(
+                            self.verdict(gate="pending", **{name: bad}))})
+                    self.assertIn(name, str(caught.exception))
+
+    def test_verdict_needs_cutoff_and_items(self):
+        for broken in ({}, {"items": [self.verdict()]},
+                       {"evidence_cutoff": "", "items": [self.verdict()]},
+                       {"evidence_cutoff": "   ", "items": [self.verdict()]},
+                       {"evidence_cutoff": 20261128, "items": [self.verdict()]},
+                       {"evidence_cutoff": None, "items": [self.verdict()]},
+                       {"evidence_cutoff": "2026-11-28", "items": []},
+                       {"evidence_cutoff": "2026-11-28", "items": {}}):
+            with self.subTest(keys=sorted(broken, key=str)):
+                with self.assertRaises(ValueError):
+                    self.save({"materials": [], "verdicts": broken})
+
+    def test_verdict_statement_version_unique(self):
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [], "verdicts": self.verdicts(
+                self.verdict(), self.verdict())})
+        self.assertIn("题面版本", str(caught.exception))
+
+    def test_verdict_and_candidate_scores_coexist(self):
+        """一次保存里既有比较过的候选、又有单候选判决，各按自己的规则校验。"""
+        result = self.save({
+            "materials": [],
+            "candidate_scores": payload(record(id="C1")),
+            "verdicts": self.verdicts(self.verdict(id="C9", statement_version="q9")),
+        })
+        self.assertEqual(result["status"], "ready")
+
+    def test_verdict_rejection_writes_nothing(self):
+        self.assertEqual(self.save({"materials": []})["status"], "ready")
+        before = read_json(self.proposal / "研究计划状态.json")["state_version"]
+        with self.assertRaises(ValueError):
+            self.save({"materials": [], "verdicts": self.verdicts(self.verdict(gate="merge"))})
+        self.assertEqual(read_json(self.proposal / "研究计划状态.json")["state_version"], before)
+
+    def test_one_compliant_one_invalid_split(self):
+        """一合规一违规时，判定的方向必须落在出错的那一侧。"""
+        # 只有 candidate_scores 违规
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [],
+                       "candidate_scores": payload(record(gate="pending", total=88.0, missing=[])),
+                       "verdicts": self.verdicts(self.verdict(id="C9", statement_version="q9"))})
+        message = str(caught.exception)
+        self.assertIn("不得给总分", message)
+        self.assertNotIn("verdicts.items", message)
+
+        # 只有 verdicts 违规
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [],
+                       "candidate_scores": payload(record()),
+                       "verdicts": self.verdicts(self.verdict(gate="merge"))})
+        message = str(caught.exception)
+        self.assertIn("verdicts.items", message)
+        self.assertNotIn("不得给总分", message)
+
+    def test_compliant_scores_and_verdicts_are_saved_verbatim(self):
+        """两个对象都合规时原样落盘，不补字段、不改写。"""
+        scores_payload = payload(record())
+        verdicts_payload = self.verdicts(self.verdict())
+        self.assertEqual(
+            self.save({"materials": [], "candidate_scores": scores_payload,
+                       "verdicts": verdicts_payload})["status"],
+            "ready",
+        )
+        state = read_json(self.proposal / "研究计划状态.json")
+        saved = read_json(
+            state["works"][self.revision]["steps"]["materials"]["artifacts"]["data"]
+        )
+        self.assertEqual(saved["candidate_scores"], scores_payload)
+        self.assertEqual(saved["verdicts"], verdicts_payload)
+
+    def test_verdict_required_fields_must_be_present(self):
+        """六个必填字段逐个删除都要被拒，并指名字段。"""
+        for name in ("id", "statement_version", "gate", "experiment", "missing", "evidence"):
+            with self.subTest(field=name):
+                item = self.verdict()
+                item.pop(name)
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(item)})
+                self.assertIn(name, str(caught.exception))
+
+    def test_verdicts_top_level_and_items_shapes(self):
+        """`verdicts` 须是对象、`items` 须是非空数组、每个条目须是对象。"""
+        for label, broken in (
+            ("顶层是数组", []),
+            ("顶层是 null", None),
+            ("顶层是字符串", "verdicts"),
+            ("items 含 null", {"evidence_cutoff": "2026-11-28", "items": [None]}),
+            ("items 含数字", {"evidence_cutoff": "2026-11-28", "items": [1]}),
+        ):
+            with self.subTest(case=label):
+                with self.assertRaises(ValueError):
+                    self.save({"materials": [], "verdicts": broken})
+
+    def test_verdict_gate_unknown_value_is_rejected(self):
+        """除 `soft_stop`、`merge` 外，未知值同样要被拒。"""
+        for bad in ("keep", "", None, 1, ["pass"]):
+            with self.subTest(gate=bad):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(
+                        self.verdict(gate=bad, missing=["还缺数据"]))})
+                self.assertIn("gate", str(caught.exception))
+
+    def test_verdict_id_and_version_must_be_non_empty_strings(self):
+        for field in ("id", "statement_version"):
+            for bad in ("", "   ", ["C1"], {"a": 1}, 1, None):
+                with self.subTest(field=field, value=bad):
+                    with self.assertRaises(ValueError):
+                        self.save({"materials": [], "verdicts": self.verdicts(
+                            self.verdict(**{field: bad}))})
+
+    def test_verdict_array_fields_must_be_arrays(self):
+        """三个内容字段传非数组时按“须是数组”拒绝，不抛 TypeError。"""
+        for field in ("experiment", "missing", "evidence"):
+            for bad in ("文字", {"a": 1}, None, 1):
+                with self.subTest(field=field, value=bad):
+                    with self.assertRaises(ValueError) as caught:
+                        self.save({"materials": [], "verdicts": self.verdicts(
+                            self.verdict(**{field: bad}))})
+                    self.assertIn(field, str(caught.exception))
+
+    def test_verdict_does_not_use_score_rules(self):
+        """免评分形态不走 candidate_scores 的分数规则：没有 weighted 项也能存。"""
+        result = self.save({"materials": [], "verdicts": self.verdicts(self.verdict())})
+        self.assertEqual(result["status"], "ready")
+
+    def test_verdict_non_stop_gate_must_not_carry_reason(self):
+        """只有 `hard_stop` 写停因；`pass`、`pending` 带 `stop_reason` 是缺口。"""
+        for gate, extra in (("pass", {}), ("pending", {"missing": ["还缺数据"]})):
+            with self.subTest(gate=gate):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(
+                        self.verdict(gate=gate, stop_reason="gap_zero", **extra))})
+                self.assertIn("stop_reason", str(caught.exception))
+
+    def test_verdict_all_problems_reported_at_once(self):
+        """一条记录内多处独立错误要一次报全。"""
+        broken = self.verdict(gate="pending", missing=[], evidence=["   "],
+                              experiment="文字")
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [], "verdicts": self.verdicts(broken)})
+        message = str(caught.exception)
+        for expected in ("experiment", "missing", "evidence"):
+            self.assertIn(expected, message)
+
+    def test_both_objects_report_problems_together(self):
+        """两个对象同时有错时一次列全，不先报一个、补完再报另一个。"""
+        bad_scores = record(gate="pending", total=88.0, missing=[])
+        bad_verdict = self.verdict(gate="pending", missing=[])
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [],
+                       "candidate_scores": payload(bad_scores),
+                       "verdicts": self.verdicts(bad_verdict)})
+        message = str(caught.exception)
+        # candidate_scores 的问题
+        self.assertIn("不得给总分", message)
+        # verdicts 的问题
+        self.assertIn("verdicts.items[0]", message)
+
+    def test_both_objects_valid_still_save(self):
+        result = self.save({
+            "materials": [],
+            "candidate_scores": payload(record(id="C1")),
+            "verdicts": self.verdicts(self.verdict(id="C9", statement_version="q9")),
+        })
+        self.assertEqual(result["status"], "ready")
