@@ -676,9 +676,9 @@ PR #9 的独立快审（按 `quick-merge-review`）指出 B1：硬门槛项记�
 
 用户对 head `0e4eec7` 提出两条业务问题：①三篇近邻找齐、但其中一篇只能读到摘要、无法核对该篇是否已用本稿方法时，现行“写不出就按 0 分”只能写成 0，再填 `hard_stop` 与 `gap_zero`；②续做旧稿时，“缺 `statement_version` 的写当前题面版本”可能把旧判决挂到新题面。两条都属“规则缺少区分、保存程序识别不出”。
 
-RP-18 新增两组文档观察点：**「写不出」按原因分档**（0 分只在已证伪时；材料不足以判断记 `null`／`pending` 并写明待核文献或方法；全文查清独立于篇数；四处同口径）与**旧记录版本先核对再补**（先按旧记录 `question` 与当时题面对照，对不上保留旧档重新判；写明程序只查非空字符串）。组件侧不新增校验、`_state.py` 不改。
+RP-18 新增两组文档观察点：**「写不出」按原因分档**（0 分只在已证伪时；材料不足以判断记 `null`／`pending` 并写明待核文献或方法；全文查清独立于篇数；四处同口径（最初计数；后经更正为七处，见本文件最后的定向确认））与**旧记录版本先核对再补**（先按旧记录 `question` 与当时题面对照，对不上保留旧档重新判；写明程序只查非空字符串）。组件侧不新增校验、`_state.py` 不改。
 
-审核对象校验值：`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`（`implementation-plan.md` 为 `d5fe9691be5e6a01d4153402e49e7db5e21988875f0d8d3553820f1721154786`，仅用于核对观察点对应）。
+审核对象校验值：`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`（`implementation-plan.md` 为 `7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016`，仅用于核对观察点对应）。
 
 **检查方式更正（同一轮内）**：本轮起 RP-18 的文档部分改为**直接阅读并按观察点逐条记录结论与依据**，删除测试计划里“运行只读结构/锚点/关键词脚本、通过条件为 `PASS <n> checks / <n>` 与 `ALL OK`”的写法。依据 `Test Engineer Rule.md` 第 3 节：现有断言或直接观察足以判断时，禁止新增专用采集器、自定义判定器或逐项证据账本；脚本计数属该节禁止的证据账本。测试计划另在「文档类必测项的检查方式」一段写明 RP-15～17 早先各轮的脚本计数属历史执行方式，自本轮起不再作为现行判定依据。本轮不改产品代码。
 
@@ -690,15 +690,15 @@ RP-18 新增两组文档观察点：**「写不出」按原因分档**（0 分�
 
 另按非阻断建议处理：「预期结果」的“没有改动既有判据”窄化为“0 分判据、九项权重、评分公式与 0/1/2 表未改（1 分「基底或指标」说明句按本轮要求在“写不出”处补了区分，不改判据本身）”；步骤 1 的“不作为该项通过条件的主体”统一为“不作为通过条件”。
 
-修正后对象：`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`、`implementation-plan.md` SHA256 `d5fe9691be5e6a01d4153402e49e7db5e21988875f0d8d3553820f1721154786`。
+修正后对象：`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`、`implementation-plan.md` SHA256 `7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016`。
 
 **最终结论 `APPROVED`（2026 年 11 月 28 日，第四轮定向复核）**：
 
 ```text
 测试计划结论：APPROVED
 审核对象：plan/test-plan.md b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f
-         implementation-plan.md d5fe9691be5e6a01d4153402e49e7db5e21988875f0d8d3553820f1721154786
-         candidate-scoring.md 796288b552142e1c7ccf4a153e800fe2605d93e9ed710039a358f5f07c43e535
+         implementation-plan.md 7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016
+         candidate-scoring.md f213cc4010294ef727afc608c0bb403fa8866b4b3c928cfd1905eb5f63f5d868
          SKILL.md 165d86e1eaa2044dac60c902937d908728adca18aca722ba49ff29c8283401f1
 理由：三处残缺（pending 首条触发、步骤-question 定位句与计划阅读清单、RP-16 重复句）均闭合；
      方法更正属等价清理、观察点可直接阅读判断；全文无脚本或计数通过条件残留；
@@ -714,7 +714,7 @@ RP-18 新增两组文档观察点：**「写不出」按原因分档**（0 分�
 ```text
 测试计划结论：APPROVED
 审核对象：plan/test-plan.md b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f
-         plan/implementation-plan.md d5fe9691be5e6a01d4153402e49e7db5e21988875f0d8d3553820f1721154786
+         plan/implementation-plan.md 7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016
 理由：计数由“六处”更正为“七处”并列出同一批句位，属等价修订；pending 触发第一条此前已由
      RP-18「待补范围」观察点覆盖，本次只是纳入同一计数，未新增观察点、未改判据、未改通过条件。
      方法更正、RP-15～17 业务观察点、组件 79 项与回归 27 项结果均不需重跑或重审。

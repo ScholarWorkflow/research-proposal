@@ -781,7 +781,7 @@ Plan conclusion: APPROVED
 **关键差异**：
 1. 硬要求改为“写不出时先分清为什么写不出”：只有已有证据满足既定 0 分条件（已证伪）才记 0；材料不足以判断时记 `null`（未评）并按 `pending`，写明待核的文献或方法。
 2. 明确**全文是否查清独立于文献篇数判断**：三篇凑够但关键一篇只读到摘要、无法核对是否已用本稿方法，仍记「未评」。
-3. 四处同口径改口：1 分判据的「基底或指标」句、硬要求段、「未评」段、「四种常见打错」第 1 条——避免只改一句、留下三处同义的反向说法。
+3. 四处同口径（最初计数；后经更正为七处，见本文件最后的定向确认）改口：1 分判据的「基底或指标」句、硬要求段、「未评」段、「四种常见打错」第 1 条——避免只改一句、留下三处同义的反向说法。
 4. 旧记录补救改为“先核对再补”：用旧记录里的 `question` 文字与当时保存的题面逐个比对，能对上某一版就补那一版，对不上就保留旧档、按当前题面重新判；并写明程序只查非空字符串、判断不了属于哪一版。
 
 **不影响**：0 分判据本身（仍是“已证伪”一种来源两种情形）、三篇最低证据要求、九项权重与评分公式、`candidate_scores` 与 `verdicts` 的全部校验规则、组件代码（本轮不改 `_state.py`）。
@@ -790,7 +790,7 @@ Plan conclusion: APPROVED
 
 **检查方式的更正（同一轮内）**：此前 RP-18 的文档部分用仓库外一次性脚本判定并以 `PASS n checks` 计数作为通过条件。按 `Test Engineer Rule.md` 第 3 节，文档类目标直接阅读足以判断时不得新增专用采集器、自定义判定器或逐项证据账本，该做法属禁止事项。本轮起改为**直接阅读并按观察点逐条记录结论与依据**；测试计划已同步删除脚本判定器与 `PASS n checks` 通过条件。各轮历史记录里的脚本计数保留为历史，不再作为现行判定依据。本计划的本轮改动不含产品代码。
 
-审核对象校验值：`implementation-plan.md` SHA256 `d5fe9691be5e6a01d4153402e49e7db5e21988875f0d8d3553820f1721154786`，`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`（本轮补两条观察点，并删除脚本判定器与 `PASS n checks` 通过条件），`skills/research-proposal/references/candidate-scoring.md` SHA256 `796288b552142e1c7ccf4a153e800fe2605d93e9ed710039a358f5f07c43e535`。
+审核对象校验值：`implementation-plan.md` SHA256 `7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016`，`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`（本轮补两条观察点，并删除脚本判定器与 `PASS n checks` 通过条件），`skills/research-proposal/references/candidate-scoring.md` SHA256 `f213cc4010294ef727afc608c0bb403fa8866b4b3c928cfd1905eb5f63f5d868`。
 
 **定向修正与结论 `APPROVED`（2026 年 11 月 28 日，第六轮）**。审核者对 `8d799819…` 给出 `APPROVED`（P1–P4 全 PASS、`Gate review completeness: COMPLETE`），并确认：两条缺陷原文确实存在于上一版（`:58` 的“写不出，按 0 分”与 `:391` 的“写当前题面版本”）；保存入口只判非空字符串（`_state.py:760-766`）；本轮属既有规则的表达修正，不是新增产品要求；六处改口一致、未出现“把已确认没有变化也记成永远 pending”的新误用；计划没有把“历史误判由这句话触发”写成已证事实，表述恰当；把文档检查从脚本计数改为直接阅读记录**不削弱覆盖**，删除被禁止的判定设施是从禁止做法回退到合规基线，不需要新批准。
 
@@ -801,10 +801,10 @@ Plan conclusion: APPROVED
 3. **旧记录核对未点名保存件位置**：文档与计划各补一句“旧题面在各修订目录的 `步骤-question-*.json` 里，可按本稿状态记录的路径找”，让 P4 的核对步骤可执行。
 4. **测试计划文案重复**：RP-16 执行步骤末尾重复句已去重；“四处”同步为“六处”。
 
-修正后对象：`implementation-plan.md` SHA256 `d5fe9691be5e6a01d4153402e49e7db5e21988875f0d8d3553820f1721154786`、`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`、`candidate-scoring.md` SHA256 `796288b552142e1c7ccf4a153e800fe2605d93e9ed710039a358f5f07c43e535`、`SKILL.md` SHA256 `165d86e1eaa2044dac60c902937d908728adca18aca722ba49ff29c8283401f1`。前一轮 `8d799819…` 的批准按 `Plan Reviewer Rule.md` 第 6.3 节做影响分析后由本版沿用：只改计数、摘要措辞与保存件位置说明，未改 requirement、owner、机制、兼容性或失败策略。
+修正后对象：`implementation-plan.md` SHA256 `7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016`、`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`、`candidate-scoring.md` SHA256 `f213cc4010294ef727afc608c0bb403fa8866b4b3c928cfd1905eb5f63f5d868`、`SKILL.md` SHA256 `165d86e1eaa2044dac60c902937d908728adca18aca722ba49ff29c8283401f1`。前一轮 `8d799819…` 的批准按 `Plan Reviewer Rule.md` 第 6.3 节做影响分析后由本版沿用：只改计数、摘要措辞与保存件位置说明，未改 requirement、owner、机制、兼容性或失败策略。
 
 **追加影响分析（第六轮后两处纯文字修正）**。在 `8d799819…` 获批后，计划又改了两处，均来自审核者自己的非阻断观察与测试计划关口的阻断项：①计数从“四处”更正为更准确的处数（审核者指出实际改动多于四处，未计入的是原先只写“还没查够三篇”的门槛表与硬门槛解释段；定稿口径为 `candidate-scoring.md` 七处加 `SKILL.md` 一处，见下）；②「旧记录怎么继续保存」第 2 条补 `步骤-question-*.json` 定位句——该句原先只出现在本轮新段、第 2 条没有，观察点指向第 2 条，故两处都补。两处都只改计数措辞与核对步骤的可定位性，未改 requirement、owner、change point、机制、兼容性、失败策略或 observability。**产品文档相对已审版本确有增加**：审核者审的是 `candidate-scoring.md` `68d42f76…`，定稿 `796288b5…` 在其上多了 `pending` 触发第一条的“或三篇虽已找齐但关键一篇只读到摘要”与 `步骤-question-*.json` 定位句，`SKILL.md` 也补了判停摘要；这两处正是审核记录 O-2、O-3 的处理，审核者重读后判无设计影响。`_state.py` 未变。按 `Plan Reviewer Rule.md` 第 6.3 节提交定向确认。
 
 
 **定向确认（第 6.3 节影响分析）**：审核者复核后确认这两类修改属等价修正，可沿用 `8d799819…` 上的 P1–P4 `PASS` 与 `APPROVED`，未触及任何已审决定、无需重开 Gate；同时指出三处记录残留（计划观察点段仍写“文档四处”、计数未含 `pending` 触发第一条、以及“原先只在新段有”“产品文档未变”两处措辞与已审版本不符），均已按上段更正。
-**最终对象**：`implementation-plan.md` SHA256 `d5fe9691be5e6a01d4153402e49e7db5e21988875f0d8d3553820f1721154786`，`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`（计划侧结论沿用，测试计划由测试计划关口单独确认）。
+**最终对象**：`implementation-plan.md` SHA256 `7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016`，`test-plan.md` SHA256 `b3af79818c85c3b62ea9bbdac54be97af4f9dee52e117166b41a4a639eab258f`（计划侧结论沿用，测试计划由测试计划关口单独确认）。
