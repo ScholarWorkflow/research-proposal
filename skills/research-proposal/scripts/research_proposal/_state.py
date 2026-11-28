@@ -716,7 +716,7 @@ VERDICT_REQUIRED = (
 )
 
 
-def _candidate_scores_problems(scores) -> list:
+def _candidate_scores_problems(scores, extra_ids=()) -> list:
     """判决记录的入参检查：一次列出全部问题，由调用方统一报错。
 
     记录与分数分开：判决词、总分处理、停因与三样内容必须互相对得上，缺证据
@@ -782,7 +782,9 @@ def _candidate_scores_problems(scores) -> list:
         if isinstance(identifier, str) and identifier:
             label = f"{label}（{identifier}）"
         problems.extend(_candidate_problems(label, item, weights))
-    identities = {identifier for identifier, _ in seen}
+    # 候选身份可以只出现在 `verdicts` 里：`merged_into` 指向的是候选身份，
+    # 不是某一版记录，因此身份集合要把本次保存里出现过的 id 都算上。
+    identities = {identifier for identifier, _ in seen} | set(extra_ids)
     for (identifier, _), item in seen.items():
         merged = item.get("merged_into")
         if item.get("gate") == "merge" and isinstance(merged, str) and merged not in identities:
@@ -815,7 +817,7 @@ def _candidate_problems(label: str, item: dict, weights) -> list:
             "以下与 gate 有关的检查因 gate 非法而无法进行。"
         )
         return problems
-    problems.extend(_gate_problems(label, item, gate))
+    problems.extend(_gate_problems(label, item, gate, weights))
     return problems
 
 
@@ -854,7 +856,20 @@ def _score_problems(label: str, item: dict, weights) -> list:
                 problems.append(
                     f"{label} 的 scores 含有权重表里没有的项：{'、'.join(extra_keys)}。"
                 )
+    if has_evidence:
+        # 依据的取值能独立判断：`scores` 写错形态时也要把空白依据一起报出，
+        # 否则用户改完分数还会再被打回一次。
+        blank_evidence = sorted(
+            name for name, text in evidence.items()
+            if not isinstance(text, str) or not text.strip()
+        )
+        if blank_evidence:
+            problems.append(
+                f"{label} 的 evidence 这些项不是有效依据：{'、'.join(blank_evidence)}；"
+                "每项都要写去掉首尾空白后仍有内容的文字。"
+            )
     if has_scores and has_evidence:
+        # 键集合要两边都是对象才比较：一方写错形态时缺哪一项无从判定。
         missing_evidence = sorted(set(scores) - set(evidence))
         extra_evidence = sorted(set(evidence) - set(scores))
         if missing_evidence:
@@ -867,19 +882,10 @@ def _score_problems(label: str, item: dict, weights) -> list:
                 f"{label} 的 evidence 含有 scores 里没有的项：{'、'.join(extra_evidence)}；"
                 "依据要逐项对应分数，不能多写没有对应分数的键。"
             )
-        blank_evidence = sorted(
-            name for name, text in evidence.items()
-            if not isinstance(text, str) or not text.strip()
-        )
-        if blank_evidence:
-            problems.append(
-                f"{label} 的 evidence 这些项不是有效依据：{'、'.join(blank_evidence)}；"
-                "每项都要写去掉首尾空白后仍有内容的文字。"
-            )
     return problems
 
 
-def _gate_problems(label: str, item: dict, gate: str) -> list:
+def _gate_problems(label: str, item: dict, gate: str, weights) -> list:
     """只在 `gate` 合法时检查：总分、停因、并入目标、三样内容与判决的对应。"""
     problems = []
     total = item.get("total")
@@ -927,17 +933,21 @@ def _gate_problems(label: str, item: dict, gate: str) -> list:
                 problems.append(
                     f"{label} 的 scores 缺少硬门槛项 {name}；两道硬门槛必须逐项记分或记 null。"
                 )
-        problems.extend(_gate_score_alignment(label, item, gate, scores))
+        problems.extend(_gate_score_alignment(label, item, gate, scores, weights))
     return problems
 
 
-def _gate_score_alignment(label: str, item: dict, gate: str, scores: dict) -> list:
+def _gate_score_alignment(label: str, item: dict, gate: str, scores: dict,
+                         weights) -> list:
     """判决与两项硬门槛分数互相对齐。
 
     判决词和分数是两件事，但方向必须一致：硬门槛记 0 才允许用它的停因，
     记了 0 就不能记可推进或备选。「判停要有依据、通过要有门槛」在两边都不能
     只说一边：`gate` 写停而分数全过、或分数未过硬门槛却记 `pass`，
     都会让候选被误读成与事实相反的结论，正是本轮要堵的路径。
+
+    `weights` 只用于一条：`pass`、`soft_stop` 要求总分照算，而总分分母是
+    “已评项的正权重之和”；一项正权重都不剩时分母为零，这两种判决没有依据。
     """
     problems = []
     unrated = [name for name in HARD_GATE_ITEMS if scores.get(name) is None]
@@ -949,9 +959,13 @@ def _gate_score_alignment(label: str, item: dict, gate: str, scores: dict) -> li
         return problems
     if gate == "hard_stop":
         reason = item.get("stop_reason")
-        required = STOP_REASON_GATE.get(reason)
+        # 先判类型再查表：停因写成列表或对象时不能在这里抛 TypeError，
+        # 否则已经收集到的问题和另一个对象的问题都返回不了。
+        required = STOP_REASON_GATE.get(reason) if isinstance(reason, str) else None
         if required is None:
-            # `problem_invalid` 不是九项之一，不要求哪一项为 0。
+            # `problem_invalid` 不是九项之一，不要求哪一项为 0；
+            # 非法停因已在 `_gate_problems` 报过，这里不重复报。
+            # `hard_stop` 本来就不给总分，分母与它无关。
             return problems
         if valued.get(required) != 0:
             problems.append(
@@ -969,12 +983,36 @@ def _gate_score_alignment(label: str, item: dict, gate: str, scores: dict) -> li
                 "硬门槛为 0 的候选不进入排序与推荐，须记 hard_stop 并写对应停因，"
                 "或改记 pending 并写明缺什么。"
             )
+        problems.extend(_denominator_problems(label, gate, scores, weights))
     return problems
 
 
-def _check_candidate_scores(scores) -> None:
+def _denominator_problems(label: str, gate: str, scores: dict, weights) -> list:
+    """`pass`、`soft_stop` 要求总分照算，分母不能为零。
+
+    分母是“已评项的正权重之和”：权重可以设为 0，也可以整表只留一项正权重；
+    若那一项恰好是「未评」，剔除未评项后分母就是 0，总分没有定义。
+    这种记录只能记 `pending` 并写明缺哪项，不能记成可推进或备选。
+    """
+    if weights is None or not isinstance(weights, dict):
+        # 权重表本身已判非法，分母无从计算，不叠加报错。
+        return []
+    counted = [
+        name for name, weight in weights.items()
+        if isinstance(weight, (int, float)) and not isinstance(weight, bool)
+        and weight > 0 and scores.get(name) is not None
+    ]
+    if counted:
+        return []
+    return [
+        f"{label} 记 {gate}，但没有可计入总分的正权重项（正权重项都已记未评或不存在）；"
+        "剔除未评项后分母为零，总分无法照算。改记 pending 并写明缺哪项，或补齐后重判。"
+    ]
+
+
+def _check_candidate_scores(scores, extra_ids=()) -> None:
     """拒绝不合规的判决记录，一次列出全部问题，避免违规记录静默入库。"""
-    problems = _candidate_scores_problems(scores)
+    problems = _candidate_scores_problems(scores, extra_ids)
     if problems:
         raise ValueError("判决记录不合规：" + "；".join(problems))
 
@@ -1072,6 +1110,55 @@ def _check_verdicts(verdicts) -> None:
         raise ValueError("免评分判决记录不合规：" + "；".join(problems))
 
 
+def _verdict_identities(verdicts) -> set:
+    """`verdicts` 里出现过的候选 id；供 `merged_into` 的身份判断使用。"""
+    if not isinstance(verdicts, dict):
+        return set()
+    items = verdicts.get("items")
+    if not isinstance(items, list):
+        return set()
+    return {
+        item["id"] for item in items
+        if isinstance(item, dict) and isinstance(item.get("id"), str) and item["id"].strip()
+    }
+
+
+def _cross_object_duplicate_problems(candidate_scores, verdicts) -> list:
+    """同一 `(id, statement_version)` 不能同时出现在两个对象里。
+
+    两个对象各自查重只能保证“本对象内不重复”，同一条题面版本仍可能在
+    `candidate_scores` 记一个判决、在 `verdicts` 记另一个相反判决，两条都落盘后
+    汇总无法确定该采用哪一条。题面版本是判决的身份，整次保存只能有一条。
+    """
+    seen = {}
+    problems = []
+    for label, obj in (("candidate_scores", candidate_scores), ("verdicts", verdicts)):
+        if not isinstance(obj, dict):
+            continue
+        items = obj.get("items")
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            identifier = item.get("id")
+            version = item.get("statement_version")
+            if not isinstance(identifier, str) or not isinstance(version, str):
+                continue
+            key = (identifier, version)
+            if key in seen:
+                # 同一对象内的重复已由各自的对象校验报过，这里只报跨对象那一类，
+                # 否则错误文本会写成“同时记在 verdicts 与 verdicts”这类废话。
+                if seen[key] != label:
+                    problems.append(
+                        f"{identifier} 的题面版本 {version!r} 同时记在 {seen[key]} 与 {label}；"
+                        "同一题面版本的判决只能有一条：保留一条，删掉或移走另一条。"
+                    )
+            else:
+                seen[key] = label
+    return problems
+
+
 def _check_materials_records(data: dict) -> None:
     """校验材料步骤里的判决记录，两个可选对象的问题合并成一次报错。
 
@@ -1079,10 +1166,17 @@ def _check_materials_records(data: dict) -> None:
     一次保存只说对了一半的错，执行者补齐后还会再被打回一次。
     """
     problems = []
+    # 候选身份可能只记在 `verdicts` 里，`merge` 允许指向这种候选。
+    extra_ids = _verdict_identities(data.get("verdicts"))
     if "candidate_scores" in data:
-        problems.extend(_candidate_scores_problems(data["candidate_scores"]))
+        problems.extend(_candidate_scores_problems(
+            data["candidate_scores"], extra_ids,
+        ))
     if "verdicts" in data:
         problems.extend(_verdicts_problems(data["verdicts"]))
+    problems.extend(_cross_object_duplicate_problems(
+        data.get("candidate_scores"), data.get("verdicts"),
+    ))
     if problems:
         raise ValueError("判决记录不合规：" + "；".join(problems))
 

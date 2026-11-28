@@ -687,3 +687,84 @@ Plan conclusion: APPROVED
 `Proposed review status`：`pending`。正式结论由独立 `plan_reviewer` 给出。
 
 审核对象校验值（第三轮修正后）：`implementation-plan.md` SHA256 `3a3a99563099fcc77d00e420c243ce032a37188191c83e5401b95bd839df1d6a`（最终批准版，未再变动）；`test-plan.md` 当时为 `0fc1848981ce27861f02d9e3d1b69e901912982570699b2b55ec98ddfb2fd090`——该值只表示本计划审核读取时的测试计划版本；测试计划其后经独立审核修订为 `c81d68b39258cf12d7b803b858a684dcd13d7ff7ac4c392472d1d802c9e15028` 并单独获批（见 `plan/test-plan-review.md` 最后一节），本计划审核不覆盖测试计划的批准。
+
+## r12 用户复核第三轮（四条）的计划审批（2026-11-28）
+
+用户对 head `de1e42f` 第四次判 `NOT_READY`，提出四条，全部用构造输入复现（6 组探针，修前 0/6 符合预期）：
+
+1. **同一题面能保存两条相反判决**：`candidate_scores` 与 `verdicts` 各自查重，同一 `(id, statement_version)` 可一处记 `pass`、另一处记 `hard_stop`，两条都落盘。现有测试还断言这种写法可以保存。
+2. **非法停因打断整份报错**：两道硬门槛已评分时，`hard_stop` 带 `stop_reason: []` 或 `{}` 在停因表字典查找处抛 `TypeError`，已收集的问题与另一对象的问题都无法返回。
+3. **可独立判断的依据错误仍漏报**：`scores: []` 配含空白值的 `evidence` 对象时只报分数形态错误。
+4. **允许的权重配置让总分公式除以零**：整表只留一项正权重、该项恰好未评时，剔除未评项后分母为零，仍可记 `pass`。
+
+其中第 1、4 项是**语义变更**（新增拒绝项与新的记录规则），按 `Plan Reviewer Rule.md` 第 5 节重新交审核；第 2、3 项是既有「一次列出全部问题」规则在畸形输入下的执行不完整，不新增产品要求。
+
+**变更目的**：让「同一题面只留一条判决」这条既有唯一性规则在整次保存范围内成立，并给“分母为零”这种合法权重配置一个确定的记录方式。
+
+**关键差异**：
+1. 新增跨对象查重：整次保存内 `(id, statement_version)` 唯一，`candidate_scores` 与 `verdicts` 之间重复时拒绝并一次报出两个对象名称；同候选不同版本、不同候选之间仍可并存。
+2. 新增分母下限检查：`pass`、`soft_stop` 要求至少有一项「权重大于 0 且该项不是未评」；否则拒绝并提示改记 `pending`。`hard_stop`、`merge` 不给总分，不加入。
+3. 文档「按题面版本分开记」补“唯一性适用范围是整次保存”；「未评」记法补“剔除后没有正权重项时分母为零、不得记 `pass`／`soft_stop`”。
+4. 健全性修正：停因先判字符串类型再查表；`evidence` 取值检查与 `scores` 类型判断拆开。
+
+**受影响关口**：P2（新增拒绝项的 owner 仍在校验入口，机制不变）、P3（新增可观察拒绝行为与兼容影响）、P4（可执行性）。P1 复用：四条均已用构造输入复现，事实来自本分支当前代码与已批准文档。
+
+**未受影响结论的沿用理由**：r12 已批准的判决记录字段、未评记法、待补范围、`problem_invalid`、`candidate_scores` 既有校验项、`verdicts` 形态与三值 `gate`、合并报错、去标识化处理均未被本次触及。
+
+**变更记录**：计划新增「整次保存的判决身份与分母下限」一段并在校验清单补两条；RP-18 新增四组观察点（整次保存的判决身份、分母下限、非法停因不打断报错、依据取值可独立判断）；文档 `candidate-scoring.md` 两处补规则；测试文件增至 75 项。
+
+复验：`test_verdict_record` 75 项 `OK`；四条缺陷探针 6/6 符合预期。
+
+审核对象校验值：`implementation-plan.md` SHA256 `63fd6cf0cea873679f1285a2de629351843b7a2c752a26b72d714f8cc3bb8697`，`test-plan.md` SHA256 `f8e0d47b690da7048e6917ed32340b0ab228642365c72b3819ea637d5b3a7f24`。
+
+**定向复核结论 `NEEDS_MODIFICATION`（2026 年 11 月 28 日，`Gate review completeness: COMPLETE`）**：P1、P2 通过（P1 确认四条缺陷证据链成立；P2 确认两个新增拒绝项的 owner 仍在校验入口、跨对象唯一性是既有规则的执行、分母下限是既有“总分照算”与“未评剔除”的必然条件），P3、P4 各留修正未同步：
+
+- **M-01**：计划两处、测试计划一处、产品文档两处仍写“两个对象各按自己的规则校验／各存各的”，没有写整次保存的 `(id, statement_version)` 唯一；`runtime.md` 与「被拒绝时怎么办」都没写跨对象重复的补救路径。
+- **M-02**：影响段与批准行为清单没列入两项新拒绝与两项健全性修正；旧记录处理、兼容路径与实施顺序仍只覆盖 `candidate_scores`。
+
+**修正**：统一在计划两处、`candidate-scoring.md` 的并存段与「被拒绝时怎么办」、`runtime.md` 的 `materials` 行、测试计划三处补同一句“整次保存内 `(id, statement_version)` 唯一；两对象之间重复也拒绝，报错列出两个对象名称；保留一条，删掉或移走另一条”，并新增「被拒绝时怎么办」第 5 条与旧记录处理第 5 条（明确组件不替你选、不自动删，旧记录下次保存会被拒直到按此处理）；旧记录处理由四条改五条；影响段、批准行为清单、实施顺序第 5 行、测试计划兼容路径同步补入两项新拒绝。
+
+另接受非阻断观察：O-01（停因观察点与用例对应关系，`verdicts` 侧本就不会抛 `TypeError`，真正会抛的是候选侧；已在测试计划写明并让候选侧覆盖列表与对象两种形态）、O-02（测试计划版本摘要与步骤 4 清单补本轮四组）、O-03（同对象内重复不再被写成跨对象错误）、O-04（`merge` 可指向只记在 `verdicts` 里的候选，候选身份集合并入 `verdicts` 的 id）。
+
+复验：`test_verdict_record` 77 项 `OK`（含新增 `test_merge_may_target_candidate_only_in_verdicts`、`test_same_object_duplicate_not_reported_as_cross_object`）；`test_interview` 27 项 `OK`；四条缺陷探针 6/6；旧探针 10/10、9/9；文档检查 `PASS 205 checks`、`ALL OK`。
+
+审核对象校验值（M-01／M-02 修正后）：`implementation-plan.md` SHA256 `93d7f9122721544fa150fd0d1315fbe184f0f6ea21b3d8730cf421505f0700bc`，`test-plan.md` SHA256 `32ac2e81562b12dbf3b1555797f7f42b07204e59b855dddf7e312e9560f695ca`。
+
+**定向复核第二轮结论 `NEEDS_MODIFICATION`（2026 年 11 月 28 日，`Gate review completeness: COMPLETE`）**：M-01 大部分闭合、M-02 主体闭合，O-01／O-03／O-04 闭合，O-02 部分闭合；留下三处「收束句与计数没一起改」的残留：
+
+- **R-01**：计划旧记录处理的收束句仍写“以上处理只覆盖 `materials` 步骤的 `candidate_scores`”，把同节新增第 5 条要覆盖的 `verdicts` 与跨对象情形排除在外；同节第 3 条的“先不带 `candidate_scores`”也只写一个对象；测试计划兼容路径括注同样只举 `candidate_scores`。
+- **R-02**：`candidate-scoring.md`「被拒绝时怎么办」写“四条规则”而实际五条；测试计划步骤 4 写“另含本轮新增的四类”而实际列了六类。
+- **O-05**（非阻断）：测试计划要求跨对象报错指向“保留一条，删掉或移走另一条”，但实现报错文本是“删掉其中一条再保存”，两者不一致。
+
+**修正**：R-01 把收束句改为覆盖两个对象、第 3 条改为“先不带相应对象／两个对象都不带时行为与之前一致”、测试计划兼容路径注明覆盖两个对象；R-02 计数改为“五条规则”与“六类”；O-05 把实现报错文本改为与文档同句（“同一题面版本的判决只能有一条：保留一条，删掉或移走另一条”），并新增 `test_cross_object_error_points_to_remedy` 断言该句。另按测试计划审核的补充意见，把整表权重全为 0 的用例扩到 `pass` 与 `soft_stop` 两种判决，把同对象重复不误报的用例扩到 `verdicts` 侧。
+
+**计数专项核查**（本轮反复出问题的类型）：逐处核对三个计数词与实际条目数——`candidate-scoring.md`“五条规则”对应 5 条、计划旧记录处理“五条”对应 5 条、测试计划“六类”对应 6 项；另检索 `四条规则／四类相关／同步三处／两条处理／三条处理` 等过期计数，`plan/` 与产品文档内已无命中（仅复核记录引用旧措辞）。
+
+复验：`test_verdict_record` 78 项 `OK`、`test_interview` 27 项 `OK`（合计 105 项）；四条缺陷探针 6/6；文档检查 `PASS 213 checks`、`ALL OK`。
+
+审核对象校验值（最终）：`implementation-plan.md` SHA256 `6a9353c307a3433eea715cfcb05ec42432831ecf841613e9f9a014f922a64655`，`test-plan.md` SHA256 `97b91abb2ef8e253fd6588262a73f43f0f0c7cf9468fe239f2806c10702b6181`，`_state.py` SHA256 `3054f0936ec3b392fe4921015777cd74b6410691c96be4e26835c6df6e746a9d`，`test_verdict_record.py` SHA256 `b7024d5d1845e548327dcbad8412dd5445cdda60e3a3f8c190bcdb53d7b1fbb2`。
+
+**最终结论 `APPROVED`（2026 年 11 月 28 日，第五轮，`Gate review completeness: COMPLETE`）**：
+
+```text
+Plan revision: rp-plan-r12-verdict-record-2026-11-28（SHA256 6a9353c3…a64655）
+Requirement revision: rp-requirements-r8-verdict-record-2026-11-28
+Target repository revision: research-proposal 分支 feat/verdict-record，基线 97c1340，head de1e42f
+
+P1 Requirement & Reality Grounding: PASS（沿用）
+P2 Solution Validity & Ownership: PASS（沿用）
+P3 Impact, Safety & Counterexample: PASS（沿用）
+P4 Executability: PASS（R-01a 三处及直接位置已闭合）
+Gate review completeness: COMPLETE
+
+Unresolved impacts: N/A
+Required modifications: N/A
+
+Plan conclusion: APPROVED
+```
+
+审核者确认：R-01a 三处已闭合（`candidate-scoring.md:393` 写明两个可选对象与“甚至两个都不传”、`runtime.md:92` 改为“相应对象（`candidate_scores` 与／或 `verdicts`）”、`test-plan.md:250` 括注同步）；R-01、R-02、O-01、O-02、O-03、O-04、O-05 均已闭合且未回退；计数五条／五条／六类与实际条目一致；`test-results.md` 的 r28 历史表加时点说明不构成残留，因为没有改写历史结果、也没有把旧计数冒充当前状态。
+
+获批行为变化：`materials` 新增可选 `verdicts` 对象；`candidate_scores` 硬门槛分数与 `gate` 对齐；`evidence` 键集合与空白/布尔/数字检查；两个对象同时有错合并成一次 `ValueError`；整次保存内 `(id, statement_version)` 唯一、跨对象重复拒绝并给出补救；`pass`／`soft_stop` 在没有可计入的正权重项时拒绝；停因类型与依据取值独立报错。
+
+本结论只表示当前设计版本适合实施，不表示实现正确、测试全部通过或可以合并。

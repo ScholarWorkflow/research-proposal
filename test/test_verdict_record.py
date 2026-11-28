@@ -719,19 +719,23 @@ class VerdictWithoutScoresTests(ComponentCase):
         self.assertIn("不得给总分", message)
         self.assertNotIn("verdicts.items", message)
 
-        # 只有 verdicts 违规
+        # 只有 verdicts 违规（用不同题面版本，避免同时命中跨对象重复）
         with self.assertRaises(ValueError) as caught:
             self.save({"materials": [],
                        "candidate_scores": payload(record()),
-                       "verdicts": self.verdicts(self.verdict(gate="merge"))})
+                       "verdicts": self.verdicts(self.verdict(id="C9", statement_version="q9",
+                                                              gate="merge"))})
         message = str(caught.exception)
         self.assertIn("verdicts.items", message)
         self.assertNotIn("不得给总分", message)
 
     def test_compliant_scores_and_verdicts_are_saved_verbatim(self):
-        """两个对象都合规时原样落盘，不补字段、不改写。"""
-        scores_payload = payload(record())
-        verdicts_payload = self.verdicts(self.verdict())
+        """两个对象都合规时原样落盘，不补字段、不改写。
+
+        两条记录必须属于不同题面版本：同一 `(id, statement_version)` 只能有一条判决。
+        """
+        scores_payload = payload(record(id="C1", statement_version="q1"))
+        verdicts_payload = self.verdicts(self.verdict(id="C2", statement_version="q2"))
         self.assertEqual(
             self.save({"materials": [], "candidate_scores": scores_payload,
                        "verdicts": verdicts_payload})["status"],
@@ -839,3 +843,160 @@ class VerdictWithoutScoresTests(ComponentCase):
             "verdicts": self.verdicts(self.verdict(id="C9", statement_version="q9")),
         })
         self.assertEqual(result["status"], "ready")
+
+    def test_cross_object_statement_version_must_be_unique(self):
+        """同一 (id, statement_version) 不能同时记在两个对象里，否则两份判决互相矛盾。"""
+        cases = {
+            "同版本相反判决": (payload(record(id="C1", statement_version="q1", gate="pass")),
+                              self.verdicts(self.verdict(id="C1", statement_version="q1",
+                                                         gate="hard_stop",
+                                                         stop_reason="problem_invalid"))),
+            "同版本同判决": (payload(record(id="C1", statement_version="q1", gate="pass")),
+                            self.verdicts(self.verdict(id="C1", statement_version="q1",
+                                                       gate="pass"))),
+        }
+        for label, (scores_payload, verdicts_payload) in cases.items():
+            with self.subTest(case=label):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "candidate_scores": scores_payload,
+                               "verdicts": verdicts_payload})
+                message = str(caught.exception)
+                self.assertIn("题面版本", message)
+                self.assertIn("candidate_scores", message)
+                self.assertIn("verdicts", message)
+
+        # 不同版本或不同候选可以并存。
+        ok = self.save({
+            "materials": [],
+            "candidate_scores": payload(record(id="C1", statement_version="q1")),
+            "verdicts": self.verdicts(self.verdict(id="C1", statement_version="q2")),
+        })
+        self.assertEqual(ok["status"], "ready")
+
+    def test_verdict_bad_reason_type_does_not_raise_type_error(self):
+        """停因写成列表或对象时按 ValueError 报问题，不能抛 TypeError 打断整份报错。"""
+        for bad in ([], {}, ["gap_zero"], {"gap_zero": 1}):
+            with self.subTest(stop_reason=bad):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "verdicts": self.verdicts(
+                        self.verdict(gate="hard_stop", stop_reason=bad, missing=["x"]))})
+                self.assertIn("stop_reason", str(caught.exception))
+
+    def test_bad_stop_reason_keeps_other_errors_visible(self):
+        """`candidate_scores` 的停因形态非法时不抛 TypeError，且另一对象的独立错误仍要一起报出。
+
+        真正会走到停因表字典查找的是候选侧（两道硬门槛已评分）；这里覆盖列表与对象
+        两种形态，保留 `verdicts` 一侧 `pending` 缺 `missing` 的独立错误。
+        """
+        for bad_reason in ([], {}):
+            with self.subTest(stop_reason=bad_reason):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({
+                        "materials": [],
+                        "candidate_scores": payload(record(gate="hard_stop", total=None,
+                                                           stop_reason=bad_reason,
+                                                           missing=["x"])),
+                        "verdicts": self.verdicts(self.verdict(id="C9", statement_version="q9",
+                                                               gate="pending", missing=[])),
+                    })
+                message = str(caught.exception)
+                self.assertIn("stop_reason", message)
+                self.assertIn("verdicts.items", message)
+
+    def test_blank_evidence_reported_even_when_scores_malformed(self):
+        """依据取值能独立判断：scores 形态写错时也要一并报出空白依据。"""
+        evidence = {name: "事实：合成依据" for name in WEIGHTS}
+        evidence["价值"] = "   "
+        for bad_scores in ([], "70", None):
+            with self.subTest(scores_type=type(bad_scores).__name__):
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "candidate_scores": payload(
+                        record(scores=bad_scores, evidence=evidence))})
+                message = str(caught.exception)
+                self.assertIn("scores 须是对象", message)
+                self.assertIn("不是有效依据", message)
+
+    def test_zero_denominator_cannot_pass(self):
+        """只留一项正权重而该项未评时分母为零，两种判决都不能记。"""
+        weights = {name: 0 for name in WEIGHTS}
+        weights["价值"] = 15
+        scores = {name: 2 for name in WEIGHTS}
+        scores["价值"] = None
+        evidence = {name: "事实：合成依据" for name in WEIGHTS}
+        for gate in ("pass", "soft_stop"):
+            with self.subTest(gate=gate):
+                broken = {"weights": weights, "evidence_cutoff": "2026-11-28",
+                          "items": [record(gate=gate, scores=scores, evidence=evidence,
+                                           total=100.0, missing=["软门槛补法：先找使用者"])]}
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "candidate_scores": broken})
+                message = str(caught.exception)
+                self.assertIn("正权重", message)
+                self.assertIn("分母", message)
+
+        # 改记 pending 并写明缺项即可保存。
+        pending = {"weights": weights, "evidence_cutoff": "2026-11-28",
+                   "items": [record(gate="pending", total=None, scores=scores,
+                                    evidence=evidence, missing=["价值还缺使用者访谈"])]}
+        self.assertEqual(
+            self.save({"materials": [], "candidate_scores": pending})["status"], "ready"
+        )
+
+    def test_zero_weights_still_need_one_positive(self):
+        """整表权重为 0 时没有可计入的项，两种判决都无从计算。"""
+        weights = {name: 0 for name in WEIGHTS}
+        for gate in ("pass", "soft_stop"):
+            with self.subTest(gate=gate):
+                broken = {"weights": weights, "evidence_cutoff": "2026-11-28",
+                          "items": [record(gate=gate, total=100.0,
+                                           missing=["软门槛补法：先找使用者"])]}
+                with self.assertRaises(ValueError) as caught:
+                    self.save({"materials": [], "candidate_scores": broken})
+                self.assertIn("正权重", str(caught.exception))
+
+    def test_merge_may_target_candidate_only_in_verdicts(self):
+        """`merged_into` 指向候选身份；候选只记在 `verdicts` 里也应算存在。"""
+        merged = record(id="C2", gate="merge", total=None, merged_into="C9")
+        result = self.save({
+            "materials": [],
+            "candidate_scores": payload(merged),
+            "verdicts": self.verdicts(self.verdict(id="C9", statement_version="q9")),
+        })
+        self.assertEqual(result["status"], "ready")
+
+    def test_same_object_duplicate_not_reported_as_cross_object(self):
+        """同对象内重复由各自校验报出，错误文本不写成“同时记在两个同一对象里”。"""
+        cases = {
+            "candidate_scores": payload(
+                record(id="C1", statement_version="q1"),
+                record(id="C1", statement_version="q1"),
+            ),
+            "verdicts": None,  # 下面单独构造
+        }
+        verdicts_dup = self.verdicts(
+            self.verdict(id="C1", statement_version="q1"),
+            self.verdict(id="C1", statement_version="q1"),
+        )
+        for label, payload_value in cases.items():
+            with self.subTest(obj=label):
+                data = {"materials": []}
+                if label == "verdicts":
+                    data["verdicts"] = verdicts_dup
+                else:
+                    data["candidate_scores"] = payload_value
+                with self.assertRaises(ValueError) as caught:
+                    self.save(data)
+                message = str(caught.exception)
+                self.assertIn("重复", message)
+                self.assertNotIn(f"同时记在 {label} 与 {label}", message)
+
+    def test_cross_object_error_points_to_remedy(self):
+        """跨对象重复的报错要给出补救办法，与文档保存节第 5 条同一句。"""
+        with self.assertRaises(ValueError) as caught:
+            self.save({"materials": [],
+                       "candidate_scores": payload(record(id="C1", statement_version="q1")),
+                       "verdicts": self.verdicts(self.verdict(id="C1", statement_version="q1",
+                                                              gate="pass"))})
+        message = str(caught.exception)
+        self.assertIn("保留一条", message)
+        self.assertIn("删掉或移走另一条", message)
