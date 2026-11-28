@@ -688,9 +688,9 @@ cd "$RP_WORKTREE" && nix build .#research-proposal-runtime --out-link "$RP_R18_R
 **记录问题 3 项与 1 项非阻断观察，本轮已处理**：
 - **R-1**：执行记录原写获批计划为 `4bc4ae33…`／`95c20b5a…`，与最终获批的 `d5fe9691…`／`b3af7981…` 不符。已改为最终值并注明见两份审核记录最后一节。
 - **R-2**：执行记录同一段既说“不重跑”又说“另跑了一次（`Ran 106 tests`）”，且无命令与日志。已删除该声明，只保留按第 6 节复用，并注明整理记录时的非证据性检查不记为执行结果。
-- **R-3**：计划把①—④统称“原来写‘写不出→0’的地方”，但其中「未评」段原写的是“还没查够三篇”；同一段又出现“五处口径一致”与“七处”并存。已改为按原文性质分三类（三处原写“写不出→0”、一处原只写篇数、两处在伪空白分支外只写篇数、一处是 `pending` 触发条），并统一为“七处口径一致”。
+- **R-3**：计划把①—④统称“原来写‘写不出→0’的地方”，但其中「未评」段原写的是“还没查够三篇”；同一段又出现“五处口径一致”与“七处”并存。已改为按原文性质分四组（三处原写“写不出→0”、一处原只写篇数、两处在伪空白分支外只写篇数、一处是 `pending` 触发条），并统一为“七处口径一致”。
 - **O-1**：原写“在 `evidence`／`missing` 里写明待核项”，而组件的未评规则要求 `scores` 为 `null` 时 `evidence` 非空；执行者只填 `missing` 会被拒。已改为“在 `evidence` 里写明待核的文献或方法（未评项的 `evidence` 是必填的），并把同一项写进 `missing` 作为待办”。
 
-修正后对象：`implementation-plan.md` SHA256 `7b17bcbc5b11fc00a107642b3c9ac2e98b3ddb569adf718055b50aeefd2db016`、`candidate-scoring.md` SHA256 `f213cc4010294ef727afc608c0bb403fa8866b4b3c928cfd1905eb5f63f5d868`；`test-plan.md` 与 `_state.py` 未变。R-3 属计划文字更正，按 `Plan Reviewer Rule.md` 第 6.3 节提交定向确认。
+修正后对象：`implementation-plan.md` SHA256 `cfeaed144d680ae30f5ad042f9f77bea6032d3a2ab31cb303958a18d775f9b9d`、`candidate-scoring.md` SHA256 `f213cc4010294ef727afc608c0bb403fa8866b4b3c928cfd1905eb5f63f5d868`；`test-plan.md` 与 `_state.py` 未变。R-3 属计划文字更正，按 `Plan Reviewer Rule.md` 第 6.3 节提交定向确认。
 
 本结论只说明实现符合性，不代替计划关口、测试第三关口与合并批准。
