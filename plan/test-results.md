@@ -675,3 +675,190 @@ RP-13 的原稿状态含绝对工作目录，普通副本续接会指回原稿�
 - 非阻塞项一并处理：「推荐怎么写」旧路径句补“本条取代这条旧路”；测试计划的交叉引用行号标注为基线行号。
 - 数值判断：新增的“判停禁止清单”列了 0.05、0.02、两个百分点、0.93 四个阈值，它们是效果量线的通用例子，不带出处、对象或结论，不构成用户材料片段，保留。G1 只按 7 个字符串做新增行筛查，不是完整隐私扫描；数值是否属于用户材料片段由本条人工判断。
 - 修正后技能 diff 相对基线仍为 `SKILL.md` 1+/1−、`candidate-scoring.md` 54+/6−、`research-design.md` 20+/0−，与首次执行一致。修正只改自检句、旧路径句、脚本与记录，未改停因、`gate` 枚举、字段名与改动范围。
+
+## r28：RP-18 判决记录与保存校验（2026-11-28）
+
+角色：本地执行工程师。执行对象为仓库同级容器下的 `worktrees/research-proposal-record`，分支 `feat/verdict-record`，基线 `97c1340`。执行计划 `rp-plan-r12-verdict-record-2026-11-28`（`APPROVED`，见 [implementation-plan-review.md](implementation-plan-review.md) 的 r12 一节）；测试计划 `rp-tests-r12-verdict-record-2026-11-28`（`APPROVED`，见 [test-plan-review.md](test-plan-review.md) 的 rp-tests-r12 一节）。
+
+**范围**：只执行 RP-18。RP-01 至 RP-17 本轮未重跑，按计划沿用既有有效结果；RP-09 继续延期。不安装产品到消费者、不启动评估会话、不调用上游。
+
+**产品版本**：分支 `feat/verdict-record` 工作树未提交改动，基线 `97c1340`。相对基线的 `git diff --numstat 97c1340 -- skills/` 见本节末“实现符合性审核后的修正”，首次执行时为 4 files changed、252 insertions(+)、21 deletions(-)；新增 `test/test_verdict_record.py`（首个版本 21 用例、最终 30 用例）。
+
+**执行环境**：结果根在仓库外的一次性临时目录（按 `PROJECT_CONSENSUS.md` 不入库不推送，本文只记相对布局与变量名，不写本机绝对路径）。运行包由当前工作树构建：
+
+```bash
+: "${RP_WORKTREE:?绑定到本轮工作树根目录}"
+export RP_R18_RUN="$(mktemp -d "${TMPDIR:-/tmp}/rp-r18-run.XXXXXX")"
+export RP_R18_RUNTIME="$RP_R18_RUN/runtime"
+nix build .#research-proposal-runtime --out-link "$RP_R18_RUNTIME"
+```
+
+构建退出 0（`warning: Git tree ... is dirty` 属未提交工作树的正常提示）。`--out-link` 指向仓库外目录，工作树未留下 `result` 链接（`git status` 无新增未跟踪文件）。
+
+**导入来源确认**（RP-18 执行步骤第 2 段）：
+
+```bash
+"$RP_R18_RUNTIME/bin/python3" -c \
+  'import research_proposal._state as s; print(s.__file__); assert hasattr(s, "_check_candidate_scores")'
+```
+
+输出路径位于构建输出由 Nix 提供的 `site-packages` 内（形如 `<runtime>/lib/python3.14/site-packages/research_proposal/_state.py`），断言通过。另用 `diff` 比对运行包内 `_candidate_scores_problems` 至 `_check_interview_payload` 区间与工作树源码，**逐行相同**：被测模块确为本次实现，不是工作树源码或旧运行包。未设置 `PYTHONPATH`。
+
+**组件执行**：
+
+```bash
+cd "$RP_WORKTREE/test"
+RP_TEST_OUTPUT="$RP_R18_RUN/component-output" \
+  "$RP_R18_RUNTIME/bin/python3" -m unittest -v test_verdict_record \
+  > "$RP_R18_RUN/rp18-components.log" 2>&1
+```
+
+退出 0，`Ran 21 tests`、`OK`。日志：`$RP_R18_RUN/rp18-components.log`。
+
+**文档执行**：仓库外临时目录的只读检查脚本（仓库外只读脚本，不提交），`PASS 79 checks`、`ALL OK`、退出 0。`pandoc -f markdown -t html` 对改动文件通过；`git diff --check 97c1340` 无输出。
+
+| 检查组 | 观察点 | 结果 |
+|---|---|---|
+| A1–A3 新节与位置 | 「判决记录怎么写」存在，位于「判决与停因」之后、「打分前先定证据」之前 | 通过 |
+| B1–B7 字段清单 | 四项字段齐全；`experiment`、`missing` 为数组，`evidence` 为与 `scores` 同键对象；三字段不可省；`hard_stop` 的 `evidence`、`pending` 的 `missing`、`pass` 与 `soft_stop` 的 `evidence` 非空 | 通过 |
+| C1–C6 题面版本 | `id` 跨版本不变、`(id, statement_version)` 唯一、`merged_into` 指向身份；旧记录留档；转述带版本；汇总只能由当前版本记录生成 | 通过 |
+| D1–D8 未评 | `scores` 写 `null` 并在 `evidence` 写明缺什么；不进总分、注明“按 N 项计”；硬门槛项未评不得 `pass`/`soft_stop`；含与不含未评不同表比较；不是第三道硬门槛；0 分只留给有依据的否定；「怎么算总分」已补分母规则 | 通过 |
+| E 待补范围 | 六类触发情形齐全（近邻不足三篇、领先项只有摘要、关键数据缺失、实现有错、反例待核、口径未定）；承重证据按研究问题确定；第 2 句不再是唯一入口；`pending` 不得改写为「停」 | 通过 |
+| F1–F9 `problem_invalid` | 锁定同一目标量、假设与观测资料；五问五个独立分支齐全；第 4 问与第 1 问分界写明；「依赖不可观测分布」收窄；轴匹配、算力、指标更换另行处理；判停写明 `statement_version` | 通过 |
+| G1–G3 保存与拒绝路径 | 「保存」节含新字段与校验说明；「被拒绝时怎么办」四条齐全（不写入、状态版本不变、上一份记录原样保留、可按 `gate` 补齐、可先不带 `candidate_scores`、不自动迁移） | 通过 |
+| H1–H5 入口 | `runtime.md` 写拒绝后状态并指向新节；`SKILL.md` 含新节入口、未评规则与汇总来源 | 通过 |
+| I1–I8 不扩散 | 权重表、评分公式、五态判决词表逐行与基线相同；硬门槛仍为两条，新意落点评分行与基线的“新意落点行”相同，空白成因的评分行与硬门槛行按 IR-01 收窄为“已证伪”两种情形；空白成因 1 分判据行与基线相同（首次执行时整张硬门槛表还与基线相同，见本节末修正）；`research-design.md`、`interview.md`、`flake.nix`、`flake.lock`、`nix/`、`README.md` 无 diff | 通过 |
+| J1–J2 锚点 | 本文件内全部锚点可解析；新锚点存在 | 通过 |
+| K1–K3 交叉引用 | 「怎么报给用户」「推荐怎么写」「判决与停因」三处指向新节且措辞成立 | 通过 |
+| L1 隐私 | 新增行与新增测试文件无 URL、绝对路径、邮箱、真实人名、学校名或用户材料片段；测试输入为合成项目名 | 通过 |
+
+**组件观察点与实际用例**：
+
+| 观察点 | 用例 | 结果 |
+|---|---|---|
+| 合规记录放行并原样落盘 | `test_compliant_record_is_saved` | 通过 |
+| `pending` 带总分被拒 | `test_pending_with_total_is_rejected` | 通过 |
+| `hard_stop` 缺 `stop_reason` 被拒 | `test_hard_stop_without_reason_is_rejected` | 通过 |
+| `stop_reason` 取值非法被拒 | `test_hard_stop_with_unknown_reason_is_rejected` | 通过 |
+| `merge` 缺 `merged_into` 被拒 | `test_merge_without_target_is_rejected` | 通过 |
+| `merged_into` 指向不存在的候选被拒 | `test_merge_target_must_exist` | 通过 |
+| `merged_into` 按候选身份跨版本成立 | `test_merge_target_uses_candidate_identity` | 通过 |
+| `pass` 须带数值总分 | `test_pass_needs_numeric_total` | 通过 |
+| `pending` 须有 `missing` | `test_pending_needs_missing` | 通过 |
+| `pass` 须有 `evidence` | `test_pass_needs_evidence` | 通过 |
+| 未评项须写 `evidence`、可与其他项共存 | `test_unrated_item_needs_evidence` | 通过 |
+| 硬门槛项未评不得 `pass`/`soft_stop`，`pending` 放行 | `test_hard_gate_unrated_cannot_pass` | 通过 |
+| `scores` 键集合须等于 `weights` | `test_scores_must_match_weights` | 通过 |
+| 三样内容字段不可省 | `test_record_fields_are_required` | 通过 |
+| 一次列出全部问题 | `test_all_problems_are_reported_at_once` | 通过 |
+| 拒绝后状态版本不变 | `test_rejected_save_keeps_previous_state_version` | 通过 |
+| 拒绝后上一份材料记录逐字节不变、新内容未写入 | `test_rejected_save_leaves_previous_materials_record_untouched` | 通过 |
+| 同一候选可保留不同题面版本 | `test_same_candidate_may_keep_other_statement_version` | 通过 |
+| 同一候选同一版本重复被拒 | `test_same_candidate_same_version_is_rejected` | 通过 |
+| 不带 `candidate_scores` 的材料保存不变 | `test_materials_without_scores_still_save` | 通过 |
+| 不带对象的材料保存按原行为 | `test_materials_without_object_saves_as_before`（原 `test_other_stages_are_not_affected`，IR-05 改名） | 通过 |
+| 其他阶段不受影响 | 由 `test_interview` 27 项回归覆盖，不在本模块内重复 | 通过 |
+
+**回归**：`test_interview`（27 用例）用同一运行包执行，退出 0、`OK`。日志 `$RP_R18_RUN/regress-interview.log`。该回归只覆盖与 `save_revision` 共用的入参拒绝路径，不重开 RP-14 的既有结论。
+
+**执行中的自我修正（保留原始记录）**：
+
+1. 首次组件执行用 `PYTHONPATH` 指向工作树源码，导入来源实为未打包的源码，跑出的 15 项通过不能证明运行包行为。计划审核 B-06 指出该问题后，改为从运行包自带 `site-packages` 导入，并加导入来源断言与源码逐行比对；此后 20 项、21 项通过均为运行包结果。首次 15 项结果不作为本项证据。
+2. 首次构建运行包发生在 `_check_candidate_scores` 写入之前，该运行包内确无该函数（已实测 `grep -c` 为 0）。后续两次重建都在改码之后，正式结果使用最后一次构建。
+3. 文档检查脚本首轮 4 项失败均为脚本断言本身写错：`C6` 把三级标题当作二级标题查、`D6` 与 `I6` 的期望字符串与文档实际措辞不符、`F6` 依赖的切片被 `##` 边界提前截断。逐条核实后修正脚本，并补写了文档中缺失的「五个独立分支」一句与第 4 问与第 1 问的分界说明；修正后 `PASS 79 checks`。脚本问题不计为产品失败，但文档缺句属真实遗漏，已补。
+
+**未执行**：RP-01 至 RP-17（按计划沿用既有结果）、产品正式安装到消费者（本轮不改安装、依赖与交付格式）、真实评估会话、Word 与页图相关检查。
+
+**限定**：RP-18 的组件部分是组件级入参校验与拒绝后不落盘，文档部分是静态结构与措辞检查；两者都不证明主技能在真实会话中会按新节写记录，也不证明模型会主动补齐旧记录。这类效果留待实际使用观察。
+
+**审核状态**：本记录只说明 RP-18 结果，不构成第三关或合并批准。执行计划与测试计划均已 `APPROVED`；实现符合性审核与合并审核另行安排。
+
+**实现符合性审核后的修正（2026-11-28）**：专用 `implementation_reviewer` 首次审核结论为**部分完成**，提出 IR-01 至 IR-07。逐条处理如下，原结论与问题保留。
+
+- **IR-01（阻断，要求二未一致落实）**：`candidate-scoring.md` 就“空白成因 0”存在两套记法——评分表 0 分列与第 62 行把“还没查够三篇”记 0 并标待补，新节却要求证据未齐记「未评」。经需求裁定人按用户原话“证据未齐记未评、0 留给有依据的否定”确认：**0 分收窄为“已证伪”，一种来源、两种情形**（伪空白；查证后确认没有相近工作），“还没查够三篇”改记「未评」并按 `pending` 处理。评分表 0 分列、第 62 行、硬门槛表、门槛解释句、`gap_zero` 定义与 `pending` 情形清单六处同步改口，“伪空白”全文只保留一套定义。这是本轮唯一一处语义修订，已在执行计划中单列并注明它收窄了原先“九项 0/1/2 判据不变”的范围。
+- **IR-02（校验比计划清单更严）**：保留而非收窄。依据是 `Implementation Reviewer` 未反对的三条都与 `candidate-scoring.md` 既有规则一致（每项 0、1、2 分；权重不为负；按 `gate` 写 `stop_reason` 或 `merged_into`），拒绝的是文档本来就禁止的写法。已在执行计划补「校验边界」一句：校验可覆盖既有规则，超出既有规则的新增拒绝项须另行批准。
+- **IR-03（畸形输入抛 `TypeError`）**：`_candidate_scores_problems` 改为先判 `id` 与 `statement_version` 类型、再构造唯一键，畸形输入按 `ValueError` 报问题。新增 `test_malformed_id_types_raise_value_error`。
+- **IR-04（必测观察点缺结果）**：补 9 个用例覆盖形状与类型（`candidate_scores` 非对象、`weights`／`evidence_cutoff` 缺失、权重为空或非数字、`items` 为空或非数组、`gate` 非法值、非停判决带停因字段、`merged_into` 指向自己、分数取值越界、`experiment`／`missing` 非数组、`evidence` 非对象）、畸形 `id` 与题面版本、合规 `soft_stop` 放行。用例数由 21 增至 30，重跑 `Ran 30 tests`、`OK`。
+- **IR-05（用例名与断言不符）**：`test_other_stages_are_not_affected` 实际只保存材料步骤，改名为 `test_materials_without_object_saves_as_before` 并在 docstring 写明其他阶段由 `test_interview` 回归覆盖；r28 与测试计划的归属同步改正。
+- **IR-06（检查脚本两项空过）**：`check.py` 的 I1 检索串原先在基线与当前文件都匹配 0 行（恒真），L1 的 URL 正则把 `^` 写在中间（永不匹配）。已改为真实存在的行 `| 问题成形 | 15 |` 与 `https?://`，并新增 I4a–I4f 六项核对 0 分收窄与“伪空白”单一定义。重跑 `PASS 84 checks`、`ALL OK`、退出 0。
+- **IR-07（记录状态与行号）**：`test-plan-review.md` 的旧“当前状态”行改为历史并新增 r12 状态行；`implementation-plan-review.md` 的行号引用改为“`_state.py:995` 校验、996 加锁、1035 首次 `write_record`、1063 与 1073 `_persist_work`、`_store_state` 第 123 行递增版本”。
+
+**修正后的正式结果**（用最后两次重建的运行包执行）：
+
+| 项 | 命令 | 结果 |
+|---|---|---|
+| RP-18 组件 | `RP_TEST_OUTPUT=... "$RP_R18_RUNTIME/bin/python3" -m unittest -v test_verdict_record` | `Ran 30 tests`、`OK`、退出 0 |
+| 回归 | 同上，`test_interview` | `Ran 27 tests`、`OK`、退出 0 |
+| RP-18 文档 | 仓库外临时目录的只读检查脚本 | `PASS 84 checks`、`ALL OK`、退出 0 |
+| diff 卫生 | `git diff --check 97c1340` | 无输出 |
+
+最终产品差异（`git diff --numstat 97c1340 -- skills/ test/`，以提交前最后一次 `git diff --cached` 为准）：`SKILL.md` 1+/1−、`references/candidate-scoring.md` 114+/26−、`references/runtime.md` 1+/1−、`scripts/research_proposal/_state.py` 151+/0−、`test/test_verdict_record.py` 362+/0−。
+
+**保留的观察（不阻断）**：组件校验在加锁之前执行，因此过期的 `expected_state_version` 或已提交修订若同时带不合规 `candidate_scores`，会先得到 `ValueError` 而不是 `conflict`/`blocked`。计划未要求两种响应优先，本轮不改；将来若有调用方依赖原顺序需另行决定。
+
+**第二轮定向复核后的修正（2026-11-28）**：`implementation_reviewer` 定向复核结论仍为**部分完成**，指出 IR-01 在第 58 行残留直接矛盾，另有 IR-02、IR-05、IR-07 三处未闭合。逐条处理：
+
+- **IR-01 残留**：第 58 行「空白成因的硬要求」原写“缺这三项也按 0 分”，与第 62 行“还没查够三篇记「未评」”直接冲突，正是本轮要消除的失败模式。改为“还没查够三篇不按 0 分记，记「未评」并按 `pending` 处理；只有查过之后仍凑不出这三项、且确认没有相近工作，才按 0 分”。第 70 行与第 185 行两处“0/1/2 判据不变”补括注，写明空白成因 0 分的适用情形已按 r12 收窄。计划第 439 行补记第 58 行同属该口径改写，避免下次漏查。
+- **IR-02 边界清单缺一项**：`id` 与 `statement_version` 须为非空字符串这一要求原先既不在文档、也不在计划边界清单。已在 `candidate-scoring.md` 的题面版本段写明“`id` 与 `statement_version` 都写非空字符串（例如 `C1` 与 `q1`）”，并在计划「校验边界」清单补上该项。
+- **IR-05 未闭合**：r28 观察点表仍把“其他步骤不受影响”归给已改名的用例。已改为两行：一行归 `test_materials_without_object_saves_as_before`（注明原名），一行写明其他阶段由 `test_interview` 27 项回归覆盖。
+- **IR-07 行号**：`implementation-plan-review.md` 的行号引用按当前代码更新为第 1003 行校验、1004 加锁、738–757 类型判定与唯一键、1035 首次 `write_record`、1063 与 1073 `_persist_work`、`_store_state` 第 109 行递增。
+- **测试计划第 236 行**：「不扩散」改为“新意落点判据行与基线相同，空白成因 1 分判据行与基线相同、0 分判据按 IR-01 收窄”，与同一文件第 232 行口径一致。
+- **检查脚本**：新增 I4g 至 I4j 与 I4h2，覆盖第 58 行改写、两处括注、`id` 与题面版本类型要求。自查时发现自己写了一条带 `or True` 的恒真断言（与 IR-06 同类问题），已删除并改为两条实质断言。
+
+**最终结果**（产品代码未变，故不重跑 27 项回归；运行包为最后一次构建）：
+
+| 项 | 结果 |
+|---|---|
+| RP-18 组件 `test_verdict_record` | `Ran 30 tests`、`OK`、退出 0 |
+| RP-18 文档 仓库外临时目录的只读检查脚本 | `PASS 89 checks`、`ALL OK`、退出 0 |
+| 上一轮回归 `test_interview` | `Ran 27 tests`、`OK`、退出 0（产品代码未再变动，结果继续有效） |
+| `git diff --check 97c1340` | 无输出 |
+
+**第三轮审核触发修订后的记录（2026-11-28）**：实现符合性审核第三轮指出记录层四处未对齐，逐条处理如下。
+
+- **I1–I8 行自相矛盾（R-05 同类）**：原写“两条硬门槛表……逐行与基线相同”，与同句“0 分判据已收窄”相反——`candidate-scoring.md` 的「空白成因 = 0」一行确已从“伪空白、换基底或指标但答不出新回答，或还没查够三篇”改为“已证伪：伪空白……或查证后确认没有相近工作”。已改为“硬门槛仍为两条，新意落点行与基线相同，空白成因的评分行与硬门槛行按 IR-01 收窄”。
+- **计数过期**：按当前 `git diff --cached --numstat 97c1340` 更新为 `candidate-scoring.md` 114+/26−、`test_verdict_record.py` 362+/0−（上一轮记的是 112+/24− 与 361+/0−）。
+- **测试文件最后改动晚于被引用的日志**：`test/test_verdict_record.py` 与 `candidate-scoring.md` 的最后修改时间为 06:03:20，而此前引用的组件日志为 05:53、文档检查为 05:52。为让记录对应实际版本，已在 06:13 重跑并保留日志：
+  - `$RP_R18_RUN/rp18-components.log`（06:13:32）：`Ran 30 tests`、`OK`、退出 0；
+  - `$RP_R18_RUN/regress-interview.log`（06:13:34）：`Ran 27 tests`、`OK`、退出 0；
+  - `仓库外临时目录的 `check.log``（06:13:44）：`PASS 89 checks`、`ALL OK`、退出 0。
+  产品代码自 IR-03 修正后未再变动，运行包无需重建；运行包内 `_state.py` 与工作树源码同哈希的前提在前一轮已核对。
+- **本轮改动内容**：`test_malformed_id_types_raise_value_error` 的 `bad` 列表补空字符串与纯空白两种输入（用例数仍 30）；`candidate-scoring.md`「旧记录怎么继续保存」第 1 条补“`id`、`statement_version` 要写成字符串；旧记录把编号写成数字时改成同名文本，不要改编号本身”；两份计划与审核记录按 `plan_reviewer` 的定性写入审批记录（执行计划第 457 行新增项重新批准，测试计划 R-05 修正后复核 `APPROVED`）。
+- **检查脚本标签**：`check.py` 的 I3 名称由“两条硬门槛表”改为“新意落点硬门槛行”，与实际只检索新意落点一行相符；空白成因行的收窄由 I4a–I4j 覆盖。名称修正只改检查标签、不改检索串与项数，89 项结果沿用 06:13 的运行；修正后又重跑一次覆盖了日志。
+
+**最终状态**：RP-18 文档检查 89 项全通过、组件 30 项通过、回归 27 项通过，三者日志时间均晚于最后一次文件改动。
+
+**PR #9 快审后的修正与复验（2026-11-28）**：独立快审按 `quick-merge-review` 结论 `NOT_READY`，提出 B1–B4。B1–B3 为已证实缺陷，逐条处理：
+
+- **B1（实现缺陷）**：硬门槛项记「未评」时，校验只在 `gate in ("pass", "soft_stop")` 时报错，`hard_stop` 与 `merge` 分支不检查，因此“空白成因未评 + `hard_stop` + `gap_zero`”可通过，“门槛没查就判停”仍可入库。已改为存在硬门槛项未评时 `gate` 只能为 `pending`；`test_hard_gate_unrated_cannot_pass` 增补 `hard_stop` 与 `merge` 两条负向断言（用例数仍 30）。
+- **B2（文档缺陷）**：「先行核对」0 分列原写“还没核对，或差别没有依据”，与「未评」规则冲突。已改为“核对过，但差别没有依据（还没核对不算 0 分，记「未评」）”，软门槛补法与该行解释句同步。
+- **B3（文档缺陷）**：`SKILL.md` 判停句原写“空白成因 = 0 且已判伪空白”，比新定义窄。已改为“已证伪”，并写明两种情形与“还没查够三篇记「未评」，不算 0”。
+- **B4（记录缺失）**：r12 最终结论未落在 `plan/implementation-review.md`，已补 r12 一节，含五轮审核过程与快审四项。
+
+**复验**（重建运行包后执行）：
+- `test_verdict_record`：`Ran 30 tests`、`OK`、退出 0。
+- 文档检查：`PASS 94 checks`、`ALL OK`、退出 0（新增 I4k–I4o 覆盖硬门槛未评只能 `pending`、先行核对未评不记 0、`SKILL.md` 判停句）。
+- `test_interview`：27 项回归，产品代码新增判定只作用于 `materials` 的可选对象。
+
+快审同时确认无问题的部分（校验顺序、不误伤既有调用、空白成因单一外延、范围无越界、计划哈希与批准一致）继续有效，不重复证明。
+
+**快审第二轮（B5、B6）修正与复验**：B5 为文档缺陷——「先行核对」的软门槛补法写成“整条按 `pending`”，与同文件的「同表比较」段和已批准计划冲突，会把软门槛未评变成第三道硬门槛。已删去该半句，改为“按未评记法处理，含未评时不与其他候选同表比较”。B6 为 B1 的配套文档未同步：代码对四值全拒，文档两处仍只写拒 `pass` 与 `soft_stop`，已改为“只能记 `pending`，四值都会被拒绝”，`runtime.md` 的“等”改为显式写“`pending` 以外的任何 `gate`”。
+
+文档检查脚本 I4k 原先带 `or` 兜底、因而漏检 B6；已删除兜底并把 D4 更新为四值断言，新增 I4k2、I4k3。
+
+复验：`test_verdict_record` 30 项、`test_interview` 27 项、文档检查 `PASS 96 checks` 全部通过。
+
+**快审第二轮（用户四条件）修正与复验（2026-11-28）**：用户复核 PR #9 判 `NOT_READY`，提出四条。四条均经本地复现确认，逐条处理：
+
+- **第 1 条（保存放行缺依据或缺待办的记录）**：实测五种写法原先都能保存成功——`pass` 的 `evidence` 与 `scores` 完全不对应、`evidence` 缺一项、`pending` 的 `missing: [null]`、`evidence_cutoff` 为空串、从权重/分数/依据同时删掉一道硬门槛仍记 `pass`。已补齐结构校验：`evidence_cutoff` 须非空字符串；`experiment`、`missing` 每项须非空字符串；`scores` 键集合须等于 `weights`（少评要写 `null`，不能删键）且必含两道硬门槛；`evidence` 须对 `scores` 每一项都有非空依据；权重不得为负。五种写法现已全部被拒。
+- **第 2 条（一次报错漏掉可独立判断的问题）**：原实现遇到非法 `gate` 直接 `return`。已把字段自身问题（类型、取值、键集合、依据齐全）与 `gate` 对齐要求分开收集：非法 `gate` 时先报出所有独立字段错误，再报 `gate` 本身并说明后续检查无法进行。实测 `gate: "keep"` + `experiment: "文字"` + `missing: {}` 现能在一次报错里列出三条问题。
+- **第 3 条（汇总与计分互相冲突）**：「汇总从记录生成」原先只允许五个字段却又要求报停因、并入目标和旧题面编号；报表第 3 条仍按默认权重直接相加，与未评分母规则冲突（权重 5 的一项未评时两处分别得 100 与 95）。已改为允许并直接读取记录里的全部判决字段，报表引用「怎么算总分」的同一规则，示例表补“九项都评过才能直接相加”。
+- **第 4 条（公开差异含用户数值与本机路径）**：产品文档的示例改用合成数值（0.72、0.85、0.88、判据线 0.90）；计划同一示例替换并注明“合成数值，非用户记录”；测试步骤改为 `: "${RP_WORKTREE:?...}"` 由调用方绑定、临时目录用 `${TMPDIR:-/tmp}`；本记录也不再写本机绝对路径。新增检查 L2 对全部新增行扫描用户数值与本机路径。
+
+**已推送历史的处理**：提交 `1fe8722` 等已含上述数值与路径。经查该分支 0 条评论、0 条 review、无他人引用、仅本人三个提交且尚未合并，按合并前重写分支历史的处理方式修正，不改写 `main`。
+
+**复验**（重建运行包后）：
+- `test_verdict_record`：`Ran 38 tests`、`OK`、退出 0（新增 8 个用例覆盖第 1、2 条）。
+- `test_interview`：`Ran 27 tests`、`OK`、退出 0。
+- 文档检查：`PASS 105 checks`、`ALL OK`、退出 0（新增 I4p–I4w 覆盖第 3 条的汇总字段与计分口径、L2 覆盖第 4 条、I4v 与 I4w 检索计划与测试计划里的窄枚举，防同类遗漏再发生）。
+计划审核随后指出 M-01、M-02（计划第 436 行与测试计划第 231 行仍留五字段窄枚举），已修并复核 `APPROVED`；检查项数与结果在上表中已按修正后重跑。

@@ -4,16 +4,16 @@
 
 ## 版本与范围
 
-- 测试计划版本：`rp-tests-r11-verdict-2026-11-27`，取代 `rp-tests-r10-direction-alignment-2026-11-27`；本次新增必测项 RP-17，检查方向判决口径的两节文档（「判决与停因」「证据推翻方案之后」）与 `SKILL.md` 入口，RP-01 至 RP-16 及其场景全部沿用，RP-09 继续延期。
-- 需求版本：`rp-requirements-r7-verdict-2026-11-27`；沿用 `rp-requirements-r6-direction-alignment-2026-11-27` 的已确认要求，并增加用户 2026-11-27 追加的四项判决要求与同日审核问答的两项确认（`problem_invalid` 只写 `stop_reason`；`pending` 第二触发条件）。沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
-- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r11-verdict-2026-11-27`，审核对象 SHA256 `c28fd0bcb8c7551ff8334dc9cf57903837a49bb25b4a6ec46e6f85e417a4843b`；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。计划若有语义修订，本计划引用同一版本号，并在 `plan/test-plan-review.md` 记录当次审核对象的校验值。
-- 目标仓库：`research-proposal`；工作树：本仓库同级容器下的 `worktrees/research-proposal-verdict`；分支：`feat/verdict-gate`，基线 `56369ad`。RP-14 的正式执行环境仍为分支 `feat/interview-script-artifacts` 与结果根 `/private/tmp/research-proposal-r23-run.cSceAb`。RP-15 的执行环境仍为分支 `feat/collision-guidance`，基线 `8032701`。RP-16 为文档静态检查，不安装、不启动产品，其 diff 基线为 `61257df`。RP-17 同为文档静态检查，diff 基线为 `56369ad`。首个正式产品仍为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
-- 执行说明版本：`rp-recipe-r19-verdict-2026-11-27`，替代 `rp-recipe-r18-direction-alignment-2026-11-27`。本次修订只新增 RP-17 的直接文件检查，不改变 RP-01 至 RP-16 的执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
+- 测试计划版本：`rp-tests-r12-verdict-record-2026-11-28`，取代 `rp-tests-r11-verdict-2026-11-27`；本次新增必测项 RP-18，检查判决记录文档、未评与待补的记法、`problem_invalid` 收窄，以及保存入口对 `candidate_scores` 的校验，RP-01 至 RP-17 及其场景全部沿用，RP-09 继续延期。
+- 需求版本：`rp-requirements-r8-verdict-record-2026-11-28`；沿用 `rp-requirements-r7-verdict-2026-11-27` 的已确认要求，并增加用户 2026-11-28 追加的五项要求（判决记录按题面版本分开、未评与 0 分分开、待补范围按研究问题确定、`problem_invalid` 锁定同一目标与假设、保存校验）。沿用“只测 research-proposal 的逻辑，recipe 应该手动准备输入”，撤掉 LibreOffice 测试，Word 交付和调试延后，当前先做对 Markdown，并按需加选讲稿与想定问答。
+- 执行计划：[implementation-plan.md](implementation-plan.md)，候选版本 `rp-plan-r12-verdict-record-2026-11-28`，审核对象 SHA256 由计划审核记录给出；正式结论见 [implementation-plan-review.md](implementation-plan-review.md)，新产品实施和正式执行须采用已审版本。计划若有语义修订，本计划引用同一版本号，并在 `plan/test-plan-review.md` 记录当次审核对象的校验值。
+- 目标仓库：`research-proposal`；工作树：本仓库同级容器下的 `worktrees/research-proposal-record`；分支：`feat/verdict-record`，基线 `97c1340`。RP-14 的正式执行环境仍为分支 `feat/interview-script-artifacts` 与结果根 `/private/tmp/research-proposal-r23-run.cSceAb`。RP-15 的执行环境仍为分支 `feat/collision-guidance`，基线 `8032701`。RP-16 为文档静态检查，其 diff 基线为 `61257df`；RP-17 为文档静态检查，diff 基线为 `56369ad`。RP-18 含文档与组件两部分，文档 diff 基线为 `97c1340`。首个正式产品仍为 `4797a1bd69dca2a1354476a564c5d2714d8004da`；当前产品和执行状态由执行工程师维护于 `plan/test-results.md`。
+- 执行说明版本：`rp-recipe-r20-verdict-record-2026-11-28`，替代 `rp-recipe-r19-verdict-2026-11-27`。本次修订只新增 RP-18 的文档检查与组件校验，不改变 RP-01 至 RP-17 的执行义务；历史尝试、实际问题和不受影响的通过结果保留。RP-14 的第一关与第二关结论见 `plan/test-plan-review.md` 的「rp-tests-r6：RP-14 的第一关与第二关」一节，第三关见同文件 r23 一节；r5 的第一关、第二关与准备符合性结论分别见同文件、`plan/test-preparation-review.md`。准备完成不表示正式测试通过。
 - 本次准备清除与本范围矛盾的残留步骤：RP-09 的 Word 模板映射、`test_export.TemplateTests`（该文件已在工作区删除）、RP-08 的“所有产品页图”阅读、RP-11 的受控 `page_review` 分支。清理依据为已获批准的 r14 范围与 `Test Engineer Rule.md` 第 6 节“超范围要求必须从计划中删除”，不是临场删测或缩项。
 
 范围来自已确认的业务要求和执行计划明确安排的成功、失败及兼容行为。首版完整流程只验收苹果芯片 Mac、Codex、Nix；npx skills 验收技能与随附资源的安装，不把它单独视为完整前置环境。
 
-下面除已明确延期的 RP-09 外，RP-01 至 RP-17 的编号及各项明确列出的场景构成唯一必测清单；RP-15 沿用 r8、r9，RP-16 沿用 r10，RP-17 为本轮新增。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
+下面除已明确延期的 RP-09 外，RP-01 至 RP-18 的编号及各项明确列出的场景构成唯一必测清单；RP-15 沿用 r8、r9，RP-16 沿用 r10，RP-17 沿用 r11，RP-18 为本轮新增。当前交付为 Markdown；不运行 LibreOffice、Word 转换、模板填写或页面核对，不为这些工作增加权限配置、探针或外部诊断。Word 相关旧结果只保留历史，不作为当前阻断，也不改写为通过。
 
 只验收本仓库的安装交付、输入发现与交接安排、材料整理、研究设计、Markdown 成稿、修改、恢复、按需加选的讲稿与想定问答交付，以及撞车判断、评分映射与本次新增的教授方向对齐文档。上游产物由 Recipe 手动准备为输入；不运行采集、Zotero 保存、全文下载、论文分析或套磁候选生成来证明这些输入的生成过程，也不验收上游子代理、服务、批次或委派链。已有上游检查随产品发现入口正常使用，不为本次测试重写或绕过它们。
 
@@ -215,6 +215,37 @@
 
 **检查方式**：直接阅读改动后的三份文档，运行一次基线 diff 和一次只读的结构/关键词/锚点/隐私检查脚本；脚本只对新增行做隐私检查。不运行安装、组件测试或实际会话。RP-01 至 RP-16 的既有结果不受文档增补影响，直接沿用，不因本次提交编号变化重跑。检查脚本放在仓库外临时目录，不提交。
 
+### RP-18：判决记录与保存校验
+
+**目标**：候选的判决记录按题面版本分开保存，实验说明了什么、哪条证据支持判决、哪些材料还缺三样分开填；汇总只能由这份记录生成，不能另写。「未评」与 0 分分开：证据未齐记「未评」，0 分只留给有依据的否定；「未评」不进入总分。空白成因的 0 分收窄为“已证伪”（一种来源、两种情形：伪空白，或查证后确认没有相近工作），还没查够三篇不记 0。`pending` 的范围按研究问题确定，包括关键数据缺失、实现有错、反例待核、口径未定。`problem_invalid` 锁定同一目标与同一套假设，判停写明停到哪个题面版本。`save_revision` 对 `candidate_scores` 做字段校验，不合规一次列全部问题并拒绝保存。
+
+**输入或场景**：两部分。
+1. **文档部分**：直接读取 `skills/research-proposal/references/candidate-scoring.md`、`references/runtime.md`、`SKILL.md`，用基线 `97c1340` 做只读 diff，核对新节、字段清单、未评记法、待补范围、`problem_invalid` 收窄、交叉引用与不扩散。
+2. **组件部分**：在仓库外一次性消费者目录中，用固定运行包分别提交合规与违规的 `candidate_scores`，检查返回状态与落盘内容。使用的合规记录从用户实际工作版评分记录的字段形态抽象而来（`hard_stop` 带 `total: null`、`pass` 带数值总分、`scores` 键与 `weights` 一致），不带真实项目名、学校或论文信息。
+
+逐项核对：
+
+- **新节与位置**：`candidate-scoring.md` 存在「判决记录怎么写」，位于「判决与停因」之后、「打分前先定证据」之前。
+- **字段清单**：每个记录项含 `statement_version`、`experiment`（数组）、`evidence`（与 `scores` 同键的对象）、`missing`（数组），且写明三者都不允许省略、可以为空的写空数组；`hard_stop` 的 `evidence` 非空、`pending` 的 `missing` 非空、`pass` 与 `soft_stop` 的 `evidence` 非空。
+- **按题面版本分开记**：写明题面对应本稿 `question` 步骤的实际文字，`question` 变化后旧判决不再是当前判决，旧记录留档标“旧题面”；`id` 跨版本不变、保存内以 `(id, statement_version)` 唯一，`merged_into` 指向候选身份而不是某一版；转述另一版结论必须带 `statement_version`。
+- **汇总从记录生成**：写明汇总段落只能由该候选当前题面版本的记录生成，可用字段为 `statement_version`、`gate`、`stop_reason`、`merged_into`、总分、`experiment`、`evidence`、`missing`（与本节「汇总与计分口径」同口径），不得另写一套判断。
+- **未评记法**：写明 `scores` 写 `null`、`evidence` 写明缺什么；0 分只留给有依据的否定；**空白成因的 0 分收窄为“已证伪”（一种来源、两种情形：伪空白，或查证后确认没有相近工作），`gap_zero` 与硬门槛表同步覆盖两种情形，“伪空白”一词全文只有这一套定义，还没查够三篇记「未评」并按 `pending` 处理**，硬门槛表与「先过门槛，再算总分」的解释句同步改口，不再把“还没查够三篇”写在 0 分里；1 分判据行与基线相同；「未评」不参与总分（从分母剔除并注明“按 N 项计”）；硬门槛项为「未评」时一律记 `pending` 且 `missing` 非空，不得记 `pass`、`soft_stop`、`hard_stop` 或 `merge`；两项硬门槛已评上时其余项「未评」不阻止排序，但含与不含「未评」的候选不能同表比较；一项都评不了记 `pending` 且不给总分；「怎么算总分」末尾有对应一句。
+- **待补范围**：写明「待补」是本轮不能判并给出待办与依据；四类新增情形（关键数据缺失、实现有错、反例待核、口径未定）在内；承重证据按研究问题确定，推荐语第 2 句不再是唯一入口；`pending` 不得改写为 `hard_stop` 保留。
+- **`problem_invalid` 收窄**：写明先锁定同一目标量、同一套假设与同一份观测资料；五问保留为五个独立分支（恒等式、不可识别、依赖不可观测分布、必然拒绝或不拒绝、定义域为空），其中“依赖不可观测分布”改为更窄写法，且第 4 问与第 1 问是两件事；轴匹配不稳、算力不足、指标更换各有自己的证据，不能归到这五问；判停写明停到哪个 `statement_version`。
+- **组件校验（结构）**：`save_revision(stage="materials")` 带 `candidate_scores` 时校验 `candidate_scores` 为对象、`weights` 非空且值为不为负的数字、`evidence_cutoff` 为非空字符串、`items` 为非空数组；`(id, statement_version)` 唯一、`id` 可跨版本重复；每个 `item` 含 `id`、`question`、`statement_version`、`gate`、`scores`、`evidence`、`experiment`、`missing`；`experiment` 与 `missing` 为数组且每项为非空字符串（`missing` 不能含 `null` 或空串）；`scores` 为对象、键集合与 `weights` 相等（少评的项写 `null`，不能删键）、且必含两道硬门槛项；`evidence` 为对象、对 `scores` 的每一项都有非空依据；分数取 0、1、2 或 `null`。
+- **组件校验（与 `gate` 对齐）**：`gate` 限五值；`hard_stop`、`pending`、`merge` 不得带 `total`；`pass`、`soft_stop` 须带数值 `total`；`hard_stop` 须有合法 `stop_reason`、`merge` 须有指向本次保存内另一候选的 `merged_into`、其余判决不得带这两个字段；`hard_stop` 的 `evidence`、`pending` 的 `missing`、`pass` 与 `soft_stop` 的 `evidence` 非空；硬门槛项为 `null` 时 `gate` 只能为 `pending`（`pass`、`soft_stop`、`hard_stop`、`merge` 都拒绝）。
+- **组件校验（一次报全）**：`gate` 非法时仍要报出所有与 `gate` 无关的字段错误（例如 `experiment` 不是数组、分数越界），再报 `gate` 本身的问题；不得遇到非法 `gate` 就直接返回。违规时抛 `ValueError` 且不落盘、状态版本不变，一次列出全部问题。
+- **不扩散**：`stage="materials"` 不带 `candidate_scores` 时保存行为不变；其他阶段与其他字段的保存行为不变；硬门槛仍为两条且含义不变（新意落点判据行与基线相同；空白成因 0 分判据按 IR-01 收窄为“已证伪”一种来源两种情形，1 分判据行与基线相同，「空白成因的硬要求」里的“缺这三项也按 0 分”同步改为“还没查够三篇记未评”）；权重表、评分公式未改；三类停因仍为三条，`gap_zero` 按 IR-01 扩为两种情形；五态判决词未改；`research-design.md`、`interview.md`、`flake.nix`、`flake.lock`、`nix/`、`README.md` 无 diff。
+- **交叉引用与锚点**：新增节的锚点可达；`candidate-scoring.md` 内对「保存」「怎么报给用户」的指代仍成立。
+- **汇总与计分口径**：「汇总从记录生成」允许的字段包含 `statement_version`、`gate`、`stop_reason`、`merged_into` 与总分，并要求停因、并入目标、题面编号直接从同一版本记录读取；「怎么报给用户」第 3 条引用「怎么算总分」的同一规则（未评项权重不进分母、表头写“按 N 项计”），不再按默认权重直接相加。
+- **去标识化**：产品文档的示例为合成数值，不含用户回看的实验数值；测试步骤不写死本机绝对路径（`RP_WORKTREE` 由调用方绑定，临时目录用 `${TMPDIR:-/tmp}`）。
+- **兼容路径**：`candidate-scoring.md` 的保存节写明旧记录不合规时的处理（拒绝时不写入、上一份记录原样保留、按 `gate` 补齐、`hard_stop` 补不出真实停因就按实际判据改判、不想补齐可先不带 `candidate_scores` 保存材料步骤、不做隐式迁移）；`runtime.md` 的 `materials` 行写明拒绝后状态版本不变、上一份材料记录不受影响。组件测试由 `test_rejected_save_keeps_previous_state_version` 与 `test_rejected_save_leaves_previous_materials_record_untouched` 覆盖（后者逐字节比对上一份 `步骤-materials-*.json`）。
+- **隐私**：只查新增行，不含 URL、绝对路径、邮箱、真实人名、学校名、用户回看的实验数值或用户材料片段；组件测试输入使用合成项目名。
+
+**预期结果**：文档部分逐项如上，且没有改动既有判据；组件部分对合规记录返回 `ready` 并原样落盘，对每条违规项分别返回 `ValueError` 且报错文本指明是哪一条问题，违规记录不落盘、状态版本不变；一次含多个违规项的提交在单次报错里列出全部问题；不带 `candidate_scores` 的材料保存与其他步骤行为不变；导入来源确认打印出的 `_state.py` 路径位于构建出的运行包内且带本次校验函数。
+
+**检查方式**：文档部分直接阅读改动后的三份文档并运行基线 diff 与只读结构/锚点/隐私脚本。组件部分用固定运行包 `research-proposal-runtime` 的 `bin/python3` 直接导入 `research_proposal.api`，在仓库外一次性目录中对每种违规各提交一次（违规项逐条独立，不合并成一次），另提交一份合规记录与一份不带 `candidate_scores` 的材料保存作为对照。执行命令与输出位置记入 `plan/test-results.md`。示例代码入库为 `test/test_verdict_record.py`，在隔离目录中构造合成稿件，不读取用户真实资料。RP-01 至 RP-17 的既有结果不受影响，直接沿用。
+
 ## 准备和执行的边界
 
 需要真实用户选择或确认的场景，使用现有评估服务对同一隔离使用目录和同一稿件逐次发送请求。每次都明确点名安装后的 `research-proposal` 主技能，并提供真实资料或稿件路径；不把新的评估请求当成继承上次技能上下文的对话。先检查上一请求的实际问题、方案和产品保存的状态，再将针对该问题或该版方案的具体用户决定作为下一请求的输入；不预先灌入尚未提出的问题的答案，也不直接改写产品确认状态。交互之间继续使用产品已经保存的有效成果，不重复成稿。依据为现有评估服务 [app-server 入口约定](../../../eval-server/docs/appserver-migration.md)第 193–201 行，源码版本 `1ae8b6131bd0041b82cf3cc3789bf7fe09dfac6e`：每次评估创建新的主对话，不支持 `resume`。明确产品入口不等于在提示中提供内部保存函数或实现步骤。
@@ -250,8 +281,36 @@ RP-14 的执行步骤：在隔离消费者中从已提交稿件出发，先加�
 RP-15 的执行步骤：直接读取 `skills/research-proposal/references/research-design.md`、`skills/research-proposal/SKILL.md`、`skills/research-proposal/references/interview.md` 和 `skills/research-proposal/references/candidate-scoring.md`；用基线 `8032701` 运行 `git diff --stat 8032701 -- skills/research-proposal flake.nix flake.lock nix README.md` 和 `git diff 8032701 -- <上述四份文档>`，确认只新增撞车一节、两处入口和评分映射，`candidate-scoring.md` 的九项权重、两项硬门槛、评分公式和九项 0/1/2 判据未改，映射不固定分数、不新增条件，三步诊断不再出现固定篇数，frontmatter/脚本/依赖/安装未变；运行仓库外临时目录中的只读链接/锚点/关键词脚本，隐私检查只看新增行。不安装、不启动产品、不运行组件测试，也不重跑 RP-01 至 RP-14。RP-15 的既有通过结果属于提交 `61257df` 之前的基线，本轮不重开；RP-16 另行核对新增内容没有回退 RP-15 已确认的性质（三步诊断不设固定篇数、评分映射不固定分数）。
 
 RP-16 的执行步骤：直接读取 `skills/research-proposal/references/research-design.md`、`skills/research-proposal/references/candidate-scoring.md`、`skills/research-proposal/references/interview.md` 和 `skills/research-proposal/SKILL.md`。用基线 `61257df` 运行 `git diff --stat 61257df -- skills/research-proposal flake.nix flake.lock nix README.md` 和 `git diff 61257df -- <上述四份文档>`，逐项核对 RP-16 的场景清单：三节存在且位置正确，入口逐项可达（`SKILL.md` 中文方案步骤的轴入口、相关研究步骤的脉络入口、`interview.md` 两类指针、`research-design.md` 教授关系末尾的轴指针、`candidate-scoring.md`「范围连接」末尾的轴指针），缺口 A 的三类判据与适用范围写清，缺口 B 的上位说法、三篇最低证据与「空白成因」分工写清，缺口 C 的成立条件、单一研究问题与证据要求写清，`candidate-scoring.md` 只新增「范围连接」末尾指针、新增第 4 条警示并把该小节标题改为「四种常见打错」、九项权重／两项硬门槛／评分公式／九项 0/1/2 判据／「范围连接」2/1/0 判据未改；`research-design.md` 原有的“理由见上一节”已改为具名指向「新颖性写在哪里」；`interview.md` 三类追问未改；frontmatter／脚本／依赖／安装文件无 diff。再运行仓库外临时目录中的只读链接/锚点/关键词脚本，隐私检查只看新增行。不安装、不启动产品、不运行组件测试，也不重跑 RP-01 至 RP-15。检查脚本放在 `/tmp` 下的一次性目录，不提交。
+RP-18 的执行步骤：
 
-旧产品 b983 的 r13 运行、失败和诊断保留，不视为 Markdown 完成。RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划「版本保存以一份核对完成的交付集为提交单位」一节与「提交顺序」第 3 步声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
+1. **文档部分**：直接读取 `skills/research-proposal/references/candidate-scoring.md`、`references/runtime.md`、`SKILL.md`；用基线 `97c1340` 运行 `git diff --stat 97c1340 -- skills/research-proposal flake.nix flake.lock nix README.md` 与 `git diff 97c1340 -- skills/research-proposal`，逐项核对本节场景清单的新节位置、字段清单、题面版本规则、汇总生成规则、未评记法、待补范围、`problem_invalid` 收窄、交叉引用与不扩散；运行仓库外临时目录中的只读锚点/关键词/隐私脚本，隐私检查只看新增行。
+2. **组件部分**：本轮改了 `scripts/`，运行包须按当前工作树重新构建，不复用 `97c1340` 之前的运行包。变量与构建一次写完：
+   ```bash
+   set -e
+   : "${RP_WORKTREE:?执行前须把 RP_WORKTREE 绑定到本轮工作树根目录}"
+   export RP_R18_RUN="$(mktemp -d "${TMPDIR:-/tmp}/rp-r18-run.XXXXXX")"
+   export RP_R18_RUNTIME="$RP_R18_RUN/runtime"
+   mkdir -p "$RP_R18_RUN/component-output"
+   cd "$RP_WORKTREE"
+   nix build .#research-proposal-runtime --out-link "$RP_R18_RUNTIME"
+   ```
+   构建产物放在仓库外一次性目录，`--out-link` 明确指向该目录，不在工作树留下 `result`。运行包自带的 `site-packages` 内已含 `research_proposal` 模块，因此**不得设置 `PYTHONPATH` 指向工作树源码**：否则导入的是未打包的源码，测不到运行包里的模块。先确认导入来源：
+   ```bash
+   "$RP_R18_RUNTIME/bin/python3" -c \
+     'import research_proposal._state as s; print(s.__file__); assert hasattr(s, "_check_candidate_scores")'
+   ```
+   输出的路径须位于 `$RP_R18_RUNTIME` 或它指向的 `nix/store` 内，且带本次新增的校验函数；两项任一不成立时本项记“未执行”，先查构建绑定，不改测试迎合产品。
+3. 运行入库的测试代码：
+   ```bash
+   cd "$RP_WORKTREE/test"
+   RP_TEST_OUTPUT="$RP_R18_RUN/component-output" \
+     "$RP_R18_RUNTIME/bin/python3" -m unittest -v test_verdict_record \
+     > "$RP_R18_RUN/rp18-components.log" 2>&1
+   ```
+   运行包的 `bin/python3` 自带 `lxml`、`python-docx`、`PyMuPDF` 等既有依赖；导入失败时记“未执行”，不改产品迎合测试。`RP_TEST_OUTPUT` 是本仓库组件用例既有约定（`test/support.py:68`），不新增。
+4. `test/test_verdict_record.py` 已含每类违规各一次、形状与类型类违规（`weights`／`evidence_cutoff`／`items` 形状、`gate` 五值、非停判决不得带停因字段、`merged_into` 不得指向自己、分数取值、`experiment` 与 `missing` 必须是数组、`evidence` 必须是对象、畸形 `id` 与题面版本按 `ValueError` 报错）、合规 `soft_stop` 放行、一份合规记录、一次同时含多个违规项的提交（对应检查入口「一次列出全部问题」）、不带 `candidate_scores` 的材料保存对照；其他阶段的保存行为由既有 `test_interview` 回归覆盖，不在本模块内重复。不另写一次性提交脚本，避免同一动作两套入口。执行命令、实际输出目录与逐项结果记入 `plan/test-results.md` 的 r28 一节。不安装产品、不启动评估会话、不调用上游。
+
+RP-03 至 RP-05 已按 r13 通过；RP-02、RP-06、RP-13 及未受影响的导入组件结果继续使用 `test-results.md` 的有效记录，旧 Word 导入结果只保留历史。本次不重建手工上游输入、不运行上游业务、不重复采集或视觉请求。改变导出与提交行为需要新产品：`b983497308157dedec6b4d97f16c95dc0b0f60f9` 的 `review_revision` 仍直接要求 `page_review`，`_commit_problems` 仍要求 `docx`，也没有计划「版本保存以一份核对完成的交付集为提交单位」一节与「提交顺序」第 3 步声明的 `delivery_formats` 与 `checked_formats`；这些当前交付要求要从主代理发布的固定远端提交正式安装后才执行。
 
 固定共享夹具继续为 `5a31ae0095952cc359f7fa826730f14e7ee4f5b2`，使用前的更新记录沿本轮主代理交接。模型仍为夹具默认 `gpt-6-luna`、`low`；保留 `workspace-write`、实际 `on-request`、单主线程和 600 秒。未获批准的 `auto_review` 和其他模型候选不加载，也不启停任何服务。
 

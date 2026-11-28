@@ -1,6 +1,93 @@
 # 研究计划草稿技能计划审核记录
 
-## 当前状态：r11 方向判决口径已通过
+## 当前状态：r12 判决记录与保存校验已通过
+
+## r12 判决记录与保存校验（2026-11-28）
+
+用户 2026 年 11 月 28 日回看前几轮判决记录，指出四类误判（实验结果、选题成立与优先推荐被当成同一个判决；低优先级被写成不成立；测量出错时照样判活或判停；用弱证据判活却把分数写得很确定）与三处记录丢失（题面版本、判决范围、同版条件不同的报告），并给出五点要求：判决记录按题面版本分开、未评与 0 分分开、待补范围按研究问题确定、`problem_invalid` 锁定同一目标与假设、保存程序校验判决记录。用户明确表示只有改一处时会先改判决记录。
+
+据此修订执行计划为 `rp-plan-r12-verdict-record-2026-11-28`，需求 `rp-requirements-r8-verdict-record-2026-11-28`，目标分支 `feat/verdict-record`，基线 `97c1340`（PR #8 合并后的 `main`）。独立审核者为专用 `plan_reviewer` 代理，只读，未修改文件、未运行测试。
+
+**首轮**（候选 SHA256 `f8a48ace…541b6e`）结论 `NEEDS_MODIFICATION`，P1–P4 均有阻断项，共八项：
+- B-01（P1、P4）：`evidence` 被同时写成“可为空数组”的三项之一，又要求按评分项判断非空；实际形态是与 `scores` 同键的对象。
+- B-02（P2）：`id` 在保存内唯一与“按题面版本保留旧记录”直接冲突，同一候选多版本必然重复 `id`。
+- B-03（P2、P3）：硬门槛项为「未评」时没有规定 `gate`，且计划两处对「未评是否进入排序」写法相反；这正是“未评变成第三道硬门槛”的入口。
+- B-04（P2）：五问收窄只展开三类证明，第 4 问（真零假设下必然拒绝或必然不拒绝）没有归属。
+- B-05（P3、P4）：既有不合规记录按下新校验无法继续保存，而 `materials` 是整对象覆盖，拒绝会连带挡住本轮合规材料；计划却把用户工作版的 `C1` 称为“正确形态”，推论不成立。
+- B-06（P4）：RP-18 的 `$RP_R18_RUNTIME` 从未定义、`nix build` 无 `--out-link`、`PYTHONPATH` 会命中工作树源码而非运行包模块，该必测项不可执行且验证对象错误。
+- B-07（P4）：用户要求“一次列出全部问题”没有观察点，测试设计还明确排除了多问题并存的提交。
+- B-08（P4）：`summary` 字段凭空出现，不在字段清单、校验项与 RP-18 中。
+
+作者按最小修正全部处理，并统一了三处口径：`experiment`、`missing` 为数组，`evidence` 与 `scores` 同键；`id` 为候选身份、`(id, statement_version)` 唯一、`merged_into` 指向身份；硬门槛项为「未评」时一律 `pending`、不得 `pass` 或 `soft_stop`，其余项「未评」不阻止排序但不同表比较。另新增「旧记录怎么继续保存」四条路径（拒绝时不写入、按 `gate` 补齐且 `hard_stop` 补不出真实停因就按实际判据改判、不想补齐可先不带 `candidate_scores` 保存材料步骤、不做隐式迁移）。
+
+**复审**（候选 SHA256 `f094b8f5…50d9db`）结论 `NEEDS_MODIFICATION`，三项残留：
+- R-01（P2）：校验清单第 2 条仍写「`id` 在本次保存内唯一」，B-02 只在别处改了口径。
+- R-02（P4）：旧记录处理四条只写进计划，`candidate-scoring.md` 与 `runtime.md` 均无对应内容，用户仍只会看到报错。
+- R-03（P4）：RP-18 的「上一份材料记录不受影响」没有用例。
+
+作者逐条修正：第 2 条改为 `(id, statement_version)` 唯一；`candidate-scoring.md` 的「保存」节新增「被拒绝时怎么办」小节、`runtime.md` 的 `materials` 行同步；新增 `test_rejected_save_leaves_previous_materials_record_untouched`，逐字节比对上一份 `步骤-materials-*.json`。
+
+**定向复核**（候选 SHA256 `8810fa4e…543de43`）结论 `APPROVED`：
+
+```text
+Plan revision: rp-plan-r12-verdict-record-2026-11-28
+Requirement revision: rp-requirements-r8-verdict-record-2026-11-28
+Target repository revision: research-proposal 分支 feat/verdict-record，基线 97c1340
+Relevant upstream/runtime revision: N/A（RP-18 按当前工作树构建运行包）
+
+P1 Requirement & Reality Grounding: PASS
+P2 Solution Validity & Ownership: PASS
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE
+
+Critical assumptions: N/A
+Unresolved impacts: N/A
+Approved behavior changes: 「未评」不参与总分、硬门槛项未评一律 pending；pending 增加四类触发情形；save_revision 对 candidate_scores 新增拒绝行为；拒绝后按四条路径处理、不做隐式迁移
+Required modifications: N/A
+
+Plan conclusion: APPROVED
+```
+
+审核者核对的五处一致口径：`(id, statement_version)` 唯一在 `plan/implementation-plan.md:446`、`plan/test-plan.md:230,235`、`references/candidate-scoring.md:156`、`_state.py:738-757` 五处一致，全文已无「id 在本次保存内唯一」；拒绝路径在 `candidate-scoring.md:365-372`、`runtime.md:92`、`_state.py:1003` 校验、加锁在第 1004 行、`(id, statement_version)` 类型判定与唯一键在第 738–757 行、首次 `write_record` 在第 1035 行、本步骤的 `_persist_work` 在第 1063 与 1073 行、状态版本递增在 `_store_state` 第 109 行、`test_verdict_record.py:150-170` 五处一致。审核者另确认校验调用早于 `_locked` 与写入，因此「不落盘、状态版本不变」在实现上成立。
+
+非阻断观察两项已处理：第 448 行的「见下」改为具名指向「旧记录怎么继续保存」；`pass` 带非空 `missing` 属允许形态，不改。第三项（`assertNotIn` 用序列化文本子串匹配）作为失败提示足够，保留。
+
+**实现符合性审核触发的一处语义修订（IR-01）**。首轮实现符合性审核指出：交付文档里「空白成因 0 有两种」与计划/新节「0 分只留给有依据的否定」并存，同一情形两套记法；按旧写法“还没查够三篇”记 0 时，`空白成因 = 0` 与 `hard_stop`/`gap_zero` 仍可入库，正是本轮要消除的“没查齐→判停”。
+
+需求裁定人按用户原话“证据未齐记未评、0 留给有依据的否定”裁定：**空白成因的 0 分收窄为“已证伪”，一种来源、两种情形**（伪空白；查证后确认没有相近工作），“还没查够三篇”改记「未评」并按 `pending` 处理。这条同时收窄了原先“九项 0/1/2 判据不变”的范围：2 分与 1 分判据不变，0 分的适用情形收窄。计划与测试计划相应修订，交定向复核。
+
+**定向复核（R-04，SHA256 `75121892…efe227f`）**：结论 `NEEDS_MODIFICATION`，指出澄清引入「伪空白」的三套定义（第 41、62、129 行），「查证后确认没有相近工作」这一情形在 `gap_zero` 未覆盖时没有合法 `gate`。作者按审核首选方案统一为“一种来源、两种情形”，同步第 41、62、94、108、129、207 行与两份计划；并按审核建议在执行计划补「校验边界」一句（校验可覆盖 `candidate-scoring.md` 既有评分与字段规则，超出既有规则的新增拒绝项须另行批准），对 IR-02 选择保留更严校验而非收窄。
+
+**最终定向复核（SHA256 `3891b47c…b4e0a3d`）**：结论 `APPROVED`。
+
+```text
+Plan revision: rp-plan-r12-verdict-record-2026-11-28
+Requirement revision: rp-requirements-r8-verdict-record-2026-11-28
+Target repository revision: research-proposal 分支 feat/verdict-record，基线 97c1340
+Relevant upstream/runtime revision: N/A
+
+P1 Requirement & Reality Grounding: PASS
+P2 Solution Validity & Ownership: PASS
+P3 Impact, Safety & Counterexample: PASS
+P4 Executability: PASS
+Gate review completeness: COMPLETE
+
+Critical assumptions: N/A
+Unresolved impacts: N/A
+Approved behavior changes: 空白成因 0 分收窄为“已证伪”（一种来源、两种情形），还没查够三篇改记「未评」并按 pending；「未评」不参与总分、硬门槛项未评一律 pending；pending 增加四类触发情形；save_revision 对 candidate_scores 新增拒绝行为；拒绝后按四条路径处理、不做隐式迁移
+Required modifications: N/A
+
+Plan conclusion: APPROVED
+```
+
+审核者核对六处同一定义：第 41、62、94、129 行属定义与引用，第 207 行是否定用法；全文 `伪空白` 命中 6 次，无第二套外延。并确认「查证后确认没有相近工作」现在能合法落到 `hard_stop` + `gap_zero`：分数记 0 而非 `null`，不受“未评须 pending”限制；硬门槛命中不得 `pass`/`soft_stop`；`gap_zero` 已覆盖该情形；校验只要求 `stop_reason` 取三个枚举之一，不会误拒。上一版“无合法 `gate`”的空档已消除。
+
+非阻断观察已处理：r7 历史小节的 `gap_zero` 一行加「（r12 已收窄，见下文 r12 的「空白成因的 0 分收窄」条）」括注，避免被误引为现行规范。`research-design.md` 第 91、117 行的「伪空白」与第 41 行定义相容，属 r12 未触碰的既有文本，不改。
+
+本结论覆盖 `3891b47c…b4e0a3d` 与 `4aae7a25…7b8144`；其后仅按非阻断观察加了一处括注（当前计划 SHA256 `a49343891cef7828ab5013be5aa86b7d9c5ab7ac8dde343d9f6ac7bb21f49688`），不触及 P1–P4 判断，按 Plan Reviewer Rule 第 6.3 节属等价局部修正，沿用 `APPROVED`。结论不代替测试第二、第三关口与合并批准。
+
+## 当前状态历史：r11 方向判决口径已通过
 
 ## r11 方向判决口径（2026-11-27）
 
@@ -433,3 +520,80 @@ Plan conclusion: APPROVED
 审核者已对 `d8a31354…` 与 `5c5c79e8…` 做 diff 级适用性确认：两者之间只有需求记录与措辞的编辑性修订，行为范围、必测范围、接口、依赖、owner 与 P1–P4 结论不变，原 `APPROVED` 继续适用于 `5c5c79e8…`，不需要重开任何关口。
 
 **限定**：该结论只表示当前方案适合实施，不代表实现正确、测试关口通过或可以合并。审核未运行构建、测试或产品入口；测试计划关口与合并条件不在本结论内。
+
+## r12 实现符合性审核触发修订后的计划审批（2026-11-28）
+
+实现符合性审核的 IR-01、IR-02 处理后，两份计划出现新哈希，按 Plan Reviewer Rule 第 6.3 节做影响分析。
+
+**受审版本**：执行计划 `73230e9ef73c27f5630eb1c55abbf56881c2993f0af09a4c14d5d71935d14933`；测试计划 `8ef08f6c6a8e41de244523c2ece4aaa00619d4d55f9145a5fe187003192ec38a`。
+
+**差异与定性**（相对上一次 `APPROVED`）：
+
+| 差异 | 定性 |
+|---|---|
+| 第 405 行 r7 历史小节加括注 | 记录性，不改现行规范 |
+| 第 439 行补记「空白成因的硬要求」第 58 行同属该口径改写 | 落实已批准口径，不新增语义 |
+| 第 457 行校验边界补「`id` 与 `statement_version` 为非空字符串」 | **触及 contract 与 identity，需重新批准** |
+| 测试计划第 236 行「不扩散」措辞 | 意图正确但一度保留「两条硬门槛原文……未改」造成内部矛盾（R-05），已改 |
+
+审核者判断：前两项可复用原 `APPROVED`；第三项因新增了一条计划文本原先没有的可拒绝条件、且 `id` 是候选身份，不能按纯第 6.3 节复用，须重新批准；测试计划还有 R-05。
+
+**R-05 修正**：测试计划第 236 行改为「硬门槛仍为两条且含义不变（新意落点判据行与基线相同；空白成因 0 分判据按 IR-01 收窄为“已证伪”一种来源两种情形，1 分判据行与基线相同，「空白成因的硬要求」里的“缺这三项也按 0 分”同步改为“还没查够三篇记未评”）」，删去与第 232 行冲突的旧短语。
+
+**复核结论**：
+
+```text
+Plan revision: rp-plan-r12-verdict-record-2026-11-28
+Requirement revision: rp-requirements-r8-verdict-record-2026-11-28
+Target repository revision: research-proposal 分支 feat/verdict-record，基线 97c1340
+
+P1 Requirement & Reality Grounding: PASS（复用首轮结论）
+P2 Solution Validity & Ownership: PASS（第 3 项重审：owner 仍为 save_revision 入参校验，机制不变）
+P3 Impact, Safety & Counterexample: PASS（第 3 项不改变既有记录可接受性）
+P4 Executability: PASS（第 3 项可执行；文档与计划同轮对齐）
+Gate review completeness: COMPLETE
+
+Approved behavior changes: 空白成因 0 分收窄为“已证伪”（一种来源、两种情形）、还没查齐记「未评」并按 pending；「未评」不参与总分、硬门槛项未评一律 pending；pending 增加四类触发情形；save_revision 对 candidate_scores 新增拒绝行为；拒绝后按四条路径处理、不做隐式迁移；新增：id 与 statement_version 须为非空字符串
+
+Plan conclusion: APPROVED
+```
+
+审核者对第三项的复核依据：owner 仍是 `save_revision` 的入参校验，机制、change point、失败策略均未变；`_state.py` 在上一轮批准前已有该判断，本次只是补依据、未扩大代码行为；计划第 457 行的「校验边界」现在自洽——校验只拒绝文档本来就禁止或明确要求的写法，而文档同轮已写明该要求。兼容影响可忽略：用户工作版记录的 `id`（`C1`、`C2`、`C-version`）与 `statement_version` 均为字符串，旧记录按已批准口径本不迁移。
+
+**非阻断观察已处理**：`test_malformed_id_types_raise_value_error` 的 `bad` 列表补上空字符串与纯空白；「旧记录怎么继续保存」第 1 条补一句“`id`、`statement_version` 要写成字符串；旧记录把编号写成数字时改成同名文本，不要改编号本身”。
+
+**审核者的证据限制**：旧版本 `3891b47c…` 与 `a4934389…` 的文件内容不在 git 对象中，审核者只能核对当前内容与基线 `97c1340` 的差异以及交接说明列出的四处；若有未列出的改动，不在该结论覆盖范围内。本条如实保留。
+
+结论不代替测试第二、第三关口与合并批准。
+
+## r12 用户复核四条件后的计划审批（2026-11-28）
+
+用户复核 PR #9 判 `NOT_READY`，提出四条（保存放行缺依据的记录、一次报错漏掉独立问题、汇总与计分冲突、公开差异含用户数值与本机路径）。修正后计划新增「结构校验补齐」「汇总与计分口径统一」「示例与路径去标识化」三段，测试计划新增四组观察点，属语义级改动，重新交审核。
+
+**审核过程**：首轮结论 `NEEDS_MODIFICATION`，两项阻断——M-01（计划第 436 行仍写五字段窄枚举，与第 477 行的全字段口径互斥）、M-02（测试计划第 231 行同样窄枚举，与第 240 行互斥）。两处都是「只改了一处、漏了紧邻的另一处」，与快审 C1 同一类问题。
+
+**修正**：第 436 行与测试计划第 231 行改为全字段集合，并写明「字段集合由下文『汇总与计分的口径统一』条同口径规定，不是只取前五个」；文档第 285 行改为引用式，只保留行为要求，避免同源漂移。检查脚本新增 I4v、I4w 检索窄枚举，命中即失败。
+
+**定向复核**结论 `APPROVED`：
+
+```text
+Plan revision: rp-plan-r12-verdict-record-2026-11-28（SHA256 086e111e…da8587b）
+Requirement revision: rp-requirements-r8-verdict-record-2026-11-28
+Target repository revision: research-proposal 分支 feat/verdict-record，基线 97c1340
+
+P1 Requirement & Reality Grounding: PASS（复用）
+P2 Solution Validity & Ownership: PASS（复用）
+P3 Impact, Safety & Counterexample: PASS（复用）
+P4 Executability: PASS
+Gate review completeness: COMPLETE
+
+Approved behavior changes: 沿用上一版全部，另加 evidence_cutoff 非空、experiment/missing 每项非空字符串、scores 键集合等于 weights 且必含两道硬门槛、evidence 覆盖每个已评项、权重非负、gate 非法时不提前返回、汇总字段扩为全部判决字段、报表第 3 条引用「怎么算总分」
+
+Plan conclusion: APPROVED
+```
+
+审核者确认六处只剩一套字段集合（计划 436／477、测试计划 231／240、文档 174／285），全仓无窄枚举残留；并确认新增结构校验没有超出「只拒绝文档本来就禁止或明确要求的写法」这条边界——`scores` 必含硬门槛有第 89–94 行「两项硬门槛」与第 33 行「每项 0、1、2 分」为据，`evidence` 逐项有依据有第 238 行「每一项的分数后面必须跟一句依据」与第 250 行「0 分也要写依据」为据，其余各项也各有出处。
+
+审核者另记录两项未独立核实：远端分支历史重写后的实际状态无法从本地核实；新增检查项 I4v、I4w 位于仓库外脚本，只能确认现行文本已无窄枚举。两处均不影响计划正确性。
+
+结论不代替测试关口与合并批准。

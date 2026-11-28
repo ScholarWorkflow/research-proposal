@@ -696,6 +696,206 @@ def _next_steps(work: dict) -> list:
     ]
 
 
+CANDIDATE_GATES = ("pass", "pending", "soft_stop", "hard_stop", "merge")
+STOP_REASONS = ("novelty_zero", "gap_zero", "problem_invalid")
+NO_TOTAL_GATES = ("pending", "hard_stop", "merge")
+CANDIDATE_REQUIRED = (
+    "id", "question", "statement_version", "gate",
+    "scores", "evidence", "experiment", "missing",
+)
+
+
+def _candidate_scores_problems(scores) -> list:
+    """判决记录的入参检查：一次列出全部问题，由调用方统一报错。
+
+    记录与分数分开：判决词、总分处理、停因与三样内容必须互相对得上，缺证据
+    的记「未评」而不是 0 分。这里检查结构、取值与判决对齐，不重算分数，也不
+    判断证据本身是否成立。
+
+    两类检查刻意分开：字段自身的错误（类型、取值、键集合）先全部收集，
+    与 `gate` 有关的对齐要求只在 `gate` 合法时才查。这样一条记录同时有多处
+    独立错误时也能一次报全，而不是遇到非法 `gate` 就返回。
+    """
+    if not isinstance(scores, dict):
+        return ["candidate_scores 须是对象，含 weights、evidence_cutoff 和 items。"]
+    problems = []
+    for name in ("weights", "evidence_cutoff"):
+        if name not in scores:
+            problems.append(f"candidate_scores 缺少 {name}。")
+    cutoff = scores.get("evidence_cutoff")
+    if "evidence_cutoff" in scores and (
+        not isinstance(cutoff, str) or not cutoff.strip()
+    ):
+        problems.append("candidate_scores.evidence_cutoff 须是非空字符串（证据截止日期）。")
+    weights = scores.get("weights")
+    if "weights" in scores and (
+        not isinstance(weights, dict) or not weights
+        or any(type(value) not in (int, float) or isinstance(value, bool) or value < 0
+               for value in weights.values())
+    ):
+        problems.append("candidate_scores.weights 须是非空对象，权重为不为负的数字。")
+        weights = None
+    items = scores.get("items")
+    if "items" not in scores or not isinstance(items, list) or not items:
+        problems.append("candidate_scores.items 须是非空数组。")
+        return problems
+    seen = {}
+    for index, item in enumerate(items):
+        label = f"items[{index}]"
+        if not isinstance(item, dict):
+            problems.append(f"{label} 须是对象。")
+            continue
+        identifier = item.get("id")
+        version = item.get("statement_version")
+        # 先判类型再构造键：畸形输入也按 ValueError 报问题，不能抛 TypeError。
+        if not isinstance(identifier, str) or not identifier.strip():
+            problems.append(f"{label} 缺少 id。")
+            identifier = None
+        if not isinstance(version, str) or not version.strip():
+            problems.append(f"{label} 的 statement_version 须是非空字符串。")
+            version = None
+        # id 是候选身份，跨题面版本不变；同一版本只留一条记录。
+        key = (identifier, version)
+        if identifier is None or version is None:
+            pass
+        elif key in seen:
+            problems.append(
+                f"candidate_scores 内 {identifier} 的题面版本 "
+                f"{item.get('statement_version')!r} 重复；同一候选同一版本只留一条。"
+            )
+        else:
+            seen[key] = item
+        for name in CANDIDATE_REQUIRED:
+            if name not in item:
+                problems.append(f"{label}（{identifier or '无 id'}）缺少 {name}。")
+        if isinstance(identifier, str) and identifier:
+            label = f"{label}（{identifier}）"
+        problems.extend(_candidate_problems(label, item, weights))
+    identities = {identifier for identifier, _ in seen}
+    for (identifier, _), item in seen.items():
+        merged = item.get("merged_into")
+        if item.get("gate") == "merge" and isinstance(merged, str) and merged not in identities:
+            problems.append(f"候选 {identifier} 的 merged_into 指向不存在的候选：{merged}。")
+    return problems
+
+
+def _candidate_problems(label: str, item: dict, weights) -> list:
+    """单条记录的结构与取值问题；与 `gate` 无关的部分不因 `gate` 非法而跳过。"""
+    problems = []
+    for name in ("experiment", "missing"):
+        value = item.get(name)
+        if name not in item:
+            continue
+        if not isinstance(value, list):
+            problems.append(f"{label} 的 {name} 须是数组。")
+        elif any(not isinstance(entry, str) or not entry.strip() for entry in value):
+            problems.append(f"{label} 的 {name} 每项须是非空字符串，不能有 null 或空串。")
+    problems.extend(_score_problems(label, item, weights))
+    gate = item.get("gate")
+    if gate not in CANDIDATE_GATES:
+        problems.append(
+            f"{label} 的 gate 须是 {'、'.join(CANDIDATE_GATES)} 之一，实为 {gate!r}；"
+            "以下与 gate 有关的检查因 gate 非法而无法进行。"
+        )
+        return problems
+    problems.extend(_gate_problems(label, item, gate))
+    return problems
+
+
+def _score_problems(label: str, item: dict, weights) -> list:
+    """分数与依据的结构检查：键集合、取值、逐项依据。与 `gate` 无关。"""
+    problems = []
+    scores = item.get("scores")
+    evidence = item.get("evidence")
+    if "scores" not in item or not isinstance(scores, dict):
+        return [f"{label} 的 scores 须是对象，逐项写分数。"]
+    if "evidence" not in item or not isinstance(evidence, dict):
+        return [f"{label} 的 evidence 须是对象，逐项写依据。"]
+    if weights is not None:
+        # 少评一项不等于「未评」：缺键就是缺项，必须显式写 null。
+        missing_keys = sorted(set(weights) - set(scores))
+        extra_keys = sorted(set(scores) - set(weights))
+        if missing_keys:
+            problems.append(
+                f"{label} 的 scores 缺少权重表里的项：{'、'.join(missing_keys)}；"
+                "没判的项要写 null，不能直接删掉。"
+            )
+        if extra_keys:
+            problems.append(
+                f"{label} 的 scores 含有权重表里没有的项：{'、'.join(extra_keys)}。"
+            )
+        missing_evidence = [name for name in scores if name in weights and not evidence.get(name)]
+        if missing_evidence:
+            problems.append(
+                f"{label} 的 evidence 缺少这些项的依据：{'、'.join(sorted(missing_evidence))}；"
+                "每一项分数后面都要跟一句依据。"
+            )
+    for name, score in scores.items():
+        if score is None:
+            continue
+        if type(score) not in (int, float) or isinstance(score, bool) or score not in (0, 1, 2):
+            problems.append(f"{label} 的 {name} 分数须是 0、1、2 或 null（未评）。")
+    return problems
+
+
+def _gate_problems(label: str, item: dict, gate: str) -> list:
+    """只在 `gate` 合法时检查：总分、停因、并入目标、三样内容与判决的对应。"""
+    problems = []
+    total = item.get("total")
+    if gate in NO_TOTAL_GATES and total is not None:
+        problems.append(f"{label} 记 {gate}，不得给总分；结果留在 experiment 里。")
+    if gate in ("pass", "soft_stop"):
+        if type(total) not in (int, float) or isinstance(total, bool):
+            problems.append(f"{label} 记 {gate}，须给数值总分。")
+    if gate == "hard_stop":
+        reason = item.get("stop_reason")
+        if reason not in STOP_REASONS:
+            problems.append(
+                f"{label} 记 hard_stop，须写 stop_reason 为 {'、'.join(STOP_REASONS)} 之一。"
+            )
+    elif "stop_reason" in item:
+        problems.append(f"{label} 记 {gate}，不得写 stop_reason。")
+    if gate == "merge":
+        merged = item.get("merged_into")
+        if not isinstance(merged, str) or not merged.strip():
+            problems.append(f"{label} 记 merge，须写 merged_into 指向被并入的候选 id。")
+        elif merged == item.get("id"):
+            problems.append(f"{label} 的 merged_into 不能指向自己。")
+    elif "merged_into" in item:
+        problems.append(f"{label} 记 {gate}，不得写 merged_into。")
+    evidence = item.get("evidence")
+    if gate in ("hard_stop", "pass", "soft_stop") and isinstance(evidence, dict) and not evidence:
+        problems.append(f"{label} 记 {gate}，evidence 不能为空。")
+    missing = item.get("missing")
+    if gate == "pending" and isinstance(missing, list) and not missing:
+        problems.append(f"{label} 记 pending，missing 不能为空；没有待办就不算待补。")
+    scores = item.get("scores")
+    if isinstance(scores, dict):
+        # 门槛没判过就不等于门槛已过：硬门槛项未评时整条只能记 pending。
+        # 不只拦 pass/soft_stop——hard_stop 与 merge 同样要求门槛已经判过，
+        # 否则「还没查」就能顺着 gap_zero 走入停因，正是本轮要堵的路径。
+        if gate != "pending":
+            for name in ("新意落点", "空白成因"):
+                if name in scores and scores[name] is None:
+                    problems.append(
+                        f"{label} 的硬门槛项 {name} 记未评，只能记 pending；"
+                        f"不能记 {gate}，改记 pending 并写明缺什么。"
+                    )
+        for name in ("新意落点", "空白成因"):
+            if name not in scores:
+                problems.append(
+                    f"{label} 的 scores 缺少硬门槛项 {name}；两道硬门槛必须逐项记分或记 null。"
+                )
+    return problems
+
+
+def _check_candidate_scores(scores) -> None:
+    """拒绝不合规的判决记录，一次列出全部问题，避免违规记录静默入库。"""
+    problems = _candidate_scores_problems(scores)
+    if problems:
+        raise ValueError("判决记录不合规：" + "；".join(problems))
+
+
 def _check_interview_payload(data: dict) -> None:
     """讲稿步骤的入参检查：不接受的写法直接拒绝，避免静默覆盖已保存内容。
 
@@ -850,6 +1050,8 @@ def save_revision(request: dict) -> dict:
         raise ValueError("正文步骤须保存 Pandoc JSON 文档及 references 数组")
     if stage == "interview":
         _check_interview_payload(data)
+    if stage == "materials" and isinstance(data, dict) and "candidate_scores" in data:
+        _check_candidate_scores(data["candidate_scores"])
     with _locked(request["proposal_dir"]) as directory:
         state, rejected = _load(directory, request)
         if rejected:
